@@ -1,0 +1,18 @@
+<component name="libraryTable">
+  <library name="javafx.web">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/Desktop/lib/javafx.web.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/lib/javafx.media.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/lib/javafx.swing.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/lib/javafx.graphics.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/lib/javafx.fxml.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/lib/javafx.controls.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/lib/javafx.base.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/lib/javafx-swt.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$USER_HOME$/Desktop/Project-Random-Sentences-Generator" />
+    </SOURCES>
+  </library>
+</component>

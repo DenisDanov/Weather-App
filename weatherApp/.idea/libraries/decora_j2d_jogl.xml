@@ -1,0 +1,67 @@
+<component name="libraryTable">
+  <library name="decora-j2d-jogl">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/decora-j2d-jogl.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/decora-jsw.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/decora-j2d.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/decora-runtime.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/decora-ogl.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/decora-sse.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/eula.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/fxdloader.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/javafx-common.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/javafx-anim.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/javafx-ext-swing.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/javafx-geom.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/javafx-io.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/javafx-sg-common.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/javafx-sg-swing.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/javafx-ui-charts.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/javafx-ui-common.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/javafx-ui-controls.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/javafx-ui-desktop.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/javafx-ui-swing.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/javafxrt-main.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/jmc.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/jogl-awt.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/jogl-common.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/rt15.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/script-api.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/desktop/websvc.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/shared/asm-all-3.1.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/shared/fxjdi.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/shared/fxdtools.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/shared/javafxdoc.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/shared/javafxc.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/shared/javafxrt.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/shared/toolchain.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/tv/pbp_1.1.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/tv/jsr172_1.0.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/tv/javafxtools-cdc.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/tv/javafxrt-cdc.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/tv/javafxapi-cdc.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/tv/fp_1.1.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/tv/cdc_1.1.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/prism/decora-es2.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/prism/decora-prism-ps.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/prism/decora-prism-sw.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/prism/decora-prism.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/prism/javafx-font.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/prism/javafx-iio.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/prism/javafx-sg-prism.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/prism/javafx-ui-prism.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/prism/jogl-prism.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/prism/newt.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/prism/pisces.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/prism/prism-common.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/prism/prism-es1.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/prism/prism-es2.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/prism/prism-ps.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/mobile/javafxapi-cldc.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/mobile/javafxrt-stub-cldc.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/javafx-sdk1.3/lib/mobile/javafxtools-cldc.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
