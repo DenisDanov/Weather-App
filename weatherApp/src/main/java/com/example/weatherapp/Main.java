@@ -45,7 +45,7 @@ public class Main extends Application {
         VBox root = new VBox();
         Scene scene = new Scene(root, 500, 615);
         scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/background.css")).toExternalForm());
-        Label cityLabel = new Label("Enter City:");
+        Label cityLabel = new Label("Enter City or Country:");
         TextField cityTextField = new TextField(); // Create a TextField for input
 
         Label temperatureLabel = new Label();
@@ -257,7 +257,7 @@ public class Main extends Application {
         Button convertButton = (Button) root.getChildren().get(6);
         convertButton.setVisible(true);
         Button showMoreButton = (Button) root.getChildren().get(8);
-        Button converWindSpeedButton = (Button) root.getChildren().get(root.getChildren().size() - 13);
+        Button convertWindSpeedButton = (Button) root.getChildren().get(root.getChildren().size() - 13);
         showMoreButton.setVisible(true);
         humidityLabel.setVisible(true);
         windSpeedLabel.setVisible(true);
@@ -297,25 +297,51 @@ public class Main extends Application {
                         humidityLabel.setText(String.format("Humidity: %d%%", mainInfo.getHumidity()));
                         uvLabel.setText("UV Index: " + getUvOutputFormat(getUV(city)));
                         windSpeedLabel.setText(String.format("Wind speed: %.2f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
-                        converWindSpeedButton.setVisible(true);
+                        convertWindSpeedButton.setVisible(true);
                         showDailyForecastButton.setVisible(true);
                     } else {
-                        humidityLabel.setText("");
-                        uvLabel.setText("");
-                        windSpeedLabel.setText("");
-                        showDailyForecastButton.setVisible(false);
-                        converWindSpeedButton.setVisible(false);
-                        dateForecast.setText("");
-                        weatherDescription.setText("");
-                        maxTemp.setText("");
-                        minTemp.setText("");
-                        avgTemp.setText("");
-                        maxWind.setText("");
-                        avgHumidity.setText("");
-                        chanceOfRain.setText("");
-                        chanceOfSnow.setText("");
-                        sunrise.setText("");
-                        sunset.setText("");
+                        showDailyForecastButton.setVisible(true);
+                        convertWindSpeedButton.setVisible(true);
+                        ForecastData forecastData = getForecast();
+                        humidityLabel.setText(String.format("Humidity: %d%%", mainInfo.getHumidity()));
+                        uvLabel.setText("UV Index: " + getUvOutputFormat(getUV(city)));
+                        windSpeedLabel.setText(String.format("Wind speed: %.2f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
+                        if (!dateForecast.getText().equals("")){
+                            dateForecast.setText(String.format("Date: %s", forecastData.getDate()));
+                            weatherDescription.setText("Weather description for the day: " + forecastData.getWeatherDescription());
+                            maxTemp.setText(String.format("Max temperature for the day: %.0f°C", forecastData.getMaxTemp()));
+                            minTemp.setText(String.format("Min temperature for the day: %.0f°C", forecastData.getMinTemp()));
+                            avgTemp.setText(String.format("Average temperature for the day: %.0f°C", forecastData.getAvgTemp()));
+                            maxWind.setText(String.format("Max wind speed for the day: %.2f km/h", forecastData.getMaxWind()));
+                            avgHumidity.setText("Average humidity for the day: " + forecastData.getAvgHumidity() + "%");
+                            chanceOfRain.setText(String.format("Chance of raining: %d%%", forecastData.getPercentChanceOfRain()));
+                            chanceOfSnow.setText(String.format("Chance of snowing: %d%%", forecastData.getPercentChanceOfSnow()));
+                            sunrise.setText("Sunrise: " + forecastData.getSunRise());
+                            sunset.setText("Sunset: " + forecastData.getSunSet());
+                        } else {
+                            dateForecast.setVisible(false);
+                            maxTemp.setVisible(false);
+                            minTemp.setVisible(false);
+                            avgTemp.setVisible(false);
+                            maxWind.setVisible(false);
+                            avgHumidity.setVisible(false);
+                            chanceOfRain.setVisible(false);
+                            chanceOfSnow.setVisible(false);
+                            weatherDescription.setVisible(false);
+                            sunrise.setVisible(false);
+                            sunset.setVisible(false);
+                            dateForecast.setText("");
+                            weatherDescription.setText("");
+                            maxTemp.setText("");
+                            minTemp.setText("");
+                            avgTemp.setText("");
+                            maxWind.setText("");
+                            avgHumidity.setText("");
+                            chanceOfRain.setText("");
+                            chanceOfSnow.setText("");
+                            sunrise.setText("");
+                            sunset.setText("");
+                        }
                     }
                 }
             } else {
@@ -327,7 +353,7 @@ public class Main extends Application {
                 showMoreButton.setVisible(false);
                 humidityLabel.setVisible(false);
                 windSpeedLabel.setVisible(false);
-                converWindSpeedButton.setVisible(false);
+                convertWindSpeedButton.setVisible(false);
                 uvLabel.setVisible(false);
                 showDailyForecastButton.setVisible(false);
                 dateForecast.setVisible(false);
@@ -341,6 +367,20 @@ public class Main extends Application {
                 weatherDescription.setVisible(false);
                 sunrise.setVisible(false);
                 sunset.setVisible(false);
+                dateForecast.setText("");
+                weatherDescription.setText("");
+                maxTemp.setText("");
+                minTemp.setText("");
+                avgTemp.setText("");
+                maxWind.setText("");
+                avgHumidity.setText("");
+                chanceOfRain.setText("");
+                chanceOfSnow.setText("");
+                sunrise.setText("");
+                sunset.setText("");
+                humidityLabel.setText("");
+                uvLabel.setText("");
+                windSpeedLabel.setText("");
             }
         } catch (Exception e) {
             e.printStackTrace();
