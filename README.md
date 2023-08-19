@@ -1,2 +1,2 @@
 # Weather-App
-JavaFX Weather App: Seamlessly Stay Informed about Local Weather Conditions
+JavaFX Weather App: Stay Informed About Weather Conditions Worldwide
