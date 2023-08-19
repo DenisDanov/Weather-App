@@ -6,8 +6,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -69,7 +69,7 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        mainScene = new Scene(root, 780, 650);
+        mainScene = new Scene(root, 666, 666);
         addStyleSheet(mainScene);
         configurePrimaryStage(primaryStage, mainScene);
         configureFetchButton(root);
@@ -133,7 +133,7 @@ public class Main extends Application {
     }
 
     private void addStyleSheet(Scene scene) {
-        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/background.css")).toExternalForm());
+        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/mainPage.css")).toExternalForm());
         temperatureLabel.getStyleClass().add("emoji-label"); // Apply the CSS class
         descriptionLabel.getStyleClass().add("emoji-label");// Apply the CSS class
         temperatureFeelsLikeLabel.getStyleClass().add("emoji-label");
@@ -148,7 +148,7 @@ public class Main extends Application {
         fetchButton.setOnAction(event -> {
             try {
                 // Fetch and display weather data
-                fetchAndDisplayWeatherData(cityTextField.getText(), root);
+                fetchAndDisplayWeatherData(cityTextField.getText());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -186,18 +186,58 @@ public class Main extends Application {
             configureWeeklyForecastButtonAction();
         });
     }
+    private void setCustomCellFactory(TableColumn<TemperatureData, String> column) {
+        column.setCellFactory(tc -> {
+            TableCell<TemperatureData, String> cell = new TableCell<>() {
+                private final Label label = new Label();
 
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setGraphic(null);
+                    } else {
+                        label.setText(item);
+                        label.setWrapText(true); // Allow text wrapping
+                        setGraphic(label);
+                    }
+                }
+            };
+            return cell;
+        });
+    }
     private void configureWeeklyForecastButtonAction() {
         if (root.getChildren().get(0).equals(cityLabel)) {
             resetUI();
-            TableView<Main.TemperatureData> tableView = new TableView<>();
+            TableView<TemperatureData> tableView = new TableView<>();
 
             // Create columns for days of the week
-            TableColumn<Main.TemperatureData, String> dayColumn = new TableColumn<>("Day");
+            TableColumn<TemperatureData, String> dayColumn = new TableColumn<>("Day");
             dayColumn.setCellValueFactory(new PropertyValueFactory<>("day"));
             tableView.getColumns().add(dayColumn);
+            dayColumn.setCellFactory(column -> {
+                return new TableCell<TemperatureData, String>() {
+                    private final Text text;
 
-            // Create columns for max temperatures
+                    {
+                        text = new Text();
+                        text.wrappingWidthProperty().bind(dayColumn.widthProperty().subtract(4.5));
+                        setGraphic(text);
+                    }
+
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (item == null || empty) {
+                            setText(null);
+                            setGraphic(null);
+                        } else {
+                            text.setText(item);
+                            setGraphic(text);
+                        }
+                    }
+                };
+            });
             String[] daysOfWeek = new String[7];
             JSONArray weeklyForecast = getWeeklyForecast();
             JSONObject[] daysOfTheWeek = new JSONObject[7];
@@ -206,15 +246,38 @@ public class Main extends Application {
                 daysOfWeek[i] = formatDateTime(day.get("date").toString());
                 daysOfTheWeek[i] = weeklyForecast.getJSONObject(i);
             }
-
             // Add day columns
             for (String day : daysOfWeek) {
-                TableColumn<Main.TemperatureData, String> tempColumn = new TableColumn<>(day);
-                tempColumn.setCellValueFactory(new PropertyValueFactory<>(day.toLowerCase())); // Matches with the property name in TemperatureData
-                tableView.getColumns().add(tempColumn);
+                TableColumn<TemperatureData, String> columns = new TableColumn<>(day);
+                columns.setCellValueFactory(new PropertyValueFactory<>(day.toLowerCase())); // Matches with the property name in TemperatureData
+                columns.setResizable(true);
+                columns.setCellFactory(column -> {
+                    return new TableCell<TemperatureData, String>() {
+                        private final Text text;
+
+                        {
+                            text = new Text();
+                            text.wrappingWidthProperty().bind(columns.widthProperty());
+                            setGraphic(text);
+                        }
+
+                        @Override
+                        protected void updateItem(String item, boolean empty) {
+                            super.updateItem(item, empty);
+                            if (item == null || empty) {
+                                setText(null);
+                                setGraphic(null);
+                            } else {
+                                text.setText(item);
+                                setGraphic(text);
+                            }
+                        }
+                    };
+                });
+                tableView.getColumns().add(columns);
+
             }
 
-            // Add data rows to the table
             JSONObject day1 = daysOfTheWeek[0];
             JSONObject day2 = daysOfTheWeek[1];
             JSONObject day3 = daysOfTheWeek[2];
@@ -223,7 +286,7 @@ public class Main extends Application {
             JSONObject day6 = daysOfTheWeek[5];
             JSONObject day7 = daysOfTheWeek[6];
 
-            tableView.getItems().add(new Main.TemperatureData("Max Temperature",
+            tableView.getItems().add(new TemperatureData("Max Temperature",
                     (day1.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
                     (day2.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
                     (day3.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
@@ -231,7 +294,7 @@ public class Main extends Application {
                     (day5.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
                     (day6.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
                     (day7.getJSONObject("day").getDouble("maxtemp_c") + "°C")));
-            tableView.getItems().add(new Main.TemperatureData("Min Temperature",
+            tableView.getItems().add(new TemperatureData("Min Temperature",
                     (day1.getJSONObject("day").getDouble("mintemp_c") + "°C"),
                     (day2.getJSONObject("day").getDouble("mintemp_c") + "°C"),
                     (day3.getJSONObject("day").getDouble("mintemp_c") + "°C"),
@@ -239,7 +302,7 @@ public class Main extends Application {
                     (day5.getJSONObject("day").getDouble("mintemp_c") + "°C"),
                     (day6.getJSONObject("day").getDouble("mintemp_c") + "°C"),
                     (day7.getJSONObject("day").getDouble("mintemp_c") + "°C")));
-            tableView.getItems().add(new Main.TemperatureData("Avg Temperature",
+            tableView.getItems().add(new TemperatureData("Avg Temperature",
                     (day1.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
                     (day2.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
                     (day3.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
@@ -247,7 +310,7 @@ public class Main extends Application {
                     (day5.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
                     (day6.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
                     (day7.getJSONObject("day").getDouble("avgtemp_c") + "°C")));
-            tableView.getItems().add(new Main.TemperatureData("Max Wind Speed",
+            tableView.getItems().add(new TemperatureData("Max Wind Speed",
                     (day1.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
                     (day2.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
                     (day3.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
@@ -255,7 +318,7 @@ public class Main extends Application {
                     (day5.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
                     (day6.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
                     (day7.getJSONObject("day").getDouble("maxwind_kph") + " km/h")));
-            tableView.getItems().add(new Main.TemperatureData("Avg Humidity",
+            tableView.getItems().add(new TemperatureData("Avg Humidity",
                     (day1.getJSONObject("day").getDouble("maxwind_kph") + "%"),
                     (day2.getJSONObject("day").getDouble("maxwind_kph") + "%"),
                     (day3.getJSONObject("day").getDouble("maxwind_kph") + "%"),
@@ -263,7 +326,7 @@ public class Main extends Application {
                     (day5.getJSONObject("day").getDouble("maxwind_kph") + "%"),
                     (day6.getJSONObject("day").getDouble("maxwind_kph") + "%"),
                     (day7.getJSONObject("day").getDouble("maxwind_kph") + "%")));
-            tableView.getItems().add(new Main.TemperatureData("UV Index",
+            tableView.getItems().add(new TemperatureData("UV Index",
                     getUvOutputFormat(day1.getJSONObject("day").getDouble("avghumidity")),
                     getUvOutputFormat(day2.getJSONObject("day").getDouble("avghumidity")),
                     getUvOutputFormat(day3.getJSONObject("day").getDouble("avghumidity")),
@@ -271,7 +334,7 @@ public class Main extends Application {
                     getUvOutputFormat(day5.getJSONObject("day").getDouble("avghumidity")),
                     getUvOutputFormat(day6.getJSONObject("day").getDouble("avghumidity")),
                     getUvOutputFormat(day7.getJSONObject("day").getDouble("avghumidity"))));
-            tableView.getItems().add(new Main.TemperatureData("Chance of Rain",
+            tableView.getItems().add(new TemperatureData("Chance of Rain",
                     (day1.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
                     (day2.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
                     (day3.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
@@ -279,7 +342,7 @@ public class Main extends Application {
                     (day5.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
                     (day6.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
                     (day7.getJSONObject("day").getDouble("daily_chance_of_rain") + "%")));
-            tableView.getItems().add(new Main.TemperatureData("Chance of Snow",
+            tableView.getItems().add(new TemperatureData("Chance of Snow",
                     (day1.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
                     (day2.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
                     (day3.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
@@ -287,7 +350,7 @@ public class Main extends Application {
                     (day5.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
                     (day6.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
                     (day7.getJSONObject("day").getDouble("daily_chance_of_snow") + "%")));
-            tableView.getItems().add(new Main.TemperatureData("Weather Description",
+            tableView.getItems().add(new TemperatureData("Weather Description",
                     (day1.getJSONObject("day").getJSONObject("condition").getString("text")),
                     (day2.getJSONObject("day").getJSONObject("condition").getString("text")),
                     (day3.getJSONObject("day").getJSONObject("condition").getString("text")),
@@ -295,7 +358,7 @@ public class Main extends Application {
                     (day5.getJSONObject("day").getJSONObject("condition").getString("text")),
                     (day6.getJSONObject("day").getJSONObject("condition").getString("text")),
                     (day7.getJSONObject("day").getJSONObject("condition").getString("text"))));
-            tableView.getItems().add(new Main.TemperatureData("Sunrise",
+            tableView.getItems().add(new TemperatureData("Sunrise",
                     (day1.getJSONObject("astro").getString("sunrise")),
                     (day2.getJSONObject("astro").getString("sunrise")),
                     (day3.getJSONObject("astro").getString("sunrise")),
@@ -303,7 +366,7 @@ public class Main extends Application {
                     (day5.getJSONObject("astro").getString("sunrise")),
                     (day6.getJSONObject("astro").getString("sunrise")),
                     (day7.getJSONObject("astro").getString("sunrise"))));
-            tableView.getItems().add(new Main.TemperatureData("Sunset",
+            tableView.getItems().add(new TemperatureData("Sunset",
                     (day1.getJSONObject("astro").getString("sunset")),
                     (day2.getJSONObject("astro").getString("sunset")),
                     (day3.getJSONObject("astro").getString("sunset")),
@@ -312,11 +375,19 @@ public class Main extends Application {
                     (day6.getJSONObject("astro").getString("sunset")),
                     (day7.getJSONObject("astro").getString("sunset"))));
 
+            tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+            double tableViewWidth = 0;
+            for (TableColumn<?, ?> column : tableView.getColumns()) {
+                tableViewWidth += column.getWidth();
+            }
+            tableView.setPrefHeight(470);
             VBox root = new VBox(tableView);
-            Scene scene = new Scene(root, 828, 650); // Adjusted scene dimensions
-            Button getToMainPage = new Button("Get to main page");
+            Scene scene = new Scene(root, tableViewWidth, 650); // Adjusted scene dimensions
+            Button getToMainPage = new Button("Go back to the main page");
             root.getChildren().add(getToMainPage);
+            scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/weeklyForecastPage.css")).toExternalForm());
             stage.setScene(scene);
+
             stage.show();
 
             getToMainPage.setOnAction(actionEvent -> {
@@ -434,7 +505,7 @@ public class Main extends Application {
         });
     }
 
-    private void fetchAndDisplayWeatherData(String cityTextField, VBox root) throws IOException {
+    private void fetchAndDisplayWeatherData(String cityTextField) throws IOException {
         // Fetch and display weather data logic
         Button convertButton = convertTemperature;
         convertButton.setVisible(true);

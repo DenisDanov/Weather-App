@@ -1,0 +1,29 @@
+/* Adjusted CSS with larger text for labels */
+
+/* Style the root container */
+.root {
+    -fx-background-color: #f0f0f0;
+    -fx-padding: 5px; /* Further reduce the padding */
+}
+
+/* Style the labels */
+.label {
+    -fx-font-size: 15px; /* Larger font size */
+    -fx-text-fill: #333;
+    -fx-padding: 2px; /* Further reduce the padding */
+}
+
+/* Style the button */
+.button {
+    -fx-background-color: #4690cc;
+    -fx-text-fill: #fff;
+    -fx-font-size: 12px; /* Smaller font size */
+    -fx-padding: 5px 10px; /* Reduce the padding */
+    -fx-border-radius: 5px;
+}
+
+/* Style the emoji label */
+.emoji-label {
+    -fx-font-family: "Segoe UI Emoji";
+    -fx-font-size: 16px; /* Larger font size */
+}
