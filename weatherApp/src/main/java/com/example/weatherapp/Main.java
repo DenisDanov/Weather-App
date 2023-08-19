@@ -186,26 +186,7 @@ public class Main extends Application {
             configureWeeklyForecastButtonAction();
         });
     }
-    private void setCustomCellFactory(TableColumn<TemperatureData, String> column) {
-        column.setCellFactory(tc -> {
-            TableCell<TemperatureData, String> cell = new TableCell<>() {
-                private final Label label = new Label();
-
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (item == null || empty) {
-                        setGraphic(null);
-                    } else {
-                        label.setText(item);
-                        label.setWrapText(true); // Allow text wrapping
-                        setGraphic(label);
-                    }
-                }
-            };
-            return cell;
-        });
-    }
+    
     private void configureWeeklyForecastButtonAction() {
         if (root.getChildren().get(0).equals(cityLabel)) {
             resetUI();
