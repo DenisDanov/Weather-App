@@ -52,13 +52,10 @@ public class Main extends Application {
     Label cityLabel = new Label("Enter City or Country:");
     Button showWeeklyForecastButton = new Button("Show weekly forecast");
     private TableView<TemperatureData> temperatureTable;
-
     public Main() {
         this.weatherAppAPI = new WeatherAppAPI();
     }
-
     Scene mainScene;
-    GridPane gridPane = new GridPane();
     VBox root = createRootLayout();
     Stage stage;
     private TableView<TemperatureData> tableViewLayout;
@@ -69,7 +66,7 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        mainScene = new Scene(root, 666, 666);
+        mainScene = new Scene(root, 686, 666);
         addStyleSheet(mainScene);
         configurePrimaryStage(primaryStage, mainScene);
         configureFetchButton(root);
@@ -84,10 +81,6 @@ public class Main extends Application {
 
     private VBox createRootLayout() {
         root = new VBox();
-
-        gridPane.setHgap(10);
-        gridPane.setVisible(false);
-
         temperatureLabel.getStyleClass().add("emoji-label"); // Apply the CSS class
         descriptionLabel.getStyleClass().add("emoji-label");// Apply the CSS class
         temperatureFeelsLikeLabel.getStyleClass().add("emoji-label");
@@ -186,7 +179,7 @@ public class Main extends Application {
             configureWeeklyForecastButtonAction();
         });
     }
-    
+
     private void configureWeeklyForecastButtonAction() {
         if (root.getChildren().get(0).equals(cityLabel)) {
             resetUI();
@@ -638,22 +631,8 @@ public class Main extends Application {
     }
 
     private void returnToMainPage() {
-          /*
-        cityLabel -> gridPaneWeekDays
-        cityTextField -> MaxTempLabel
-        fetchButton -> MinTempLabel
-        localTimeLabel -> AvgTempLabel
-        temperatureLabel -> MaxWindLabel
-        temperatureFeelsLikeLabel -> AvgHumidityLabel
-        descriptionLabel -> ChanceOfRaining
-        convertTemperature -> ChanceOfSnowing
-        showMoreWeatherInfo -> WeatherDescription
-        humidityLabel -> Sunrise
-        uvLabel -> Sunset
-         */
         stage.setScene(mainScene);
         stage.show();
-        gridPane.setVisible(false);
         temperatureLabel.setVisible(true);
         descriptionLabel.setVisible(true);
         temperatureFeelsLikeLabel.setVisible(true);
@@ -717,9 +696,7 @@ public class Main extends Application {
             throw new RuntimeException(e);
         }
         JSONObject response = new JSONObject(responseBody);
-        JSONArray forecastDays = response.getJSONObject("forecast").getJSONArray("forecastday");
-        System.out.println(forecastDays.length());
-        return forecastDays;
+        return response.getJSONObject("forecast").getJSONArray("forecastday");
     }
 
     private ForecastData getDailyForecast() {
