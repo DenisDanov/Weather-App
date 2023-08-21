@@ -1,3 +1,4 @@
 # Weather-App
 JavaFX Weather App: Stay Informed About Weather Conditions Worldwide
-![Screenshot_dnv_e36_pacific_coast_hwy_31-9-122-21-26-42](https://github.com/DenisDanov/Weather-App/assets/122882697/e0f4b016-6c49-4583-aa05-6c21ce4a4ec3)
+![Screenshot (1377)](https://github.com/DenisDanov/Weather-App/assets/122882697/4fbaa698-e459-4dd5-953b-c438dd1238fc)
+![Screenshot (1375)](https://github.com/DenisDanov/Weather-App/assets/122882697/2923043f-8e9c-420d-a67e-138557901198)
