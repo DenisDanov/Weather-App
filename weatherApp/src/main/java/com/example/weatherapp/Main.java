@@ -8,8 +8,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.json.JSONArray;
@@ -63,8 +62,6 @@ public class Main extends Application {
     Stage stage;
     Label cityStartUpLabel = new Label("Enter City or Country:");
     TextField cityStartUpTextField = new TextField();
-
-
     public static void main(String[] args) {
         launch(args);
     }
@@ -96,10 +93,15 @@ public class Main extends Application {
         scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/firstPage.css")).toExternalForm());
         stage.setScene(scene);
     }
-
+    private void setRightMargin(Region node, double margin) {
+        Insets insets = new Insets(0, margin, 0, 0); // top, right, bottom, left
+        VBox.setMargin(node, insets);
+    }
     private VBox createRootLayout() {
         root = new VBox();
         root.setSpacing(1.49999);
+
+        setRightMargin(inputTextField, 530);
 
         temperatureTable = new TableView<>();
         temperatureTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
@@ -158,7 +160,7 @@ public class Main extends Application {
         fetchButton.setOnAction(event -> {
             try {
                 // Fetch and display weather data
-                if (inputTextField.getText().equals("")) {
+                if (inputTextField.getText().equals("") && !root.getChildren().contains(fetchButton)) {
                     fetchAndDisplayWeatherData(cityStartUpTextField.getText());
                 } else {
                     fetchAndDisplayWeatherData(inputTextField.getText());
@@ -502,10 +504,6 @@ public class Main extends Application {
 
     private void fetchAndDisplayWeatherData(String cityTextField) throws IOException {
         // Fetch and display weather data logic
-        if (inputTextField.getText().equals("")) {
-            root.getChildren().add(2,fetchButton);
-            stage.setScene(mainScene);
-        }
         Button convertButton = convertTemperature;
         convertButton.setVisible(true);
         Button showMoreButton = showMoreWeatherInfo;
@@ -639,11 +637,15 @@ public class Main extends Application {
             e.printStackTrace();
             temperatureLabel.setText("An error occurred.");
         }
-        if (inputTextField.getText().equals("")) {
+        if (inputTextField.getText().equals("") && !root.getChildren().contains(fetchButton)) {
             Platform.runLater(() -> {
                 inputTextField.setText(cityStartUpTextField.getText());
                 inputTextField.positionCaret(inputTextField.getText().length());
             });
+        }
+        if (inputTextField.getText().equals("") && !root.getChildren().contains(fetchButton)) {
+            root.getChildren().add(2, fetchButton);
+            stage.setScene(mainScene);
         }
     }
 
