@@ -2,10 +2,13 @@ package com.example.weatherapp;
 
 import com.google.gson.Gson;
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
@@ -25,7 +28,7 @@ public class Main extends Application {
     private final WeatherAppAPI weatherAppAPI;
     private WeatherData weatherData;
     private String city;
-    private final TextField cityTextField = new TextField(); // Create a TextField for input
+    private final TextField inputTextField = new TextField(); // Create a TextField for input
     private final Label temperatureLabel = new Label();
     private final Label descriptionLabel = new Label();
     private final Label temperatureFeelsLikeLabel = new Label();
@@ -58,7 +61,9 @@ public class Main extends Application {
     Scene mainScene;
     VBox root = createRootLayout();
     Stage stage;
-    private TableView<TemperatureData> tableViewLayout;
+    Label cityStartUpLabel = new Label("Enter City or Country:");
+    TextField cityStartUpTextField = new TextField();
+
 
     public static void main(String[] args) {
         launch(args);
@@ -66,29 +71,41 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        mainScene = new Scene(root, 686, 666);
+        mainScene = new Scene(root, 686, 700);
+        stage = primaryStage;
         addStyleSheet(mainScene);
         configurePrimaryStage(primaryStage, mainScene);
-        configureFetchButton(root);
+        configureStartUpScene();
+        configureFetchButton();
         configureConvertTemperatureButton();
         configureShowMoreButton();
         configureConvertWindSpeedButton();
         configureGetDailyForecastButton();
         configureWeeklyForecastButton();
         primaryStage.show();
-        stage = primaryStage;
+    }
+
+    private void configureStartUpScene() {
+        VBox vbox = new VBox(5);
+        vbox.setAlignment(Pos.CENTER);// Center the VBox within the scene
+        vbox.setPadding(new Insets(100));
+
+        // Add the label and text field to the VBox
+        vbox.getChildren().addAll(cityStartUpLabel, cityStartUpTextField,fetchButton);
+        Scene scene = new Scene(vbox,686, 700);
+        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/firstPage.css")).toExternalForm());
+        stage.setScene(scene);
     }
 
     private VBox createRootLayout() {
         root = new VBox();
-        temperatureLabel.getStyleClass().add("emoji-label"); // Apply the CSS class
-        descriptionLabel.getStyleClass().add("emoji-label");// Apply the CSS class
-        temperatureFeelsLikeLabel.getStyleClass().add("emoji-label");
+        root.setSpacing(1.49999);
+
         temperatureTable = new TableView<>();
         temperatureTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         // Add the TableView to the root layout
-        root.getChildren().addAll(cityLabel, cityTextField,
+        root.getChildren().addAll(cityLabel, inputTextField,
                 fetchButton,
                 localTimeLabel,
                 temperatureLabel,
@@ -121,7 +138,6 @@ public class Main extends Application {
         sunrise.setVisible(false);
         sunset.setVisible(false);
 
-        // Create and configure UI components...
         return root;
     }
 
@@ -130,6 +146,7 @@ public class Main extends Application {
         temperatureLabel.getStyleClass().add("emoji-label"); // Apply the CSS class
         descriptionLabel.getStyleClass().add("emoji-label");// Apply the CSS class
         temperatureFeelsLikeLabel.getStyleClass().add("emoji-label");
+
     }
 
     private void configurePrimaryStage(Stage primaryStage, Scene scene) {
@@ -137,11 +154,15 @@ public class Main extends Application {
         primaryStage.setScene(scene);
     }
 
-    private void configureFetchButton(VBox root) {
+    private void configureFetchButton() {
         fetchButton.setOnAction(event -> {
             try {
                 // Fetch and display weather data
-                fetchAndDisplayWeatherData(cityTextField.getText());
+                if (inputTextField.getText().equals("")) {
+                    fetchAndDisplayWeatherData(cityStartUpTextField.getText());
+                } else {
+                    fetchAndDisplayWeatherData(inputTextField.getText());
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -481,6 +502,10 @@ public class Main extends Application {
 
     private void fetchAndDisplayWeatherData(String cityTextField) throws IOException {
         // Fetch and display weather data logic
+        if (inputTextField.getText().equals("")) {
+            root.getChildren().add(2,fetchButton);
+            stage.setScene(mainScene);
+        }
         Button convertButton = convertTemperature;
         convertButton.setVisible(true);
         Button showMoreButton = showMoreWeatherInfo;
@@ -614,6 +639,12 @@ public class Main extends Application {
             e.printStackTrace();
             temperatureLabel.setText("An error occurred.");
         }
+        if (inputTextField.getText().equals("")) {
+            Platform.runLater(() -> {
+                inputTextField.setText(cityStartUpTextField.getText());
+                inputTextField.positionCaret(inputTextField.getText().length());
+            });
+        }
     }
 
     private String getUvOutputFormat(double uvIndex) {
@@ -655,7 +686,7 @@ public class Main extends Application {
         sunrise.setVisible(true);
         sunset.setVisible(true);
         localTimeLabel.setVisible(true);
-        cityTextField.setVisible(true);
+        inputTextField.setVisible(true);
         fetchButton.setVisible(true);
         cityLabel.setVisible(true);
     }
@@ -683,7 +714,7 @@ public class Main extends Application {
         sunrise.setVisible(false);
         sunset.setVisible(false);
         localTimeLabel.setVisible(false);
-        cityTextField.setVisible(false);
+        inputTextField.setVisible(false);
         fetchButton.setVisible(false);
         cityLabel.setVisible(false);
     }
