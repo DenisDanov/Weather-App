@@ -85,7 +85,7 @@ public class Main extends Application {
     private void configureStartUpScene() {
         VBox vbox = new VBox(5);
         vbox.setAlignment(Pos.CENTER);// Center the VBox within the scene
-        vbox.setPadding(new Insets(100));
+        vbox.setPadding(new Insets(150));
 
         // Add the label and text field to the VBox
         vbox.getChildren().addAll(cityStartUpLabel, cityStartUpTextField,fetchButton);
@@ -635,7 +635,7 @@ public class Main extends Application {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            temperatureLabel.setText("An error occurred.");
+            localTimeLabel.setText("An error occurred.");
         }
         if (inputTextField.getText().equals("") && !root.getChildren().contains(fetchButton)) {
             Platform.runLater(() -> {

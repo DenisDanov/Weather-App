@@ -21,6 +21,9 @@
     -fx-padding: 5px 10px; /* Reduce the padding */
     -fx-border-radius: 5px;
 }
+.button:hover {
+    -fx-background-color: #619cd7; /* Hover background color */
+}
 
 /* Style the emoji label */
 .emoji-label {

@@ -23,6 +23,10 @@
     -fx-background-color: #4690cc;
     -fx-text-fill: white; /* Adjust text color to improve contrast */
 }
+.button:hover {
+    -fx-background-color: #619cd7; /* Hover background color */
+}
+
 
 /* Style the "Weather Description" row */
 .table-row-cell:filled:selected .table-cell {
