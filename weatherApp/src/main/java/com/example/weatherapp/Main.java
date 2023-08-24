@@ -51,17 +51,24 @@ public class Main extends Application {
     private final Button convertWindSpeed = new Button("Convert wind speed");
     private final Button getDailyForecast = new Button("Show daily forecast");
     private final Button fetchButton = new Button("Show current weather");
-    Label cityLabel = new Label("Enter City or Country:");
-    Button showWeeklyForecastButton = new Button("Show weekly forecast");
+    private final Button goBackToFirstPage = new Button("Return to the first page");
+    private final Label cityLabel = new Label("Enter City or Country:");
+    private final Button showWeeklyForecastButton = new Button("Show weekly forecast");
     private TableView<TemperatureData> temperatureTable;
+
+    private Scene mainScene;
+    private VBox root = createRootLayout();
+    Stage stage;
+    private VBox firstPageVbox;
+    private final Label cityStartUpLabel = new Label("Enter City or Country:");
+    private final Label invalidInput = new Label();
+    private final TextField cityStartUpTextField = new TextField();
+    private Scene firstPageScene;
+    private GridPane buttonsPane;
     public Main() {
         this.weatherAppAPI = new WeatherAppAPI();
     }
-    Scene mainScene;
-    VBox root = createRootLayout();
-    Stage stage;
-    Label cityStartUpLabel = new Label("Enter City or Country:");
-    TextField cityStartUpTextField = new TextField();
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -74,6 +81,7 @@ public class Main extends Application {
         configurePrimaryStage(primaryStage, mainScene);
         configureStartUpScene();
         configureFetchButton();
+        configureGoBackToFirstPageButton();
         configureConvertTemperatureButton();
         configureShowMoreButton();
         configureConvertWindSpeedButton();
@@ -83,32 +91,54 @@ public class Main extends Application {
     }
 
     private void configureStartUpScene() {
-        VBox vbox = new VBox(5);
-        vbox.setAlignment(Pos.CENTER);// Center the VBox within the scene
-        vbox.setPadding(new Insets(150));
+        firstPageVbox = new VBox(5);
+        firstPageVbox.setAlignment(Pos.CENTER);// Center the VBox within the scene
+        firstPageVbox.setPadding(new Insets(150));
 
         // Add the label and text field to the VBox
-        vbox.getChildren().addAll(cityStartUpLabel, cityStartUpTextField,fetchButton);
-        Scene scene = new Scene(vbox,686, 700);
-        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/firstPage.css")).toExternalForm());
-        stage.setScene(scene);
+        firstPageVbox.getChildren().addAll(cityStartUpLabel, cityStartUpTextField, fetchButton, invalidInput);
+        firstPageScene = new Scene(firstPageVbox, 686, 700);
+        firstPageScene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/firstPage.css")).toExternalForm());
+        stage.setScene(firstPageScene);
     }
+
+    private void checkForValidInput() throws IOException {
+        String responseBody = weatherAppAPI.httpResponse(city);
+        if (responseBody.equals("{\"cod\":\"400\",\"message\":\"Nothing to geocode\"}") ||
+        responseBody.equals("{\"cod\":\"404\",\"message\":\"city not found\"}")) {
+            invalidInput.setText("Enter valid city or country");
+        } else {
+            Platform.runLater(() -> {
+                inputTextField.setText(cityStartUpTextField.getText());
+                inputTextField.positionCaret(inputTextField.getText().length());
+            });
+            stage.setScene(mainScene);
+            fetchAndDisplayWeatherData(city);
+        }
+    }
+
     private void setRightMargin(Region node, double margin) {
         Insets insets = new Insets(0, margin, 0, 0); // top, right, bottom, left
         VBox.setMargin(node, insets);
     }
+
     private VBox createRootLayout() {
         root = new VBox();
         root.setSpacing(1.49999);
 
         setRightMargin(inputTextField, 530);
 
+        buttonsPane = new GridPane();
+        buttonsPane.add(fetchButton,0,0);
+        buttonsPane.add(goBackToFirstPage,1,0);
+        buttonsPane.setHgap(5);
+
         temperatureTable = new TableView<>();
         temperatureTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         // Add the TableView to the root layout
         root.getChildren().addAll(cityLabel, inputTextField,
-                fetchButton,
+                buttonsPane,
                 localTimeLabel,
                 temperatureLabel,
                 temperatureFeelsLikeLabel,
@@ -126,6 +156,7 @@ public class Main extends Application {
         showMoreWeatherInfo.setVisible(false);
         convertWindSpeed.setVisible(false);
         uvLabel.setVisible(false);
+        buttonsPane.setVisible(false);
 
         getDailyForecast.setVisible(false);
         dateForecast.setVisible(false);
@@ -156,11 +187,21 @@ public class Main extends Application {
         primaryStage.setScene(scene);
     }
 
+    private void configureGoBackToFirstPageButton(){
+        goBackToFirstPage.setOnAction(actionEvent ->{
+            stage.setScene(firstPageScene);
+            invalidInput.setText("");
+            if (!firstPageVbox.getChildren().contains(fetchButton)) {
+                firstPageVbox.getChildren().add(2, fetchButton);
+                cityStartUpTextField.setText(city);
+            }
+        });
+    }
     private void configureFetchButton() {
         fetchButton.setOnAction(event -> {
             try {
                 // Fetch and display weather data
-                if (inputTextField.getText().equals("") && !root.getChildren().contains(fetchButton)) {
+                if (stage.getScene() == firstPageScene) {
                     fetchAndDisplayWeatherData(cityStartUpTextField.getText());
                 } else {
                     fetchAndDisplayWeatherData(inputTextField.getText());
@@ -257,7 +298,6 @@ public class Main extends Application {
                             text.wrappingWidthProperty().bind(columns.widthProperty());
                             setGraphic(text);
                         }
-
                         @Override
                         protected void updateItem(String item, boolean empty) {
                             super.updateItem(item, empty);
@@ -380,7 +420,7 @@ public class Main extends Application {
             tableView.setPrefHeight(470);
             VBox root = new VBox(tableView);
             Scene scene = new Scene(root, tableViewWidth, 650); // Adjusted scene dimensions
-            Button getToMainPage = new Button("Go back to the main page");
+            Button getToMainPage = new Button("Return to the main page");
             root.getChildren().add(getToMainPage);
             scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/weeklyForecastPage.css")).toExternalForm());
             stage.setScene(scene);
@@ -394,7 +434,6 @@ public class Main extends Application {
             returnToMainPage();
         }
     }
-
 
     public static class TemperatureData {
         private String day;
@@ -504,148 +543,154 @@ public class Main extends Application {
 
     private void fetchAndDisplayWeatherData(String cityTextField) throws IOException {
         // Fetch and display weather data logic
-        Button convertButton = convertTemperature;
-        convertButton.setVisible(true);
-        Button showMoreButton = showMoreWeatherInfo;
-        Button convertWindSpeedButton = convertWindSpeed;
-        showMoreButton.setVisible(true);
-        humidityLabel.setVisible(true);
-        windSpeedLabel.setVisible(true);
-        uvLabel.setVisible(true);
-
         this.city = cityTextField;
-        try {
-            String responseBody = weatherAppAPI.httpResponse(city);
-            System.out.println(responseBody);
-            Gson gson = new Gson();
-            weatherData = gson.fromJson(responseBody, WeatherData.class);
+        if (stage.getScene() == firstPageScene) {
+            checkForValidInput();
+        } else {
+            GridPane checkButtonsPane = (GridPane) root.getChildren().get(2);
+            if (!checkButtonsPane.getChildren().contains(fetchButton)){
+                buttonsPane.add(fetchButton,0,0);
+            }
+            stage.setScene(mainScene);
+            Button convertButton = convertTemperature;
+            Button showMoreButton = showMoreWeatherInfo;
+            Button convertWindSpeedButton = convertWindSpeed;
 
-            MainParsedData mainInfo = weatherData.getMain();
-            WeatherInfo[] weatherInfo = weatherData.getWeather();
+            try {
+                String responseBody = weatherAppAPI.httpResponse(city);
+                System.out.println(responseBody);
+                Gson gson = new Gson();
+                weatherData = gson.fromJson(responseBody, WeatherData.class);
 
-            if (mainInfo != null && weatherInfo != null && weatherInfo.length > 0) {
-                temperatureLabel.setVisible(true);
-                descriptionLabel.setVisible(true);
-                temperatureFeelsLikeLabel.setVisible(true);
-                double temperatureCelsius = getTempInCelsius(mainInfo.getTemp());
-                double temperatureFeelsLikeCelsius = getTempInCelsius(mainInfo.getFeels_like());
-                String description = weatherInfo[0].getDescription();
+                MainParsedData mainInfo = weatherData.getMain();
+                WeatherInfo[] weatherInfo = weatherData.getWeather();
 
-                localTimeLabel.setText(String.format("Local time: %s", formatDateTime(getLocalTime(city))));
-                temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21", temperatureCelsius));
-                temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21", temperatureFeelsLikeCelsius));
+                if (mainInfo != null && weatherInfo != null && weatherInfo.length > 0) {
+                    buttonsPane.setVisible(true);
+                    convertButton.setVisible(true);
+                    showMoreButton.setVisible(true);
+                    humidityLabel.setVisible(true);
+                    windSpeedLabel.setVisible(true);
+                    uvLabel.setVisible(true);
+                    temperatureLabel.setVisible(true);
+                    descriptionLabel.setVisible(true);
+                    temperatureFeelsLikeLabel.setVisible(true);
+                    double temperatureCelsius = getTempInCelsius(mainInfo.getTemp());
+                    double temperatureFeelsLikeCelsius = getTempInCelsius(mainInfo.getFeels_like());
+                    String description = weatherInfo[0].getDescription();
 
-                if (description.contains("cloud")) {
-                    descriptionLabel.setText("Weather Description: " + description + " ☁️"); // Emoji added here
-                } else if (description.contains("rain")) {
-                    descriptionLabel.setText("Weather Description: " + description + " \uD83C\uDF27️");
-                } else {
-                    descriptionLabel.setText("Weather Description: " + description + " ☀️");
-                }
-                if (!humidityLabel.getText().equals("") && !windSpeedLabel.getText().equals("")) {
-                    if (humidityLabel.getText().equals("") && windSpeedLabel.getText().equals("")) {
-                        humidityLabel.setText(String.format("Humidity: %d%%", mainInfo.getHumidity()));
-                        uvLabel.setText("UV Index: " + getUvOutputFormat(getUV(city)));
-                        windSpeedLabel.setText(String.format("Wind speed: %.2f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
-                        convertWindSpeedButton.setVisible(true);
-                        getDailyForecast.setVisible(true);
+                    localTimeLabel.setText(String.format("Local time: %s", formatDateTime(getLocalTime(city))));
+                    temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21", temperatureCelsius));
+                    temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21", temperatureFeelsLikeCelsius));
+
+                    if (description.contains("cloud")) {
+                        descriptionLabel.setText("Weather Description: " + description + " ☁️"); // Emoji added here
+                    } else if (description.contains("rain")) {
+                        descriptionLabel.setText("Weather Description: " + description + " \uD83C\uDF27️");
                     } else {
-                        getDailyForecast.setVisible(true);
-                        convertWindSpeedButton.setVisible(true);
-                        ForecastData forecastData = getDailyForecast();
-                        humidityLabel.setText(String.format("Humidity: %d%%", mainInfo.getHumidity()));
-                        uvLabel.setText("UV Index: " + getUvOutputFormat(getUV(city)));
-                        windSpeedLabel.setText(String.format("Wind speed: %.2f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
-                        if (!dateForecast.getText().equals("")) {
-                            dateForecast.setText(String.format("Date: %s", forecastData.getDate()));
-                            weatherDescriptionForecast.setText("Weather description for the day: " + forecastData.getWeatherDescription());
-                            maxTempForecast.setText(String.format("Max temperature for the day: %.0f°C", forecastData.getMaxTemp()));
-                            minTempForecast.setText(String.format("Min temperature for the day: %.0f°C", forecastData.getMinTemp()));
-                            avgTempForecast.setText(String.format("Average temperature for the day: %.0f°C", forecastData.getAvgTemp()));
-                            maxWindForecast.setText(String.format("Max wind speed for the day: %.2f km/h", forecastData.getMaxWind()));
-                            avgHumidityForecast.setText("Average humidity for the day: " + forecastData.getAvgHumidity() + "%");
-                            chanceOfRainingForecast.setText(String.format("Chance of raining: %d%%", forecastData.getPercentChanceOfRain()));
-                            chanceOfSnowForecast.setText(String.format("Chance of snowing: %d%%", forecastData.getPercentChanceOfSnow()));
-                            sunrise.setText("Sunrise: " + forecastData.getSunRise());
-                            sunset.setText("Sunset: " + forecastData.getSunSet());
+                        descriptionLabel.setText("Weather Description: " + description + " ☀️");
+                    }
+                    if (!humidityLabel.getText().equals("") && !windSpeedLabel.getText().equals("")) {
+                        if (humidityLabel.getText().equals("") && windSpeedLabel.getText().equals("")) {
+                            humidityLabel.setText(String.format("Humidity: %d%%", mainInfo.getHumidity()));
+                            uvLabel.setText("UV Index: " + getUvOutputFormat(getUV(city)));
+                            windSpeedLabel.setText(String.format("Wind speed: %.2f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
+                            convertWindSpeedButton.setVisible(true);
+                            getDailyForecast.setVisible(true);
                         } else {
-                            dateForecast.setVisible(false);
-                            maxTempForecast.setVisible(false);
-                            minTempForecast.setVisible(false);
-                            avgTempForecast.setVisible(false);
-                            maxWindForecast.setVisible(false);
-                            avgHumidityForecast.setVisible(false);
-                            chanceOfRainingForecast.setVisible(false);
-                            chanceOfSnowForecast.setVisible(false);
-                            weatherDescriptionForecast.setVisible(false);
-                            sunrise.setVisible(false);
-                            sunset.setVisible(false);
-                            dateForecast.setText("");
-                            weatherDescriptionForecast.setText("");
-                            maxTempForecast.setText("");
-                            minTempForecast.setText("");
-                            avgTempForecast.setText("");
-                            maxWindForecast.setText("");
-                            avgHumidityForecast.setText("");
-                            chanceOfRainingForecast.setText("");
-                            chanceOfSnowForecast.setText("");
-                            sunrise.setText("");
-                            sunset.setText("");
+                            getDailyForecast.setVisible(true);
+                            convertWindSpeedButton.setVisible(true);
+                            ForecastData forecastData = getDailyForecast();
+                            humidityLabel.setText(String.format("Humidity: %d%%", mainInfo.getHumidity()));
+                            uvLabel.setText("UV Index: " + getUvOutputFormat(getUV(city)));
+                            windSpeedLabel.setText(String.format("Wind speed: %.2f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
+                            if (!dateForecast.getText().equals("")) {
+                                dateForecast.setText(String.format("Date: %s", forecastData.getDate()));
+                                weatherDescriptionForecast.setText("Weather description for the day: " + forecastData.getWeatherDescription());
+                                maxTempForecast.setText(String.format("Max temperature for the day: %.0f°C", forecastData.getMaxTemp()));
+                                minTempForecast.setText(String.format("Min temperature for the day: %.0f°C", forecastData.getMinTemp()));
+                                avgTempForecast.setText(String.format("Average temperature for the day: %.0f°C", forecastData.getAvgTemp()));
+                                maxWindForecast.setText(String.format("Max wind speed for the day: %.2f km/h", forecastData.getMaxWind()));
+                                avgHumidityForecast.setText("Average humidity for the day: " + forecastData.getAvgHumidity() + "%");
+                                chanceOfRainingForecast.setText(String.format("Chance of raining: %d%%", forecastData.getPercentChanceOfRain()));
+                                chanceOfSnowForecast.setText(String.format("Chance of snowing: %d%%", forecastData.getPercentChanceOfSnow()));
+                                sunrise.setText("Sunrise: " + forecastData.getSunRise());
+                                sunset.setText("Sunset: " + forecastData.getSunSet());
+                            } else {
+                                dateForecast.setVisible(false);
+                                maxTempForecast.setVisible(false);
+                                minTempForecast.setVisible(false);
+                                avgTempForecast.setVisible(false);
+                                maxWindForecast.setVisible(false);
+                                avgHumidityForecast.setVisible(false);
+                                chanceOfRainingForecast.setVisible(false);
+                                chanceOfSnowForecast.setVisible(false);
+                                weatherDescriptionForecast.setVisible(false);
+                                sunrise.setVisible(false);
+                                sunset.setVisible(false);
+                                dateForecast.setText("");
+                                weatherDescriptionForecast.setText("");
+                                maxTempForecast.setText("");
+                                minTempForecast.setText("");
+                                avgTempForecast.setText("");
+                                maxWindForecast.setText("");
+                                avgHumidityForecast.setText("");
+                                chanceOfRainingForecast.setText("");
+                                chanceOfSnowForecast.setText("");
+                                sunrise.setText("");
+                                sunset.setText("");
+                            }
                         }
                     }
+                } else {
+                    localTimeLabel.setText("Invalid place.");
+                    showWeeklyForecastButton.setVisible(false);
+                    temperatureLabel.setVisible(false);
+                    descriptionLabel.setVisible(false);
+                    temperatureFeelsLikeLabel.setVisible(false);
+                    convertButton.setVisible(false);
+                    showMoreButton.setVisible(false);
+                    humidityLabel.setVisible(false);
+                    windSpeedLabel.setVisible(false);
+                    convertWindSpeedButton.setVisible(false);
+                    uvLabel.setVisible(false);
+                    getDailyForecast.setVisible(false);
+                    dateForecast.setVisible(false);
+                    maxTempForecast.setVisible(false);
+                    minTempForecast.setVisible(false);
+                    avgTempForecast.setVisible(false);
+                    maxWindForecast.setVisible(false);
+                    avgHumidityForecast.setVisible(false);
+                    chanceOfRainingForecast.setVisible(false);
+                    chanceOfSnowForecast.setVisible(false);
+                    weatherDescriptionForecast.setVisible(false);
+                    sunrise.setVisible(false);
+                    sunset.setVisible(false);
+                    dateForecast.setText("");
+                    weatherDescriptionForecast.setText("");
+                    maxTempForecast.setText("");
+                    minTempForecast.setText("");
+                    avgTempForecast.setText("");
+                    maxWindForecast.setText("");
+                    avgHumidityForecast.setText("");
+                    chanceOfRainingForecast.setText("");
+                    chanceOfSnowForecast.setText("");
+                    sunrise.setText("");
+                    sunset.setText("");
+                    humidityLabel.setText("");
+                    uvLabel.setText("");
+                    windSpeedLabel.setText("");
                 }
-            } else {
-                localTimeLabel.setText("Invalid place.");
-                showWeeklyForecastButton.setVisible(false);
-                temperatureLabel.setVisible(false);
-                descriptionLabel.setVisible(false);
-                temperatureFeelsLikeLabel.setVisible(false);
-                convertButton.setVisible(false);
-                showMoreButton.setVisible(false);
-                humidityLabel.setVisible(false);
-                windSpeedLabel.setVisible(false);
-                convertWindSpeedButton.setVisible(false);
-                uvLabel.setVisible(false);
-                getDailyForecast.setVisible(false);
-                dateForecast.setVisible(false);
-                maxTempForecast.setVisible(false);
-                minTempForecast.setVisible(false);
-                avgTempForecast.setVisible(false);
-                maxWindForecast.setVisible(false);
-                avgHumidityForecast.setVisible(false);
-                chanceOfRainingForecast.setVisible(false);
-                chanceOfSnowForecast.setVisible(false);
-                weatherDescriptionForecast.setVisible(false);
-                sunrise.setVisible(false);
-                sunset.setVisible(false);
-                dateForecast.setText("");
-                weatherDescriptionForecast.setText("");
-                maxTempForecast.setText("");
-                minTempForecast.setText("");
-                avgTempForecast.setText("");
-                maxWindForecast.setText("");
-                avgHumidityForecast.setText("");
-                chanceOfRainingForecast.setText("");
-                chanceOfSnowForecast.setText("");
-                sunrise.setText("");
-                sunset.setText("");
-                humidityLabel.setText("");
-                uvLabel.setText("");
-                windSpeedLabel.setText("");
+            } catch (Exception e) {
+                e.printStackTrace();
+                localTimeLabel.setText("An error occurred.");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            localTimeLabel.setText("An error occurred.");
-        }
-        if (inputTextField.getText().equals("") && !root.getChildren().contains(fetchButton)) {
-            Platform.runLater(() -> {
-                inputTextField.setText(cityStartUpTextField.getText());
-                inputTextField.positionCaret(inputTextField.getText().length());
-            });
-        }
-        if (inputTextField.getText().equals("") && !root.getChildren().contains(fetchButton)) {
-            root.getChildren().add(2, fetchButton);
-            stage.setScene(mainScene);
+            if (inputTextField.getText().equals("") && !checkButtonsPane.getChildren().contains(fetchButton)) {
+                Platform.runLater(() -> {
+                    inputTextField.setText(cityStartUpTextField.getText());
+                    inputTextField.positionCaret(inputTextField.getText().length());
+                });
+            }
         }
     }
 
