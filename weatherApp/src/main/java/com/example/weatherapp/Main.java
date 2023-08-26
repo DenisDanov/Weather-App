@@ -9,6 +9,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.json.JSONArray;
@@ -65,6 +67,7 @@ public class Main extends Application {
     private final TextField cityStartUpTextField = new TextField();
     private Scene firstPageScene;
     private GridPane buttonsPane;
+    private Color originalTextColor;
     public Main() {
         this.weatherAppAPI = new WeatherAppAPI();
     }
@@ -107,7 +110,10 @@ public class Main extends Application {
         if (responseBody.equals("{\"cod\":\"400\",\"message\":\"Nothing to geocode\"}") ||
         responseBody.equals("{\"cod\":\"404\",\"message\":\"city not found\"}")) {
             invalidInput.setText("Enter valid city or country");
+            invalidInput.setStyle("-fx-text-fill: red;");
+            cityStartUpTextField.setStyle("-fx-text-fill: red;");
         } else {
+            cityStartUpTextField.setStyle(inputTextField.getStyle());
             Platform.runLater(() -> {
                 inputTextField.setText(cityStartUpTextField.getText());
                 inputTextField.positionCaret(inputTextField.getText().length());
@@ -551,11 +557,13 @@ public class Main extends Application {
             if (!checkButtonsPane.getChildren().contains(fetchButton)){
                 buttonsPane.add(fetchButton,0,0);
             }
+            if (localTimeLabel.getTextFill().equals(Color.RED)){
+                localTimeLabel.setTextFill(originalTextColor);
+            }
             stage.setScene(mainScene);
             Button convertButton = convertTemperature;
             Button showMoreButton = showMoreWeatherInfo;
             Button convertWindSpeedButton = convertWindSpeed;
-
             try {
                 String responseBody = weatherAppAPI.httpResponse(city);
                 System.out.println(responseBody);
@@ -566,6 +574,10 @@ public class Main extends Application {
                 WeatherInfo[] weatherInfo = weatherData.getWeather();
 
                 if (mainInfo != null && weatherInfo != null && weatherInfo.length > 0) {
+
+                    if (inputTextField.getStyle().equals("-fx-text-fill: red;")) {
+                        inputTextField.setStyle(temperatureLabel.getStyle());
+                    }
                     buttonsPane.setVisible(true);
                     convertButton.setVisible(true);
                     showMoreButton.setVisible(true);
@@ -580,6 +592,7 @@ public class Main extends Application {
                     String description = weatherInfo[0].getDescription();
 
                     localTimeLabel.setText(String.format("Local time: %s", formatDateTime(getLocalTime(city))));
+                    originalTextColor = (Color) localTimeLabel.getTextFill();
                     temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21", temperatureCelsius));
                     temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21", temperatureFeelsLikeCelsius));
 
@@ -644,6 +657,8 @@ public class Main extends Application {
                     }
                 } else {
                     localTimeLabel.setText("Invalid place.");
+                    localTimeLabel.setTextFill(Color.RED);
+                    inputTextField.setStyle("-fx-text-fill: red;");
                     showWeeklyForecastButton.setVisible(false);
                     temperatureLabel.setVisible(false);
                     descriptionLabel.setVisible(false);
