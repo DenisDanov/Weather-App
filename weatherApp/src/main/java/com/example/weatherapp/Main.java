@@ -10,6 +10,8 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.json.JSONArray;
@@ -23,6 +25,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Main extends Application {
     private final WeatherAppAPI weatherAppAPI;
@@ -53,9 +57,8 @@ public class Main extends Application {
     private final Button getDailyForecast = new Button("Show daily forecast");
     private final Button fetchButton = new Button("Show current weather");
     private final Button goBackToFirstPage = new Button("Return to the first page");
-    private final Label cityLabel = new Label("Enter City or Country:");
+    private final Label cityLabel = new Label();
     private final Button showWeeklyForecastButton = new Button("Show weekly forecast");
-
     private Scene mainScene;
     private VBox root = createRootLayout();
     Stage stage;
@@ -66,6 +69,7 @@ public class Main extends Application {
     private Scene firstPageScene;
     private GridPane buttonsPane;
     private Color originalTextColor;
+    private final Pattern pattern = Pattern.compile("[a-zA-Z]");
     public Main() {
         this.weatherAppAPI = new WeatherAppAPI();
     }
@@ -76,7 +80,7 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        mainScene = new Scene(root, 686, 700);
+        mainScene = new Scene(root, 868, 700);
         stage = primaryStage;
         addStyleSheet(mainScene);
         configurePrimaryStage(primaryStage, mainScene);
@@ -98,15 +102,19 @@ public class Main extends Application {
 
         // Add the label and text field to the VBox
         firstPageVbox.getChildren().addAll(cityStartUpLabel, cityStartUpTextField, fetchButton, invalidInput);
-        firstPageScene = new Scene(firstPageVbox, 686, 700);
+        firstPageScene = new Scene(firstPageVbox, 868, 700);
         firstPageScene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/firstPage.css")).toExternalForm());
         stage.setScene(firstPageScene);
     }
 
     private void checkForValidInput() throws IOException {
-        String responseBody = weatherAppAPI.httpResponse(city);
+        Matcher matcher = pattern.matcher(city);
+        String responseBody = "";
+        if (matcher.find()) {
+            responseBody = weatherAppAPI.httpResponse(city);
+        }
         if (responseBody.equals("{\"cod\":\"400\",\"message\":\"Nothing to geocode\"}") ||
-        responseBody.equals("{\"cod\":\"404\",\"message\":\"city not found\"}")) {
+                responseBody.equals("{\"cod\":\"404\",\"message\":\"city not found\"}") || !matcher.find()) {
             invalidInput.setText("Enter valid city or country");
             invalidInput.setStyle("-fx-text-fill: red;");
             cityStartUpTextField.setStyle("-fx-text-fill: red;");
@@ -128,13 +136,13 @@ public class Main extends Application {
 
     private VBox createRootLayout() {
         root = new VBox();
-        root.setSpacing(1.49999);
+        root.setSpacing(1.5);
 
         setRightMargin(inputTextField, 530);
 
         buttonsPane = new GridPane();
-        buttonsPane.add(fetchButton,0,0);
-        buttonsPane.add(goBackToFirstPage,1,0);
+        buttonsPane.add(fetchButton, 0, 0);
+        buttonsPane.add(goBackToFirstPage, 1, 0);
         buttonsPane.setHgap(5);
 
         TableView<TemperatureData> temperatureTable = new TableView<>();
@@ -183,6 +191,10 @@ public class Main extends Application {
         temperatureLabel.getStyleClass().add("emoji-label"); // Apply the CSS class
         descriptionLabel.getStyleClass().add("emoji-label");// Apply the CSS class
         temperatureFeelsLikeLabel.getStyleClass().add("emoji-label");
+        Text labelText = new Text("Enter City or Country:");
+        Font boldFont = Font.font("Arial", FontWeight.BOLD, 14);
+        labelText.setFont(boldFont);
+        cityLabel.setGraphic(labelText);
     }
 
     private void configurePrimaryStage(Stage primaryStage, Scene scene) {
@@ -190,16 +202,18 @@ public class Main extends Application {
         primaryStage.setScene(scene);
     }
 
-    private void configureGoBackToFirstPageButton(){
-        goBackToFirstPage.setOnAction(actionEvent ->{
+    private void configureGoBackToFirstPageButton() {
+        goBackToFirstPage.setOnAction(actionEvent -> {
             stage.setScene(firstPageScene);
             invalidInput.setText("");
             if (!firstPageVbox.getChildren().contains(fetchButton)) {
                 firstPageVbox.getChildren().add(2, fetchButton);
                 cityStartUpTextField.setText(city);
+                cityStartUpTextField.setStyle(temperatureLabel.getStyle());
             }
         });
     }
+
     private void configureFetchButton() {
         fetchButton.setOnAction(event -> {
             try {
@@ -550,10 +564,10 @@ public class Main extends Application {
             checkForValidInput();
         } else {
             GridPane checkButtonsPane = (GridPane) root.getChildren().get(2);
-            if (!checkButtonsPane.getChildren().contains(fetchButton)){
-                buttonsPane.add(fetchButton,0,0);
+            if (!checkButtonsPane.getChildren().contains(fetchButton)) {
+                buttonsPane.add(fetchButton, 0, 0);
             }
-            if (localTimeLabel.getTextFill().equals(Color.RED)){
+            if (localTimeLabel.getTextFill().equals(Color.RED)) {
                 localTimeLabel.setTextFill(originalTextColor);
             }
             stage.setScene(mainScene);
@@ -561,14 +575,18 @@ public class Main extends Application {
             Button showMoreButton = showMoreWeatherInfo;
             Button convertWindSpeedButton = convertWindSpeed;
             try {
-                String responseBody = weatherAppAPI.httpResponse(city);
-                System.out.println(responseBody);
-                Gson gson = new Gson();
-                weatherData = gson.fromJson(responseBody, WeatherData.class);
+                MainParsedData mainInfo = null;
+                WeatherInfo[] weatherInfo = null;
+                Matcher matcher = pattern.matcher(city);
+                if (matcher.find()) {
+                    String responseBody = weatherAppAPI.httpResponse(city);
+                    System.out.println(responseBody);
+                    Gson gson = new Gson();
+                    weatherData = gson.fromJson(responseBody, WeatherData.class);
 
-                MainParsedData mainInfo = weatherData.getMain();
-                WeatherInfo[] weatherInfo = weatherData.getWeather();
-
+                    mainInfo = weatherData.getMain();
+                    weatherInfo = weatherData.getWeather();
+                }
                 if (mainInfo != null && weatherInfo != null && weatherInfo.length > 0) {
 
                     if (inputTextField.getStyle().equals("-fx-text-fill: red;")) {
@@ -695,6 +713,44 @@ public class Main extends Application {
             } catch (Exception e) {
                 e.printStackTrace();
                 localTimeLabel.setText("An error occurred.");
+                localTimeLabel.setTextFill(Color.RED);
+                inputTextField.setStyle("-fx-text-fill: red;");
+                showWeeklyForecastButton.setVisible(false);
+                temperatureLabel.setVisible(false);
+                descriptionLabel.setVisible(false);
+                temperatureFeelsLikeLabel.setVisible(false);
+                convertButton.setVisible(false);
+                showMoreButton.setVisible(false);
+                humidityLabel.setVisible(false);
+                windSpeedLabel.setVisible(false);
+                convertWindSpeedButton.setVisible(false);
+                uvLabel.setVisible(false);
+                getDailyForecast.setVisible(false);
+                dateForecast.setVisible(false);
+                maxTempForecast.setVisible(false);
+                minTempForecast.setVisible(false);
+                avgTempForecast.setVisible(false);
+                maxWindForecast.setVisible(false);
+                avgHumidityForecast.setVisible(false);
+                chanceOfRainingForecast.setVisible(false);
+                chanceOfSnowForecast.setVisible(false);
+                weatherDescriptionForecast.setVisible(false);
+                sunrise.setVisible(false);
+                sunset.setVisible(false);
+                dateForecast.setText("");
+                weatherDescriptionForecast.setText("");
+                maxTempForecast.setText("");
+                minTempForecast.setText("");
+                avgTempForecast.setText("");
+                maxWindForecast.setText("");
+                avgHumidityForecast.setText("");
+                chanceOfRainingForecast.setText("");
+                chanceOfSnowForecast.setText("");
+                sunrise.setText("");
+                sunset.setText("");
+                humidityLabel.setText("");
+                uvLabel.setText("");
+                windSpeedLabel.setText("");
             }
             if (inputTextField.getText().equals("") && !checkButtonsPane.getChildren().contains(fetchButton)) {
                 Platform.runLater(() -> {
@@ -912,7 +968,8 @@ public class Main extends Application {
             return "";
         }
     }
-    private String formatDateToDayAndHour(String inputDateTime){
+
+    private String formatDateToDayAndHour(String inputDateTime) {
 
         SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         String formattedDate = null;
@@ -931,4 +988,3 @@ public class Main extends Application {
         return formattedDate;
     }
 }
-
