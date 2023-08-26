@@ -10,7 +10,6 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.json.JSONArray;
@@ -56,7 +55,6 @@ public class Main extends Application {
     private final Button goBackToFirstPage = new Button("Return to the first page");
     private final Label cityLabel = new Label("Enter City or Country:");
     private final Button showWeeklyForecastButton = new Button("Show weekly forecast");
-    private TableView<TemperatureData> temperatureTable;
 
     private Scene mainScene;
     private VBox root = createRootLayout();
@@ -139,7 +137,7 @@ public class Main extends Application {
         buttonsPane.add(goBackToFirstPage,1,0);
         buttonsPane.setHgap(5);
 
-        temperatureTable = new TableView<>();
+        TableView<TemperatureData> temperatureTable = new TableView<>();
         temperatureTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         // Add the TableView to the root layout
@@ -185,7 +183,6 @@ public class Main extends Application {
         temperatureLabel.getStyleClass().add("emoji-label"); // Apply the CSS class
         descriptionLabel.getStyleClass().add("emoji-label");// Apply the CSS class
         temperatureFeelsLikeLabel.getStyleClass().add("emoji-label");
-
     }
 
     private void configurePrimaryStage(Stage primaryStage, Scene scene) {
@@ -245,9 +242,7 @@ public class Main extends Application {
     }
 
     private void configureWeeklyForecastButton() {
-        showWeeklyForecastButton.setOnAction(actionEvent -> {
-            configureWeeklyForecastButtonAction();
-        });
+        showWeeklyForecastButton.setOnAction(actionEvent -> configureWeeklyForecastButtonAction());
     }
 
     private void configureWeeklyForecastButtonAction() {
@@ -259,28 +254,26 @@ public class Main extends Application {
             TableColumn<TemperatureData, String> dayColumn = new TableColumn<>("Day");
             dayColumn.setCellValueFactory(new PropertyValueFactory<>("day"));
             tableView.getColumns().add(dayColumn);
-            dayColumn.setCellFactory(column -> {
-                return new TableCell<TemperatureData, String>() {
-                    private final Text text;
+            dayColumn.setCellFactory(column -> new TableCell<>() {
+                private final Text text;
 
-                    {
-                        text = new Text();
-                        text.wrappingWidthProperty().bind(dayColumn.widthProperty().subtract(4.5));
+                {
+                    text = new Text();
+                    text.wrappingWidthProperty().bind(dayColumn.widthProperty().subtract(4.8));
+                    setGraphic(text);
+                }
+
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setText(null);
+                        setGraphic(null);
+                    } else {
+                        text.setText(item);
                         setGraphic(text);
                     }
-
-                    @Override
-                    protected void updateItem(String item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (item == null || empty) {
-                            setText(null);
-                            setGraphic(null);
-                        } else {
-                            text.setText(item);
-                            setGraphic(text);
-                        }
-                    }
-                };
+                }
             });
             String[] daysOfWeek = new String[7];
             JSONArray weeklyForecast = getWeeklyForecast();
@@ -295,27 +288,26 @@ public class Main extends Application {
                 TableColumn<TemperatureData, String> columns = new TableColumn<>(day);
                 columns.setCellValueFactory(new PropertyValueFactory<>(day.toLowerCase())); // Matches with the property name in TemperatureData
                 columns.setResizable(true);
-                columns.setCellFactory(column -> {
-                    return new TableCell<TemperatureData, String>() {
-                        private final Text text;
+                columns.setCellFactory(column -> new TableCell<>() {
+                    private final Text text;
 
-                        {
-                            text = new Text();
-                            text.wrappingWidthProperty().bind(columns.widthProperty());
+                    {
+                        text = new Text();
+                        text.wrappingWidthProperty().bind(columns.widthProperty().subtract(4));
+                        setGraphic(text);
+                    }
+
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (item == null || empty) {
+                            setText(null);
+                            setGraphic(null);
+                        } else {
+                            text.setText(item);
                             setGraphic(text);
                         }
-                        @Override
-                        protected void updateItem(String item, boolean empty) {
-                            super.updateItem(item, empty);
-                            if (item == null || empty) {
-                                setText(null);
-                                setGraphic(null);
-                            } else {
-                                text.setText(item);
-                                setGraphic(text);
-                            }
-                        }
-                    };
+                    }
                 });
                 tableView.getColumns().add(columns);
 
@@ -423,7 +415,7 @@ public class Main extends Application {
             for (TableColumn<?, ?> column : tableView.getColumns()) {
                 tableViewWidth += column.getWidth();
             }
-            tableView.setPrefHeight(470);
+            tableView.setPrefHeight(440);
             VBox root = new VBox(tableView);
             Scene scene = new Scene(root, tableViewWidth, 650); // Adjusted scene dimensions
             Button getToMainPage = new Button("Return to the main page");
@@ -433,17 +425,21 @@ public class Main extends Application {
 
             stage.show();
 
-            getToMainPage.setOnAction(actionEvent -> {
-                returnToMainPage();
-            });
+            getToMainPage.setOnAction(actionEvent -> returnToMainPage());
         } else {
             returnToMainPage();
         }
     }
 
     public static class TemperatureData {
-        private String day;
-        private String monday, tuesday, wednesday, thursday, friday, saturday, sunday;
+        private final String day;
+        private final String monday;
+        private final String tuesday;
+        private final String wednesday;
+        private final String thursday;
+        private final String friday;
+        private final String saturday;
+        private final String sunday;
 
         public TemperatureData(String day, String monday, String tuesday, String wednesday, String thursday, String friday, String saturday, String sunday) {
             this.day = day;
@@ -591,7 +587,7 @@ public class Main extends Application {
                     double temperatureFeelsLikeCelsius = getTempInCelsius(mainInfo.getFeels_like());
                     String description = weatherInfo[0].getDescription();
 
-                    localTimeLabel.setText(String.format("Local time: %s", formatDateTime(getLocalTime(city))));
+                    localTimeLabel.setText(String.format("Local time: %s", formatDateToDayAndHour(getLocalTime(city))));
                     originalTextColor = (Color) localTimeLabel.getTextFill();
                     temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21", temperatureCelsius));
                     temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21", temperatureFeelsLikeCelsius));
@@ -820,14 +816,13 @@ public class Main extends Application {
         String sunRise = astroObject.getString("sunrise");
         String sunSet = astroObject.getString("sunset");
 
-        ForecastData forecastData = new ForecastData(date, maxTempC, minTempC, avgTempC, maxWind,
+        return new ForecastData(date, maxTempC, minTempC, avgTempC, maxWind,
                 avgHumidity, chanceOfRain, chanceOfSnow, weatherCondition, sunRise, sunSet);
-        return forecastData;
     }
 
     private double getUV(String city) {
 
-        String responseBody = null;
+        String responseBody;
         try {
             responseBody = ForecastAPI.httpResponse(city);
         } catch (IOException e) {
@@ -892,7 +887,7 @@ public class Main extends Application {
     }
 
     private String getLocalTime(String city) {
-        String responseBody = null;
+        String responseBody;
         try {
             responseBody = ForecastAPI.httpResponse(city);
         } catch (IOException e) {
@@ -904,19 +899,36 @@ public class Main extends Application {
         return forecastData.getLocation().getLocaltime();
     }
 
-    public static String formatDateTime(String inputDateTime) {
+    private static String formatDateTime(String inputDateTime) {
         // Date formatting logic
         SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat outputFormat = new SimpleDateFormat("EEEE");
 
         try {
             Date date = inputFormat.parse(inputDateTime);
-            String dayOfWeek = outputFormat.format(date);
-            return dayOfWeek;
+            return outputFormat.format(date);
         } catch (ParseException e) {
             e.printStackTrace();
             return "";
         }
+    }
+    private String formatDateToDayAndHour(String inputDateTime){
+
+        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        String formattedDate = null;
+        try {
+            Date date = inputFormat.parse(inputDateTime);
+
+            // Create object for formatting the output
+            SimpleDateFormat outputFormat = new SimpleDateFormat("EEEE, hh:mm a");
+
+            // Format the Date object as Day of the week and Time
+            formattedDate = outputFormat.format(date);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return formattedDate;
     }
 }
 
