@@ -3,7 +3,6 @@ package com.example.weatherapp;
 import com.google.gson.Gson;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -27,8 +26,12 @@ import weatherApi.WeatherAppAPI;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,24 +40,24 @@ public class Main extends Application {
     private WeatherData weatherData;
     private String city;
     private final TextField inputTextField = new TextField(); // Create a TextField for input
-    private final Label temperatureLabel = new Label();
-    private final Label descriptionLabel = new Label();
-    private final Label temperatureFeelsLikeLabel = new Label();
-    private final Label humidityLabel = new Label();
-    private final Label windSpeedLabel = new Label();
-    private final Label localTimeLabel = new Label();
-    private final Label uvLabel = new Label();
-    private final Label dateForecast = new Label();
-    private final Label maxTempForecast = new Label();
-    private final Label minTempForecast = new Label();
-    private final Label avgTempForecast = new Label();
-    private final Label maxWindForecast = new Label();
-    private final Label avgHumidityForecast = new Label();
-    private final Label chanceOfRainingForecast = new Label();
-    private final Label chanceOfSnowForecast = new Label();
-    private final Label weatherDescriptionForecast = new Label();
-    private final Label sunrise = new Label();
-    private final Label sunset = new Label();
+    private final BubbleLabels temperatureLabel = new BubbleLabels();
+    private final BubbleLabels descriptionLabel = new BubbleLabels();
+    private final BubbleLabels temperatureFeelsLikeLabel = new BubbleLabels();
+    private final BubbleLabels humidityLabel = new BubbleLabels();
+    private final BubbleLabels windSpeedLabel = new BubbleLabels();
+    private final BubbleLabels localTimeLabel = new BubbleLabels();
+    private final BubbleLabels uvLabel = new BubbleLabels();
+    private final Label dateForecast = new BubbleLabels();
+    private final Label maxTempForecast = new BubbleLabels();
+    private final Label minTempForecast = new BubbleLabels();
+    private final Label avgTempForecast = new BubbleLabels();
+    private final Label maxWindForecast = new BubbleLabels();
+    private final Label avgHumidityForecast = new BubbleLabels();
+    private final Label chanceOfRainingForecast = new BubbleLabels();
+    private final Label chanceOfSnowForecast = new BubbleLabels();
+    private final Label weatherDescriptionForecast = new BubbleLabels();
+    private final Label sunrise = new BubbleLabels();
+    private final Label sunset = new BubbleLabels();
     private final Button showMoreWeatherInfo = new Button("Show more weather info");
     private final Button convertTemperature = new Button("Convert temperature");
     private final Button convertWindSpeed = new Button("Convert wind speed");
@@ -73,10 +76,11 @@ public class Main extends Application {
     private final TextField cityStartUpTextField = new TextField();
     private Scene firstPageScene;
     private GridPane buttonsPane;
-    private Color originalTextColor;
     private final Pattern pattern = Pattern.compile("[a-zA-Z]");
+    private Color originalTextColor;
     private MediaView mediaView;
     private MediaPlayer mediaPlayer;
+    private final ExecutorService videoExecutor = Executors.newSingleThreadExecutor();
 
     public Main() {
         this.weatherAppAPI = new WeatherAppAPI();
@@ -117,23 +121,34 @@ public class Main extends Application {
 
     private void checkForValidInput() throws IOException {
         Matcher matcher = pattern.matcher(city);
+
         String responseBody = "";
+        String responseBodyN2 = "";
+
         if (matcher.find()) {
             responseBody = weatherAppAPI.httpResponse(city);
+            responseBodyN2 = getLocalTime(city);
         }
         if (responseBody.equals("{\"cod\":\"400\",\"message\":\"Nothing to geocode\"}") ||
-                responseBody.equals("{\"cod\":\"404\",\"message\":\"city not found\"}") || !matcher.find()) {
+                responseBody.equals("{\"cod\":\"404\",\"message\":\"city not found\"}") || !matcher.find()
+                || responseBodyN2 == null || responseBodyN2.contains("No matching location found.")) {
             invalidInput.setText("Enter valid city or country");
             invalidInput.setStyle("-fx-text-fill: red;");
             cityStartUpTextField.setStyle("-fx-text-fill: red;");
         } else {
-            cityStartUpTextField.setStyle(inputTextField.getStyle());
-            Platform.runLater(() -> {
-                inputTextField.setText(cityStartUpTextField.getText());
-                inputTextField.positionCaret(inputTextField.getText().length());
-            });
-            stage.setScene(mainScene);
-            fetchAndDisplayWeatherData(city);
+            if (!responseBody.equals("")) {
+                cityStartUpTextField.setStyle(inputTextField.getStyle());
+                Platform.runLater(() -> {
+                    inputTextField.setText(cityStartUpTextField.getText());
+                    inputTextField.positionCaret(inputTextField.getText().length());
+                });
+                stage.setScene(mainScene);
+                fetchAndDisplayWeatherData(city);
+            } else {
+                invalidInput.setText("Enter valid city or country");
+                invalidInput.setStyle("-fx-text-fill: red;");
+                cityStartUpTextField.setStyle("-fx-text-fill: red;");
+            }
         }
     }
 
@@ -148,14 +163,16 @@ public class Main extends Application {
         root.setSpacing(1.5);
         setRightMargin(inputTextField, 590);
 
-        Media defaultMedia = new Media(getClass().getResource("/screen-recorder-08-28-2023-12-54-13-642_tGY0iQ7a (online-video-cutter.com).mp4").toString());
+        Media defaultMedia = new Media(getClass().getResource("/screen-recorder-08-28-2023-12-54-13-642_tGY0iQ7a (online-video-cutter.com) (2).mp4").toString());
         mediaPlayer = new MediaPlayer(defaultMedia);
         mediaView = new MediaView();
         mediaView.setMediaPlayer(mediaPlayer);
         rootLayout.getChildren().add(mediaView);
-        mediaPlayer.play();
-        mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-
+        // Start video playback in a separate thread
+        new Thread(() -> {
+            mediaPlayer.play();
+            mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+        }).start();
         buttonsPane = new GridPane();
         buttonsPane.add(fetchButton, 0, 0);
         buttonsPane.add(goBackToFirstPage, 1, 0);
@@ -189,6 +206,18 @@ public class Main extends Application {
         humidityLabel.setVisible(false);
         windSpeedLabel.setVisible(false);
         buttonsPane.setVisible(false);
+
+        dateForecast.setVisible(false);
+        weatherDescriptionForecast.setVisible(false);
+        maxTempForecast.setVisible(false);
+        minTempForecast.setVisible(false);
+        avgTempForecast.setVisible(false);
+        maxWindForecast.setVisible(false);
+        avgHumidityForecast.setVisible(false);
+        chanceOfRainingForecast.setVisible(false);
+        chanceOfSnowForecast.setVisible(false);
+        sunrise.setVisible(false);
+        sunset.setVisible(false);
 
         getDailyForecast.setVisible(false);
         return rootLayout;
@@ -298,11 +327,16 @@ public class Main extends Application {
                     }
                 }
             });
+
             String[] daysOfWeek = new String[7];
             JSONArray weeklyForecast = getWeeklyForecast();
             JSONObject[] daysOfTheWeek = new JSONObject[7];
+            String day1FromForecast = "";
             for (int i = 0; i < weeklyForecast.length(); i++) {
                 JSONObject day = weeklyForecast.getJSONObject(i);
+                if (i == 0) {
+                    day1FromForecast = day.get("date").toString();
+                }
                 daysOfWeek[i] = formatDateTime(day.get("date").toString());
                 daysOfTheWeek[i] = weeklyForecast.getJSONObject(i);
             }
@@ -333,9 +367,8 @@ public class Main extends Application {
                     }
                 });
                 tableView.getColumns().add(columns);
-
             }
-
+            ForecastData day = getDailyForecast();
             JSONObject day1 = daysOfTheWeek[0];
             JSONObject day2 = daysOfTheWeek[1];
             JSONObject day3 = daysOfTheWeek[2];
@@ -344,94 +377,190 @@ public class Main extends Application {
             JSONObject day6 = daysOfTheWeek[5];
             JSONObject day7 = daysOfTheWeek[6];
 
-            tableView.getItems().add(new TemperatureData("Max Temperature",
-                    (day1.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
-                    (day2.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
-                    (day3.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
-                    (day4.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
-                    (day5.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
-                    (day6.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
-                    (day7.getJSONObject("day").getDouble("maxtemp_c") + "°C")));
-            tableView.getItems().add(new TemperatureData("Min Temperature",
-                    (day1.getJSONObject("day").getDouble("mintemp_c") + "°C"),
-                    (day2.getJSONObject("day").getDouble("mintemp_c") + "°C"),
-                    (day3.getJSONObject("day").getDouble("mintemp_c") + "°C"),
-                    (day4.getJSONObject("day").getDouble("mintemp_c") + "°C"),
-                    (day5.getJSONObject("day").getDouble("mintemp_c") + "°C"),
-                    (day6.getJSONObject("day").getDouble("mintemp_c") + "°C"),
-                    (day7.getJSONObject("day").getDouble("mintemp_c") + "°C")));
-            tableView.getItems().add(new TemperatureData("Avg Temperature",
-                    (day1.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
-                    (day2.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
-                    (day3.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
-                    (day4.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
-                    (day5.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
-                    (day6.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
-                    (day7.getJSONObject("day").getDouble("avgtemp_c") + "°C")));
-            tableView.getItems().add(new TemperatureData("Max Wind Speed",
-                    (day1.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
-                    (day2.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
-                    (day3.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
-                    (day4.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
-                    (day5.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
-                    (day6.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
-                    (day7.getJSONObject("day").getDouble("maxwind_kph") + " km/h")));
-            tableView.getItems().add(new TemperatureData("Avg Humidity",
-                    (day1.getJSONObject("day").getDouble("maxwind_kph") + "%"),
-                    (day2.getJSONObject("day").getDouble("maxwind_kph") + "%"),
-                    (day3.getJSONObject("day").getDouble("maxwind_kph") + "%"),
-                    (day4.getJSONObject("day").getDouble("maxwind_kph") + "%"),
-                    (day5.getJSONObject("day").getDouble("maxwind_kph") + "%"),
-                    (day6.getJSONObject("day").getDouble("maxwind_kph") + "%"),
-                    (day7.getJSONObject("day").getDouble("maxwind_kph") + "%")));
-            tableView.getItems().add(new TemperatureData("UV Index",
-                    getUvOutputFormat(day1.getJSONObject("day").getDouble("avghumidity")),
-                    getUvOutputFormat(day2.getJSONObject("day").getDouble("avghumidity")),
-                    getUvOutputFormat(day3.getJSONObject("day").getDouble("avghumidity")),
-                    getUvOutputFormat(day4.getJSONObject("day").getDouble("avghumidity")),
-                    getUvOutputFormat(day5.getJSONObject("day").getDouble("avghumidity")),
-                    getUvOutputFormat(day6.getJSONObject("day").getDouble("avghumidity")),
-                    getUvOutputFormat(day7.getJSONObject("day").getDouble("avghumidity"))));
-            tableView.getItems().add(new TemperatureData("Chance of Rain",
-                    (day1.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
-                    (day2.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
-                    (day3.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
-                    (day4.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
-                    (day5.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
-                    (day6.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
-                    (day7.getJSONObject("day").getDouble("daily_chance_of_rain") + "%")));
-            tableView.getItems().add(new TemperatureData("Chance of Snow",
-                    (day1.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
-                    (day2.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
-                    (day3.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
-                    (day4.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
-                    (day5.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
-                    (day6.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
-                    (day7.getJSONObject("day").getDouble("daily_chance_of_snow") + "%")));
-            tableView.getItems().add(new TemperatureData("Weather Description",
-                    (day1.getJSONObject("day").getJSONObject("condition").getString("text")),
-                    (day2.getJSONObject("day").getJSONObject("condition").getString("text")),
-                    (day3.getJSONObject("day").getJSONObject("condition").getString("text")),
-                    (day4.getJSONObject("day").getJSONObject("condition").getString("text")),
-                    (day5.getJSONObject("day").getJSONObject("condition").getString("text")),
-                    (day6.getJSONObject("day").getJSONObject("condition").getString("text")),
-                    (day7.getJSONObject("day").getJSONObject("condition").getString("text"))));
-            tableView.getItems().add(new TemperatureData("Sunrise",
-                    (day1.getJSONObject("astro").getString("sunrise")),
-                    (day2.getJSONObject("astro").getString("sunrise")),
-                    (day3.getJSONObject("astro").getString("sunrise")),
-                    (day4.getJSONObject("astro").getString("sunrise")),
-                    (day5.getJSONObject("astro").getString("sunrise")),
-                    (day6.getJSONObject("astro").getString("sunrise")),
-                    (day7.getJSONObject("astro").getString("sunrise"))));
-            tableView.getItems().add(new TemperatureData("Sunset",
-                    (day1.getJSONObject("astro").getString("sunset")),
-                    (day2.getJSONObject("astro").getString("sunset")),
-                    (day3.getJSONObject("astro").getString("sunset")),
-                    (day4.getJSONObject("astro").getString("sunset")),
-                    (day5.getJSONObject("astro").getString("sunset")),
-                    (day6.getJSONObject("astro").getString("sunset")),
-                    (day7.getJSONObject("astro").getString("sunset"))));
+            LocalDate currentDate = LocalDate.now();
+            DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            System.out.println(currentDate.format(dateFormat));
+            System.out.println(day1FromForecast);
+
+            if (currentDate.format(dateFormat).equals(day1FromForecast)) {
+                tableView.getItems().add(new TemperatureData("Max Temperature",
+                        (day6.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day7.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day1.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day2.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day3.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day4.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day5.getJSONObject("day").getDouble("maxtemp_c") + "°C")));
+                tableView.getItems().add(new TemperatureData("Min Temperature",
+                        (day6.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day7.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day1.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day2.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day3.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day4.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day5.getJSONObject("day").getDouble("mintemp_c") + "°C")));
+                tableView.getItems().add(new TemperatureData("Avg Temperature",
+                        (day6.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day7.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day1.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day2.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day3.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day4.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day5.getJSONObject("day").getDouble("avgtemp_c") + "°C")));
+                tableView.getItems().add(new TemperatureData("Max Wind Speed",
+                        (day6.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day7.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day1.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day2.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day3.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day4.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day5.getJSONObject("day").getDouble("maxwind_kph") + " km/h")));
+                tableView.getItems().add(new TemperatureData("Avg Humidity",
+                        (day6.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day7.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day1.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day2.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day3.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day4.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day5.getJSONObject("day").getDouble("avghumidity") + "%")));
+                tableView.getItems().add(new TemperatureData("UV Index",
+                        getUvOutputFormat(day6.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day7.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day1.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day2.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day3.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day4.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day5.getJSONObject("day").getDouble("uv"))));
+                tableView.getItems().add(new TemperatureData("Chance of Rain",
+                        (day6.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day7.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day1.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day2.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day3.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day4.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day5.getJSONObject("day").getDouble("daily_chance_of_rain") + "%")));
+                tableView.getItems().add(new TemperatureData("Chance of Snow",
+                        (day6.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day7.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day1.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day2.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day3.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day4.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day5.getJSONObject("day").getDouble("daily_chance_of_snow") + "%")));
+                tableView.getItems().add(new TemperatureData("Weather Description",
+                        (day6.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day7.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day1.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day2.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day3.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day4.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day5.getJSONObject("day").getJSONObject("condition").getString("text"))));
+                tableView.getItems().add(new TemperatureData("Sunrise",
+                        (day6.getJSONObject("astro").getString("sunrise")),
+                        (day7.getJSONObject("astro").getString("sunrise")),
+                        (day1.getJSONObject("astro").getString("sunrise")),
+                        (day2.getJSONObject("astro").getString("sunrise")),
+                        (day3.getJSONObject("astro").getString("sunrise")),
+                        (day4.getJSONObject("astro").getString("sunrise")),
+                        (day5.getJSONObject("astro").getString("sunrise"))));
+                tableView.getItems().add(new TemperatureData("Sunset",
+                        (day6.getJSONObject("astro").getString("sunset")),
+                        (day7.getJSONObject("astro").getString("sunset")),
+                        (day1.getJSONObject("astro").getString("sunset")),
+                        (day2.getJSONObject("astro").getString("sunset")),
+                        (day3.getJSONObject("astro").getString("sunset")),
+                        (day4.getJSONObject("astro").getString("sunset")),
+                        (day5.getJSONObject("astro").getString("sunset"))));
+            } else {
+                tableView.getItems().add(new TemperatureData("Max Temperature",
+                        (day7.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day1.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day2.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day3.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day4.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day5.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day6.getJSONObject("day").getDouble("maxtemp_c") + "°C")));
+                tableView.getItems().add(new TemperatureData("Min Temperature",
+                        (day7.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day1.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day2.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day3.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day4.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day5.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day6.getJSONObject("day").getDouble("mintemp_c") + "°C")));
+                tableView.getItems().add(new TemperatureData("Avg Temperature",
+                        (day7.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day1.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day2.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day3.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day4.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day5.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day6.getJSONObject("day").getDouble("avgtemp_c") + "°C")));
+                tableView.getItems().add(new TemperatureData("Max Wind Speed",
+                        (day7.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day1.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day2.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day3.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day4.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day5.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day6.getJSONObject("day").getDouble("maxwind_kph") + " km/h")));
+                tableView.getItems().add(new TemperatureData("Avg Humidity",
+                        (day7.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day1.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day2.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day3.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day4.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day5.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day6.getJSONObject("day").getDouble("avghumidity") + "%")));
+                tableView.getItems().add(new TemperatureData("UV Index",
+                        getUvOutputFormat(day7.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day1.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day2.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day3.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day4.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day5.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day6.getJSONObject("day").getDouble("uv"))));
+                tableView.getItems().add(new TemperatureData("Chance of Rain",
+                        (day7.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day1.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day2.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day3.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day4.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day5.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day6.getJSONObject("day").getDouble("daily_chance_of_rain") + "%")));
+                tableView.getItems().add(new TemperatureData("Chance of Snow",
+                        (day7.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day1.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day2.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day3.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day4.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day5.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day6.getJSONObject("day").getDouble("daily_chance_of_snow") + "%")));
+                tableView.getItems().add(new TemperatureData("Weather Description",
+                        (day7.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day1.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day2.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day3.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day4.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day5.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day6.getJSONObject("day").getJSONObject("condition").getString("text"))));
+                tableView.getItems().add(new TemperatureData("Sunrise",
+                        (day7.getJSONObject("astro").getString("sunrise")),
+                        (day1.getJSONObject("astro").getString("sunrise")),
+                        (day2.getJSONObject("astro").getString("sunrise")),
+                        (day3.getJSONObject("astro").getString("sunrise")),
+                        (day4.getJSONObject("astro").getString("sunrise")),
+                        (day5.getJSONObject("astro").getString("sunrise")),
+                        (day6.getJSONObject("astro").getString("sunrise"))));
+                tableView.getItems().add(new TemperatureData("Sunset",
+                        (day7.getJSONObject("astro").getString("sunset")),
+                        (day1.getJSONObject("astro").getString("sunset")),
+                        (day2.getJSONObject("astro").getString("sunset")),
+                        (day3.getJSONObject("astro").getString("sunset")),
+                        (day4.getJSONObject("astro").getString("sunset")),
+                        (day5.getJSONObject("astro").getString("sunset")),
+                        (day6.getJSONObject("astro").getString("sunset"))));
+            }
 
             tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
             double tableViewWidth = 0;
@@ -464,15 +593,15 @@ public class Main extends Application {
         private final String saturday;
         private final String sunday;
 
-        public TemperatureData(String day, String monday, String tuesday, String wednesday, String thursday, String friday, String saturday, String sunday) {
+        public TemperatureData(String day, String day1, String day2, String day3, String day4, String day5, String day6, String day7) {
             this.day = day;
-            this.monday = monday;
-            this.tuesday = tuesday;
-            this.wednesday = wednesday;
-            this.thursday = thursday;
-            this.friday = friday;
-            this.saturday = saturday;
-            this.sunday = sunday;
+            this.monday = day1;
+            this.tuesday = day2;
+            this.wednesday = day3;
+            this.thursday = day4;
+            this.friday = day5;
+            this.saturday = day6;
+            this.sunday = day7;
         }
 
         public String getDay() {
@@ -520,44 +649,59 @@ public class Main extends Application {
     }
 
     private void configureGetDailyForecastButton() {
-
         getDailyForecast.setOnAction(actionEvent -> {
             // Get daily forecast logic
-            ForecastData forecastData = getDailyForecast();
-            Platform.runLater(() -> {
-                if (dateForecast.getText().equals("")) {
-                    if (!showWeeklyForecastButton.isVisible()) {
-                        showWeeklyForecastButton.setVisible(true);
+            new Thread(() -> {
+                // Perform network operations, JSON parsing, and data processing here
+                ForecastData forecastData = getDailyForecast();
+                Platform.runLater(() -> {
+                    if (dateForecast.getText().equals("") && !dateForecast.isVisible()) {
+                        if (!showWeeklyForecastButton.isVisible()) {
+                            showWeeklyForecastButton.setVisible(true);
+                        }
+                        dateForecast.setText(String.format("Date: %s", forecastData.getDate()));
+                        weatherDescriptionForecast.setText("Weather description for the day: " + forecastData.getWeatherDescription());
+                        maxTempForecast.setText(String.format("Max temperature for the day: %f°C", forecastData.getMaxTemp()));
+                        minTempForecast.setText(String.format("Min temperature for the day: %.0f°C", forecastData.getMinTemp()));
+                        avgTempForecast.setText(String.format("Average temperature for the day: %.0f°C", forecastData.getAvgTemp()));
+                        maxWindForecast.setText(String.format("Max wind speed for the day: %.2f km/h", forecastData.getMaxWind()));
+                        avgHumidityForecast.setText("Average humidity for the day: " + forecastData.getAvgHumidity() + "%");
+                        chanceOfRainingForecast.setText(String.format("Chance of raining: %d%%", forecastData.getPercentChanceOfRain()));
+                        chanceOfSnowForecast.setText(String.format("Chance of snowing: %d%%", forecastData.getPercentChanceOfSnow()));
+                        sunrise.setText("Sunrise: " + forecastData.getSunRise());
+                        sunset.setText("Sunset: " + forecastData.getSunSet());
+                        dateForecast.setVisible(true);
+                        weatherDescriptionForecast.setVisible(true);
+                        maxTempForecast.setVisible(true);
+                        minTempForecast.setVisible(true);
+                        avgTempForecast.setVisible(true);
+                        maxWindForecast.setVisible(true);
+                        avgHumidityForecast.setVisible(true);
+                        chanceOfRainingForecast.setVisible(true);
+                        chanceOfSnowForecast.setVisible(true);
+                        sunrise.setVisible(true);
+                        sunset.setVisible(true);
+                    } else {
+                        if (showWeeklyForecastButton.isVisible()) {
+                            showWeeklyForecastButton.setVisible(false);
+                        }
+                        dateForecast.setText("");
+                        dateForecast.setVisible(false);
+                        weatherDescriptionForecast.setVisible(false);
+                        maxTempForecast.setVisible(false);
+                        minTempForecast.setVisible(false);
+                        avgTempForecast.setVisible(false);
+                        maxWindForecast.setVisible(false);
+                        avgHumidityForecast.setVisible(false);
+                        chanceOfRainingForecast.setVisible(false);
+                        chanceOfSnowForecast.setVisible(false);
+                        sunrise.setVisible(false);
+                        sunset.setVisible(false);
                     }
-                    dateForecast.setText(String.format("Date: %s", forecastData.getDate()));
-                    weatherDescriptionForecast.setText("Weather description for the day: " + forecastData.getWeatherDescription());
-                    maxTempForecast.setText(String.format("Max temperature for the day: %.0f°C", forecastData.getMaxTemp()));
-                    minTempForecast.setText(String.format("Min temperature for the day: %.0f°C", forecastData.getMinTemp()));
-                    avgTempForecast.setText(String.format("Average temperature for the day: %.0f°C", forecastData.getAvgTemp()));
-                    maxWindForecast.setText(String.format("Max wind speed for the day: %.2f km/h", forecastData.getMaxWind()));
-                    avgHumidityForecast.setText("Average humidity for the day: " + forecastData.getAvgHumidity() + "%");
-                    chanceOfRainingForecast.setText(String.format("Chance of raining: %d%%", forecastData.getPercentChanceOfRain()));
-                    chanceOfSnowForecast.setText(String.format("Chance of snowing: %d%%", forecastData.getPercentChanceOfSnow()));
-                    sunrise.setText("Sunrise: " + forecastData.getSunRise());
-                    sunset.setText("Sunset: " + forecastData.getSunSet());
-                } else {
-                    if (showWeeklyForecastButton.isVisible()) {
-                        showWeeklyForecastButton.setVisible(false);
-                    }
-                    dateForecast.setText("");
-                    weatherDescriptionForecast.setText("");
-                    maxTempForecast.setText("");
-                    minTempForecast.setText("");
-                    avgTempForecast.setText("");
-                    maxWindForecast.setText("");
-                    avgHumidityForecast.setText("");
-                    chanceOfRainingForecast.setText("");
-                    chanceOfSnowForecast.setText("");
-                    sunrise.setText("");
-                    sunset.setText("");
-                }
-            });
+                });
+            }).start();
         });
+
     }
 
     private void fetchAndDisplayWeatherData(String cityTextField) throws IOException {
@@ -580,79 +724,69 @@ public class Main extends Application {
             Button convertButton = convertTemperature;
             Button showMoreButton = showMoreWeatherInfo;
             Button convertWindSpeedButton = convertWindSpeed;
-            try {
-                MainParsedData mainInfo;
-                WeatherInfo[] weatherInfo;
-                Matcher matcher = pattern.matcher(city);
-                if (matcher.find()) {
-                    String responseBody = weatherAppAPI.httpResponse(city);
-                    System.out.println(responseBody);
-                    Gson gson = new Gson();
-                    weatherData = gson.fromJson(responseBody, WeatherData.class);
-
-                    mainInfo = weatherData.getMain();
-                    weatherInfo = weatherData.getWeather();
-                } else {
-                    mainInfo = null;
-                    weatherInfo = null;
+            new Thread(() -> {
+                // Perform network operations, JSON parsing, and data processing here
+                String responseBody = null;
+                try {
+                    responseBody = weatherAppAPI.httpResponse(city);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-                if (mainInfo != null && weatherInfo != null && weatherInfo.length > 0) {
-                    if (inputTextField.getStyle().equals("-fx-text-fill: red;")) {
-                        inputTextField.setStyle(temperatureLabel.getStyle());
-                    }
-                    double temp = mainInfo.getTemp();
-                    double tempFeelsLike = mainInfo.getFeels_like();
-                    String description = weatherInfo[0].getDescription();
-                    int humidity = mainInfo.getHumidity();
+                ForecastData forecastData = getDailyForecast();
+                String finalResponseBody = responseBody;
+                Gson gson = new Gson();
+                weatherData = gson.fromJson(finalResponseBody, WeatherData.class);
+                System.out.println(finalResponseBody);
+                Platform.runLater(() -> {
+                    try {
+                        MainParsedData mainInfo;
+                        WeatherInfo[] weatherInfo;
+                        Matcher matcher = pattern.matcher(city);
+                        if (matcher.find()) {
 
-                    ForecastData forecastData = getDailyForecast();
-                    // Update your labels here
-                    Platform.runLater(() -> {
-                        buttonsPane.setVisible(true);
-                        convertButton.setVisible(true);
-                        showMoreButton.setVisible(true);
-                        temperatureLabel.setVisible(true);
-                        descriptionLabel.setVisible(true);
-                        temperatureFeelsLikeLabel.setVisible(true);
-
-                        double temperatureCelsius = getTempInCelsius(temp);
-                        double temperatureFeelsLikeCelsius = getTempInCelsius(tempFeelsLike);
-                        localTimeLabel.setText(String.format("Local time: %s", formatDateToDayAndHour(getLocalTime(city))));
-                        originalTextColor = (Color) localTimeLabel.getTextFill();
-                        temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21", temperatureCelsius));
-                        temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21", temperatureFeelsLikeCelsius));
-
-                        if (description.contains("cloud")) {
-                            descriptionLabel.setText("Weather Description: " + description + " ☁️"); // Emoji added here
-                        } else if (description.contains("rain")) {
-                            descriptionLabel.setText("Weather Description: " + description + " \uD83C\uDF27️");
+                            mainInfo = weatherData.getMain();
+                            weatherInfo = weatherData.getWeather();
                         } else {
-                            descriptionLabel.setText("Weather Description: " + description + " ☀️");
+                            mainInfo = null;
+                            weatherInfo = null;
                         }
-                        if (!humidityLabel.getText().equals("") && !windSpeedLabel.getText().equals("")) {
-                            if (humidityLabel.getText().equals("") && windSpeedLabel.getText().equals("")) {
-                                humidityLabel.setText(String.format("Humidity: %d%%", humidity));
-                                uvLabel.setText("UV Index: " + getUvOutputFormat(getUV(city)));
-                                windSpeedLabel.setText(String.format("Wind speed: %.2f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
-                                if (!humidityLabel.isVisible() && !windSpeedLabel.isVisible() && !uvLabel.isVisible()) {
-                                    humidityLabel.setVisible(true);
-                                    windSpeedLabel.setVisible(true);
-                                    uvLabel.setVisible(true);
-                                }
-                                convertWindSpeedButton.setVisible(true);
-                                getDailyForecast.setVisible(true);
+                        if (mainInfo != null && weatherInfo != null && weatherInfo.length > 0 && getLocalTime(city) != null) {
+                            if (inputTextField.getStyle().equals("-fx-text-fill: red;")) {
+                                inputTextField.setStyle(temperatureLabel.getStyle());
+                            }
+                            double temp = mainInfo.getTemp();
+                            double tempFeelsLike = mainInfo.getFeels_like();
+                            String description = weatherInfo[0].getDescription();
+                            int humidity = mainInfo.getHumidity();
+
+                            // Update your labels here
+                            buttonsPane.setVisible(true);
+                            convertButton.setVisible(true);
+                            showMoreButton.setVisible(true);
+                            temperatureLabel.setVisible(true);
+                            descriptionLabel.setVisible(true);
+                            temperatureFeelsLikeLabel.setVisible(true);
+
+                            double temperatureCelsius = getTempInCelsius(temp);
+                            double temperatureFeelsLikeCelsius = getTempInCelsius(tempFeelsLike);
+                            localTimeLabel.setText(String.format("Local time: %s", formatDateToDayAndHour(getLocalTime(city))));
+                            originalTextColor = (Color) localTimeLabel.getTextFill();
+                            temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21", temperatureCelsius));
+                            temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21", temperatureFeelsLikeCelsius));
+
+                            if (description.contains("cloud")) {
+                                descriptionLabel.setText("Weather Description: " + description + " ☁️"); // Emoji added here
+                            } else if (description.contains("rain")) {
+                                descriptionLabel.setText("Weather Description: " + description + " \uD83C\uDF27️");
                             } else {
-                                getDailyForecast.setVisible(true);
-                                convertWindSpeedButton.setVisible(true);
+                                descriptionLabel.setText("Weather Description: " + description + " ☀️");
+                            }
+                            if (!humidityLabel.getText().equals("") && humidityLabel.isVisible()) {
                                 humidityLabel.setText(String.format("Humidity: %d%%", humidity));
                                 uvLabel.setText("UV Index: " + getUvOutputFormat(getUV(city)));
                                 windSpeedLabel.setText(String.format("Wind speed: %.2f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
-                                if (!humidityLabel.isVisible() && !windSpeedLabel.isVisible() && !uvLabel.isVisible()) {
-                                    humidityLabel.setVisible(true);
-                                    windSpeedLabel.setVisible(true);
-                                    uvLabel.setVisible(true);
-                                }
-                                if (!dateForecast.getText().equals("")) {
+
+                                if (!dateForecast.getText().equals("") && dateForecast.isVisible()) {
                                     dateForecast.setText(String.format("Date: %s", forecastData.getDate()));
                                     weatherDescriptionForecast.setText("Weather description for the day: " + forecastData.getWeatherDescription());
                                     maxTempForecast.setText(String.format("Max temperature for the day: %.0f°C", forecastData.getMaxTemp()));
@@ -666,85 +800,86 @@ public class Main extends Application {
                                     sunset.setText("Sunset: " + forecastData.getSunSet());
                                 } else {
                                     dateForecast.setText("");
-                                    maxTempForecast.setText("");
-                                    minTempForecast.setText("");
-                                    avgTempForecast.setText("");
-                                    maxWindForecast.setText("");
-                                    avgHumidityForecast.setText("");
-                                    chanceOfRainingForecast.setText("");
-                                    chanceOfSnowForecast.setText("");
-                                    weatherDescriptionForecast.setText("");
-                                    sunrise.setText("");
-                                    sunset.setText("");
+                                    dateForecast.setVisible(false);
+                                    weatherDescriptionForecast.setVisible(false);
+                                    maxTempForecast.setVisible(false);
+                                    minTempForecast.setVisible(false);
+                                    avgTempForecast.setVisible(false);
+                                    maxWindForecast.setVisible(false);
+                                    avgHumidityForecast.setVisible(false);
+                                    chanceOfRainingForecast.setVisible(false);
+                                    chanceOfSnowForecast.setVisible(false);
+                                    sunrise.setVisible(false);
+                                    sunset.setVisible(false);
                                 }
                             }
+                        } else {
+                            localTimeLabel.setText("Invalid place.");
+                            localTimeLabel.setTextFill(Color.RED);
+                            inputTextField.setStyle("-fx-text-fill: red;");
+                            showWeeklyForecastButton.setVisible(false);
+                            temperatureLabel.setVisible(false);
+                            descriptionLabel.setVisible(false);
+                            temperatureFeelsLikeLabel.setVisible(false);
+                            convertButton.setVisible(false);
+                            showMoreButton.setVisible(false);
+                            humidityLabel.setText("");
+                            humidityLabel.setVisible(false);
+                            windSpeedLabel.setVisible(false);
+                            convertWindSpeedButton.setVisible(false);
+                            uvLabel.setVisible(false);
+                            getDailyForecast.setVisible(false);
+
+                            dateForecast.setVisible(false);
+                            dateForecast.setText("");
+                            weatherDescriptionForecast.setVisible(false);
+                            maxTempForecast.setVisible(false);
+                            minTempForecast.setVisible(false);
+                            avgTempForecast.setVisible(false);
+                            maxWindForecast.setVisible(false);
+                            avgHumidityForecast.setVisible(false);
+                            chanceOfRainingForecast.setVisible(false);
+                            chanceOfSnowForecast.setVisible(false);
+                            sunrise.setVisible(false);
+                            sunset.setVisible(false);
+
                         }
-                    });
-                } else {
-                    Platform.runLater(() -> {
-                        localTimeLabel.setText("Invalid place.");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        localTimeLabel.setText("An error occurred.");
                         localTimeLabel.setTextFill(Color.RED);
                         inputTextField.setStyle("-fx-text-fill: red;");
                         showWeeklyForecastButton.setVisible(false);
-                        temperatureLabel.setText("");
-                        descriptionLabel.setText("");
-                        temperatureFeelsLikeLabel.setText("");
+                        temperatureLabel.setVisible(false);
+                        descriptionLabel.setVisible(false);
+                        temperatureFeelsLikeLabel.setVisible(false);
                         convertButton.setVisible(false);
                         showMoreButton.setVisible(false);
+                        humidityLabel.setVisible(false);
                         humidityLabel.setText("");
-                        windSpeedLabel.setText("");
-                        uvLabel.setText("");
+                        windSpeedLabel.setVisible(false);
                         convertWindSpeedButton.setVisible(false);
+                        uvLabel.setVisible(false);
                         getDailyForecast.setVisible(false);
+                        dateForecast.setVisible(false);
                         dateForecast.setText("");
-                        maxTempForecast.setText("");
-                        minTempForecast.setText("");
-                        avgTempForecast.setText("");
-                        maxWindForecast.setText("");
-                        avgHumidityForecast.setText("");
-                        chanceOfRainingForecast.setText("");
-                        chanceOfSnowForecast.setText("");
-                        weatherDescriptionForecast.setText("");
-                        sunrise.setText("");
-                        sunset.setText("");
-                    });
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                Platform.runLater(() -> {
-                    localTimeLabel.setText("An error occurred.");
-                    localTimeLabel.setTextFill(Color.RED);
-                    inputTextField.setStyle("-fx-text-fill: red;");
-                    showWeeklyForecastButton.setVisible(false);
-                    temperatureLabel.setText("");
-                    descriptionLabel.setText("");
-                    temperatureFeelsLikeLabel.setText("");
-                    convertButton.setVisible(false);
-                    showMoreButton.setVisible(false);
-                    humidityLabel.setText("");
-                    windSpeedLabel.setText("");
-                    convertWindSpeedButton.setVisible(false);
-                    uvLabel.setText("");
-                    getDailyForecast.setVisible(false);
-                    dateForecast.setText("");
-                    maxTempForecast.setText("");
-                    minTempForecast.setText("");
-                    avgTempForecast.setText("");
-                    maxWindForecast.setText("");
-                    avgHumidityForecast.setText("");
-                    chanceOfRainingForecast.setText("");
-                    chanceOfSnowForecast.setText("");
-                    weatherDescriptionForecast.setText("");
-                    sunrise.setText("");
-                    sunset.setText("");
+                        weatherDescriptionForecast.setVisible(false);
+                        maxTempForecast.setVisible(false);
+                        minTempForecast.setVisible(false);
+                        avgTempForecast.setVisible(false);
+                        maxWindForecast.setVisible(false);
+                        avgHumidityForecast.setVisible(false);
+                        chanceOfRainingForecast.setVisible(false);
+                        chanceOfSnowForecast.setVisible(false);
+                        sunrise.setVisible(false);
+                        sunset.setVisible(false);
+                    }
+                    if (inputTextField.getText().equals("") && !checkButtonsPane.getChildren().contains(fetchButton)) {
+                        inputTextField.setText(cityStartUpTextField.getText());
+                        inputTextField.positionCaret(inputTextField.getText().length());
+                    }
                 });
-            }
-            if (inputTextField.getText().equals("") && !checkButtonsPane.getChildren().contains(fetchButton)) {
-                Platform.runLater(() -> {
-                    inputTextField.setText(cityStartUpTextField.getText());
-                    inputTextField.positionCaret(inputTextField.getText().length());
-                });
-            }
+            }).start();
         }
     }
 
@@ -837,34 +972,40 @@ public class Main extends Application {
 
     private ForecastData getDailyForecast() {
         String responseBody;
+
         try {
             responseBody = ForecastAPI.httpResponseForecast(city);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        JSONObject response = new JSONObject(responseBody);
-        JSONArray forecastDays = response.getJSONObject("forecast").getJSONArray("forecastday");
+        if (responseBody != null && !responseBody.contains("No matching location found.")) {
+            JSONObject response = new JSONObject(responseBody);
 
-        JSONObject forecast = forecastDays.getJSONObject(0);
+            JSONArray forecastDays = response.getJSONObject("forecast").getJSONArray("forecastday");
 
-        JSONObject astroObject = forecast.getJSONObject("astro");
-        String date = forecast.getString("date");
-        JSONObject day = forecast.getJSONObject("day");
-        JSONObject weatherConditionObject = day.getJSONObject("condition");
+            JSONObject forecast = forecastDays.getJSONObject(0);
 
-        double maxTempC = day.getDouble("maxtemp_c");
-        double minTempC = day.getDouble("mintemp_c");
-        double avgTempC = day.getDouble("avgtemp_c");
-        double maxWind = day.getDouble("maxwind_kph");
-        double avgHumidity = day.getDouble("avghumidity");
-        int chanceOfRain = day.getInt("daily_chance_of_rain");
-        int chanceOfSnow = day.getInt("daily_chance_of_snow");
-        String weatherCondition = weatherConditionObject.getString("text");
-        String sunRise = astroObject.getString("sunrise");
-        String sunSet = astroObject.getString("sunset");
+            JSONObject astroObject = forecast.getJSONObject("astro");
+            String date = forecast.getString("date");
+            JSONObject day = forecast.getJSONObject("day");
+            JSONObject weatherConditionObject = day.getJSONObject("condition");
 
-        return new ForecastData(date, maxTempC, minTempC, avgTempC, maxWind,
-                avgHumidity, chanceOfRain, chanceOfSnow, weatherCondition, sunRise, sunSet);
+            double maxTempC = day.getDouble("maxtemp_c");
+            double minTempC = day.getDouble("mintemp_c");
+            double avgTempC = day.getDouble("avgtemp_c");
+            double maxWind = day.getDouble("maxwind_kph");
+            double avgHumidity = day.getDouble("avghumidity");
+            int chanceOfRain = day.getInt("daily_chance_of_rain");
+            int chanceOfSnow = day.getInt("daily_chance_of_snow");
+            String weatherCondition = weatherConditionObject.getString("text");
+            String sunRise = astroObject.getString("sunrise");
+            String sunSet = astroObject.getString("sunset");
+
+
+            return new ForecastData(date, maxTempC, minTempC, avgTempC, maxWind,
+                    avgHumidity, chanceOfRain, chanceOfSnow, weatherCondition, sunRise, sunSet);
+        }
+        return null;
     }
 
     private double getUV(String city) {
@@ -903,46 +1044,47 @@ public class Main extends Application {
 
     private void configureShowMoreButtonAction() {
         // Show more weather info logic
-        MainParsedData mainInfo = weatherData.getMain();
-        double uvIndex = getUV(city);
-        Platform.runLater(() -> {
-            if (humidityLabel.getText().equals("") && windSpeedLabel.getText().equals("") &&
-                    uvLabel.getText().equals("")) {
-                humidityLabel.setText(String.format("Humidity: %d%%", mainInfo.getHumidity()));
-                uvLabel.setText("UV Index: " + getUvOutputFormat(uvIndex));
-                windSpeedLabel.setText(String.format("Wind speed: %.2f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
-                convertWindSpeed.setVisible(true);
-                getDailyForecast.setVisible(true);
-                if (!humidityLabel.isVisible() && !windSpeedLabel.isVisible() && !uvLabel.isVisible()) {
+        new Thread(() -> {
+            // Perform network operations, JSON parsing, and data processing here
+            MainParsedData mainInfo = weatherData.getMain();
+            double uvIndex = getUV(city);
+            Platform.runLater(() -> {
+                if (humidityLabel.getText().equals("") && !humidityLabel.isVisible()) {
+
+                    humidityLabel.setText(String.format("Humidity: %d%%", mainInfo.getHumidity()));
+                    uvLabel.setText("UV Index: " + getUvOutputFormat(uvIndex));
+                    windSpeedLabel.setText(String.format("Wind speed: %.2f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
+                    convertWindSpeed.setVisible(true);
+                    getDailyForecast.setVisible(true);
                     humidityLabel.setVisible(true);
                     windSpeedLabel.setVisible(true);
                     uvLabel.setVisible(true);
-                }
-            } else {
-                humidityLabel.setText("");
-                windSpeedLabel.setText("");
-                uvLabel.setText("");
-                if (humidityLabel.isVisible() && windSpeedLabel.isVisible() && uvLabel.isVisible()) {
+
+                } else {
+                    humidityLabel.setText("");
                     humidityLabel.setVisible(false);
                     windSpeedLabel.setVisible(false);
                     uvLabel.setVisible(false);
+                    convertWindSpeed.setVisible(false);
+                    getDailyForecast.setVisible(false);
+                    showWeeklyForecastButton.setVisible(false);
+
+                    dateForecast.setText("");
+                    dateForecast.setVisible(false);
+                    weatherDescriptionForecast.setVisible(false);
+                    maxTempForecast.setVisible(false);
+                    minTempForecast.setVisible(false);
+                    avgTempForecast.setVisible(false);
+                    maxWindForecast.setVisible(false);
+                    avgHumidityForecast.setVisible(false);
+                    chanceOfRainingForecast.setVisible(false);
+                    chanceOfSnowForecast.setVisible(false);
+                    sunrise.setVisible(false);
+                    sunset.setVisible(false);
+
                 }
-                convertWindSpeed.setVisible(false);
-                getDailyForecast.setVisible(false);
-                showWeeklyForecastButton.setVisible(false);
-                dateForecast.setText("");
-                maxTempForecast.setText("");
-                minTempForecast.setText("");
-                avgTempForecast.setText("");
-                maxWindForecast.setText("");
-                avgHumidityForecast.setText("");
-                chanceOfRainingForecast.setText("");
-                chanceOfSnowForecast.setText("");
-                weatherDescriptionForecast.setText("");
-                sunrise.setText("");
-                sunset.setText("");
-            }
-        });
+            });
+        }).start();
     }
 
     private String getLocalTime(String city) {
@@ -952,10 +1094,13 @@ public class Main extends Application {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        Gson gson = new Gson();
-        System.out.println(responseBody);
-        ForecastAPIData forecastData = gson.fromJson(responseBody, ForecastAPIData.class);
-        return forecastData.getLocation().getLocaltime();
+        if (responseBody != null && !responseBody.contains("No matching location found.")) {
+            Gson gson = new Gson();
+            System.out.println(responseBody);
+            ForecastAPIData forecastData = gson.fromJson(responseBody, ForecastAPIData.class);
+            return forecastData.getLocation().getLocaltime();
+        }
+        return null;
     }
 
     private static String formatDateTime(String inputDateTime) {

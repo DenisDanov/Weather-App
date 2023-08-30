@@ -8,12 +8,12 @@
 /* Style the table columns */
 .table-column {
     -fx-font-size: 12.5px; /* Slightly larger font size for column headers */
-    -fx-padding: 5px; /* Increase the padding slightly */
+    -fx-padding: 3px; /* Increase the padding slightly */
 }
 
 /* Style the table cells */
 .table-cell {
-    -fx-padding: 5px;
+    -fx-padding: 3px;
 }
 
 /* Style the "Go back to the main page" button */

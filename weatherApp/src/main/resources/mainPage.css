@@ -2,27 +2,32 @@
 
 /* Style the root container */
 .root {
-    -fx-background-color: #f0f0f0;
+    -fx-background-color: #ffffff;
     -fx-padding: 5px; /* Further reduce the padding */
 }
 
 /* Style the labels */
-.label {
-    -fx-font-size: 15px; /* Larger font size */
-    -fx-text-fill: #333;
-    -fx-padding: 2px; /* Further reduce the padding */
+
+
+.bubble-label {
+    -fx-background-color: #333333;
+    -fx-font-size: 15px; /* Larger font size */ /* Charcoal color code */
+    -fx-text-fill: white; /* Text color */
+    -fx-padding: 2px 2px; /* Padding around the text */
+    -fx-background-radius: 10px; /* Rounded corners to create a bubble effect */
 }
 
 /* Style the button */
 .button {
-    -fx-background-color: #4690cc;
+    -fx-background-color: #0A2354;
     -fx-text-fill: #fff;
     -fx-font-size: 12px; /* Smaller font size */
     -fx-padding: 5px 10px; /* Reduce the padding */
     -fx-border-radius: 5px;
 }
+
 .button:hover {
-    -fx-background-color: #619cd7; /* Hover background color */
+    -fx-background-color: #305aa9; /* Hover background color */
 }
 
 /* Style the emoji label */

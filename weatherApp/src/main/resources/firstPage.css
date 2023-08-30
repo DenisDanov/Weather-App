@@ -1,6 +1,6 @@
 /* Apply styles to the main container, such as a VBox or a StackPane */
 #main-container {
-    -fx-background-color: #f0f0f0; /* Background color */
+    -fx-background-color: #6DA5C0; /* Background color */
     -fx-padding: 20px; /* Padding around the container */
     -fx-alignment: center; /* Center content horizontally */
     -fx-spacing: 10px; /* Spacing between children */
