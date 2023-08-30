@@ -27,11 +27,13 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.Objects;
-import java.util.concurrent.ExecutorService;
+import java.util.*;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -80,10 +82,14 @@ public class Main extends Application {
     private Color originalTextColor;
     private MediaView mediaView;
     private MediaPlayer mediaPlayer;
-    private final ExecutorService videoExecutor = Executors.newSingleThreadExecutor();
+    private final LinkedHashMap<String, String> responseBodiesFirstAPI;
+    private final LinkedHashMap<String, String> responseBodiesSecondAPI;
+    ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
     public Main() {
         this.weatherAppAPI = new WeatherAppAPI();
+        this.responseBodiesFirstAPI = new LinkedHashMap<>();
+        this.responseBodiesSecondAPI = new LinkedHashMap<>();
     }
 
     public static void main(String[] args) {
@@ -105,6 +111,29 @@ public class Main extends Application {
         configureGetDailyForecastButton();
         configureWeeklyForecastButton();
         primaryStage.show();
+        Runnable task = () -> {
+            // Your code here, what you want to execute every 1 minute
+            try {
+                updateAPIData();
+            } catch (ParseException | IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
+        // Schedule the task to run every 1 minute, starting immediately
+        executorService.scheduleAtFixedRate(task, 0, 1, TimeUnit.MINUTES);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            // Shut down the executor service gracefully
+            executorService.shutdown();
+            try {
+                if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
+                    // Forcefully shutdown if tasks don't finish in time
+                    executorService.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                // Handle the InterruptedException, if necessary
+                e.printStackTrace();
+            }
+        }));
     }
 
     private void configureStartUpScene() {
@@ -119,19 +148,24 @@ public class Main extends Application {
         stage.setScene(firstPageScene);
     }
 
-    private void checkForValidInput() throws IOException {
+    private void checkForValidInput() throws IOException, ParseException {
         Matcher matcher = pattern.matcher(city);
 
         String responseBody = "";
-        String responseBodyN2 = "";
+        String responseBodySecondAPI = "";
 
         if (matcher.find()) {
-            responseBody = weatherAppAPI.httpResponse(city);
-            responseBodyN2 = getLocalTime(city);
+            if (!responseBodiesFirstAPI.containsKey(city)) {
+                responseBody = weatherAppAPI.httpResponse(city);
+                responseBodiesFirstAPI.put(city, responseBody);
+            } else {
+                responseBody = responseBodiesFirstAPI.get(city);
+            }
+            responseBodySecondAPI = getLocalTime(city);
         }
         if (responseBody.equals("{\"cod\":\"400\",\"message\":\"Nothing to geocode\"}") ||
                 responseBody.equals("{\"cod\":\"404\",\"message\":\"city not found\"}") || !matcher.find()
-                || responseBodyN2 == null || responseBodyN2.contains("No matching location found.")) {
+                || responseBodySecondAPI == null || responseBodySecondAPI.contains("No matching location found.")) {
             invalidInput.setText("Enter valid city or country");
             invalidInput.setStyle("-fx-text-fill: red;");
             cityStartUpTextField.setStyle("-fx-text-fill: red;");
@@ -261,7 +295,7 @@ public class Main extends Application {
                 } else {
                     fetchAndDisplayWeatherData(inputTextField.getText());
                 }
-            } catch (IOException e) {
+            } catch (IOException | ParseException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -368,7 +402,6 @@ public class Main extends Application {
                 });
                 tableView.getColumns().add(columns);
             }
-            ForecastData day = getDailyForecast();
             JSONObject day1 = daysOfTheWeek[0];
             JSONObject day2 = daysOfTheWeek[1];
             JSONObject day3 = daysOfTheWeek[2];
@@ -378,11 +411,15 @@ public class Main extends Application {
             JSONObject day7 = daysOfTheWeek[6];
 
             LocalDate currentDate = LocalDate.now();
-            DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-d");
+            int dayCurrentDate = Integer.parseInt
+                    (String.valueOf(currentDate.format(dateFormat).charAt(currentDate.format(dateFormat).length() - 1)));
+            int day1Forecast = Integer.parseInt
+                    (String.valueOf(day1FromForecast.charAt(day1FromForecast.length() - 1)));
             System.out.println(currentDate.format(dateFormat));
             System.out.println(day1FromForecast);
 
-            if (currentDate.format(dateFormat).equals(day1FromForecast)) {
+            if (dayCurrentDate == day1Forecast) {
                 tableView.getItems().add(new TemperatureData("Max Temperature",
                         (day6.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
                         (day7.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
@@ -471,7 +508,7 @@ public class Main extends Application {
                         (day3.getJSONObject("astro").getString("sunset")),
                         (day4.getJSONObject("astro").getString("sunset")),
                         (day5.getJSONObject("astro").getString("sunset"))));
-            } else {
+            } else if (dayCurrentDate > day1Forecast) {
                 tableView.getItems().add(new TemperatureData("Max Temperature",
                         (day7.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
                         (day1.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
@@ -560,6 +597,95 @@ public class Main extends Application {
                         (day4.getJSONObject("astro").getString("sunset")),
                         (day5.getJSONObject("astro").getString("sunset")),
                         (day6.getJSONObject("astro").getString("sunset"))));
+            } else {
+                tableView.getItems().add(new TemperatureData("Max Temperature",
+                        (day5.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day6.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day7.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day1.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day2.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day3.getJSONObject("day").getDouble("maxtemp_c") + "°C"),
+                        (day4.getJSONObject("day").getDouble("maxtemp_c") + "°C")));
+                tableView.getItems().add(new TemperatureData("Min Temperature",
+                        (day5.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day6.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day7.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day1.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day2.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day3.getJSONObject("day").getDouble("mintemp_c") + "°C"),
+                        (day4.getJSONObject("day").getDouble("mintemp_c") + "°C")));
+                tableView.getItems().add(new TemperatureData("Avg Temperature",
+                        (day5.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day6.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day7.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day1.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day2.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day3.getJSONObject("day").getDouble("avgtemp_c") + "°C"),
+                        (day4.getJSONObject("day").getDouble("avgtemp_c") + "°C")));
+                tableView.getItems().add(new TemperatureData("Max Wind Speed",
+                        (day5.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day6.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day7.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day1.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day2.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day3.getJSONObject("day").getDouble("maxwind_kph") + " km/h"),
+                        (day4.getJSONObject("day").getDouble("maxwind_kph") + " km/h")));
+                tableView.getItems().add(new TemperatureData("Avg Humidity",
+                        (day5.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day6.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day7.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day1.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day2.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day3.getJSONObject("day").getDouble("avghumidity") + "%"),
+                        (day4.getJSONObject("day").getDouble("avghumidity") + "%")));
+                tableView.getItems().add(new TemperatureData("UV Index",
+                        getUvOutputFormat(day5.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day6.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day7.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day1.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day2.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day3.getJSONObject("day").getDouble("uv")),
+                        getUvOutputFormat(day4.getJSONObject("day").getDouble("uv"))));
+                tableView.getItems().add(new TemperatureData("Chance of Rain",
+                        (day5.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day6.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day7.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day1.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day2.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day3.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"),
+                        (day4.getJSONObject("day").getDouble("daily_chance_of_rain") + "%")));
+                tableView.getItems().add(new TemperatureData("Chance of Snow",
+                        (day5.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day6.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day7.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day1.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day2.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day3.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"),
+                        (day4.getJSONObject("day").getDouble("daily_chance_of_snow") + "%")));
+                tableView.getItems().add(new TemperatureData("Weather Description",
+                        (day5.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day6.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day7.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day1.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day2.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day3.getJSONObject("day").getJSONObject("condition").getString("text")),
+                        (day4.getJSONObject("day").getJSONObject("condition").getString("text"))));
+                tableView.getItems().add(new TemperatureData("Sunrise",
+                        (day5.getJSONObject("astro").getString("sunrise")),
+                        (day6.getJSONObject("astro").getString("sunrise")),
+                        (day7.getJSONObject("astro").getString("sunrise")),
+                        (day1.getJSONObject("astro").getString("sunrise")),
+                        (day2.getJSONObject("astro").getString("sunrise")),
+                        (day3.getJSONObject("astro").getString("sunrise")),
+                        (day4.getJSONObject("astro").getString("sunrise"))));
+                tableView.getItems().add(new TemperatureData("Sunset",
+                        (day5.getJSONObject("astro").getString("sunset")),
+                        (day6.getJSONObject("astro").getString("sunset")),
+                        (day7.getJSONObject("astro").getString("sunset")),
+                        (day1.getJSONObject("astro").getString("sunset")),
+                        (day2.getJSONObject("astro").getString("sunset")),
+                        (day3.getJSONObject("astro").getString("sunset")),
+                        (day4.getJSONObject("astro").getString("sunset"))));
             }
 
             tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
@@ -661,7 +787,7 @@ public class Main extends Application {
                         }
                         dateForecast.setText(String.format("Date: %s", forecastData.getDate()));
                         weatherDescriptionForecast.setText("Weather description for the day: " + forecastData.getWeatherDescription());
-                        maxTempForecast.setText(String.format("Max temperature for the day: %f°C", forecastData.getMaxTemp()));
+                        maxTempForecast.setText(String.format("Max temperature for the day: %f.0f°C", forecastData.getMaxTemp()));
                         minTempForecast.setText(String.format("Min temperature for the day: %.0f°C", forecastData.getMinTemp()));
                         avgTempForecast.setText(String.format("Average temperature for the day: %.0f°C", forecastData.getAvgTemp()));
                         maxWindForecast.setText(String.format("Max wind speed for the day: %.2f km/h", forecastData.getMaxWind()));
@@ -704,7 +830,7 @@ public class Main extends Application {
 
     }
 
-    private void fetchAndDisplayWeatherData(String cityTextField) throws IOException {
+    private void fetchAndDisplayWeatherData(String cityTextField) throws IOException, ParseException {
         // Fetch and display weather data logic
         this.city = cityTextField;
         if (stage.getScene() == firstPageScene) {
@@ -726,17 +852,24 @@ public class Main extends Application {
             Button convertWindSpeedButton = convertWindSpeed;
             new Thread(() -> {
                 // Perform network operations, JSON parsing, and data processing here
-                String responseBody = null;
-                try {
-                    responseBody = weatherAppAPI.httpResponse(city);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                String responseBody;
+                ForecastData forecastData;
+                if (!responseBodiesFirstAPI.containsKey(city)) {
+                    try {
+                        responseBody = weatherAppAPI.httpResponse(city);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    forecastData = getDailyForecast();
+                    Gson gson = new Gson();
+                    weatherData = gson.fromJson(responseBody, WeatherData.class);
+                } else {
+                    responseBody = responseBodiesFirstAPI.get(city);
+                    Gson gson = new Gson();
+                    weatherData = gson.fromJson(responseBody, WeatherData.class);
+                    forecastData = getDailyForecast();
                 }
-                ForecastData forecastData = getDailyForecast();
-                String finalResponseBody = responseBody;
-                Gson gson = new Gson();
-                weatherData = gson.fromJson(finalResponseBody, WeatherData.class);
-                System.out.println(finalResponseBody);
+
                 Platform.runLater(() -> {
                     try {
                         MainParsedData mainInfo;
@@ -750,9 +883,12 @@ public class Main extends Application {
                             mainInfo = null;
                             weatherInfo = null;
                         }
-                        if (mainInfo != null && weatherInfo != null && weatherInfo.length > 0 && getLocalTime(city) != null) {
+                        if (mainInfo != null && weatherInfo != null && weatherInfo.length > 0 && getLocalTime(city) != null && forecastData != null) {
                             if (inputTextField.getStyle().equals("-fx-text-fill: red;")) {
                                 inputTextField.setStyle(temperatureLabel.getStyle());
+                            }
+                            if (!responseBodiesFirstAPI.containsKey(city)) {
+                                responseBodiesFirstAPI.put(city, responseBody);
                             }
                             double temp = mainInfo.getTemp();
                             double tempFeelsLike = mainInfo.getFeels_like();
@@ -961,24 +1097,56 @@ public class Main extends Application {
 
     private JSONArray getWeeklyForecast() {
         String responseBody;
-        try {
-            responseBody = ForecastAPI.httpResponseForecast(city);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (!responseBodiesSecondAPI.containsKey(city)) {
+            try {
+                responseBody = ForecastAPI.httpResponseForecast(city);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            responseBodiesSecondAPI.put(city, responseBody);
+        } else {
+            responseBody = responseBodiesSecondAPI.get(city);
         }
         JSONObject response = new JSONObject(responseBody);
         return response.getJSONObject("forecast").getJSONArray("forecastday");
     }
 
+    private void updateAPIData() throws ParseException, IOException {
+        new Thread(() -> {
+            for (String cityKey : responseBodiesSecondAPI.keySet()) {
+                try {
+                    responseBodiesSecondAPI.replace(cityKey, ForecastAPI.httpResponseForecast(cityKey));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            System.out.printf("Updated %d APIs!\n",responseBodiesSecondAPI.size());
+            for (String cityKey : responseBodiesFirstAPI.keySet()) {
+                try {
+                    responseBodiesFirstAPI.replace(cityKey, weatherAppAPI.httpResponse(cityKey));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            System.out.printf("Updated %d APIs!\n",responseBodiesFirstAPI.size());
+        }).start();
+    }
+
     private ForecastData getDailyForecast() {
         String responseBody;
-
-        try {
-            responseBody = ForecastAPI.httpResponseForecast(city);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (!responseBodiesSecondAPI.containsKey(city)) {
+            try {
+                responseBody = ForecastAPI.httpResponseForecast(city);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            responseBody = responseBodiesSecondAPI.get(city);
         }
         if (responseBody != null && !responseBody.contains("No matching location found.")) {
+            if (!responseBodiesSecondAPI.containsKey(city)) {
+                responseBodiesSecondAPI.put(city, responseBody);
+            }
             JSONObject response = new JSONObject(responseBody);
 
             JSONArray forecastDays = response.getJSONObject("forecast").getJSONArray("forecastday");
@@ -1011,19 +1179,21 @@ public class Main extends Application {
     private double getUV(String city) {
 
         String responseBody;
-        try {
-            responseBody = ForecastAPI.httpResponse(city);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (!responseBodiesSecondAPI.containsKey(city)) {
+            try {
+                responseBody = ForecastAPI.httpResponseForecast(city);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            responseBodiesSecondAPI.put(city, responseBody);
+        } else {
+            responseBody = responseBodiesSecondAPI.get(city);
         }
 
-        System.out.println(responseBody);
         JSONObject jsonObject = new JSONObject(responseBody);
         JSONObject currentObject = jsonObject.getJSONObject("current");
 
-        double uvValue = currentObject.getDouble("uv");
-        System.out.println(uvValue);
-        return uvValue;
+        return currentObject.getDouble("uv");
     }
 
     private double getTempInCelsius(double temp) {
@@ -1089,14 +1259,17 @@ public class Main extends Application {
 
     private String getLocalTime(String city) {
         String responseBody;
-        try {
-            responseBody = ForecastAPI.httpResponse(city);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (!responseBodiesSecondAPI.containsKey(city)) {
+            try {
+                responseBody = ForecastAPI.httpResponseForecast(city);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            responseBody = responseBodiesSecondAPI.get(city);
         }
         if (responseBody != null && !responseBody.contains("No matching location found.")) {
             Gson gson = new Gson();
-            System.out.println(responseBody);
             ForecastAPIData forecastData = gson.fromJson(responseBody, ForecastAPIData.class);
             return forecastData.getLocation().getLocaltime();
         }
@@ -1105,7 +1278,7 @@ public class Main extends Application {
 
     private static String formatDateTime(String inputDateTime) {
         // Date formatting logic
-        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-d");
         SimpleDateFormat outputFormat = new SimpleDateFormat("EEEE");
 
         try {
