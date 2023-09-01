@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -12,6 +11,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
@@ -21,7 +22,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import parsingWeatherData.*;
@@ -47,6 +47,7 @@ public class Main extends Application {
     private final TextField inputTextField = new TextField(); // Create a TextField for input
     private final BubbleLabels temperatureLabel = new BubbleLabels();
     private final BubbleLabels descriptionLabel = new BubbleLabels();
+    private final BubbleLabels weatherDescriptionLabel = new BubbleLabels();
     private final BubbleLabels temperatureFeelsLikeLabel = new BubbleLabels();
     private final BubbleLabels humidityLabel = new BubbleLabels();
     private final BubbleLabels windSpeedLabel = new BubbleLabels();
@@ -83,11 +84,12 @@ public class Main extends Application {
     private GridPane buttonsPane;
     private final Pattern pattern = Pattern.compile("[a-zA-Z]");
     private Color originalTextColor;
-    private MediaView mediaView;
     private MediaPlayer mediaPlayer;
     private final LinkedHashMap<String, String> responseBodiesFirstAPI;
     private final LinkedHashMap<String, String> responseBodiesSecondAPI;
     ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    GridPane gridPane;
+    ImageView iconView;
 
     public Main() {
         this.weatherAppAPI = new WeatherAppAPI();
@@ -189,8 +191,8 @@ public class Main extends Application {
         }
     }
 
-    private void setRightMargin(Region node, double margin) {
-        Insets insets = new Insets(0, margin, 0, 0); // top, right, bottom, left
+    private void setRightMargin(Region node) {
+        Insets insets = new Insets(0, 590, 0, 0); // top, right, bottom, left
         VBox.setMargin(node, insets);
     }
 
@@ -198,13 +200,21 @@ public class Main extends Application {
         rootLayout = new StackPane();
         root = new VBox();
         root.setSpacing(1.5);
-        setRightMargin(inputTextField, 590);
+        setRightMargin(inputTextField);
 
-        Media defaultMedia = new Media(getClass().getResource("/screen-recorder-08-28-2023-12-54-13-642_tGY0iQ7a (online-video-cutter.com) (2).mp4").toString());
+        iconView = new ImageView();
+        gridPane = new GridPane(); // 10 is the spacing between label text and icon
+        gridPane.add(weatherDescriptionLabel, 0, 0);
+        gridPane.add(iconView, 1, 0);
+
+        descriptionLabel.setGraphic(gridPane);
+        descriptionLabel.setContentDisplay(ContentDisplay.GRAPHIC_ONLY); // Display only the graphic
+
+        Media defaultMedia = new Media(Objects.requireNonNull(getClass().getResource("/screen-recorder-08-28-2023-12-54-13-642_tGY0iQ7a (online-video-cutter.com) (2).mp4")).toString());
         mediaPlayer = new MediaPlayer(defaultMedia);
-        mediaView = new MediaView();
+        MediaView mediaView = new MediaView();
         mediaView.setMediaPlayer(mediaPlayer);
-        rootLayout.getChildren().add(mediaView);
+        Objects.requireNonNull(rootLayout).getChildren().add(mediaView);
         // Start video playback in a separate thread
         new Thread(() -> {
             mediaPlayer.play();
@@ -216,7 +226,7 @@ public class Main extends Application {
         buttonsPane.setHgap(5);
 
         // Add the TableView to the root layout
-        root.getChildren().addAll(cityLabel, inputTextField,
+        Objects.requireNonNull(root).getChildren().addAll(cityLabel, inputTextField,
                 buttonsPane,
                 localTimeLabel,
                 temperatureLabel,
@@ -260,10 +270,10 @@ public class Main extends Application {
     private void addStyleSheet(Scene scene) {
         scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/mainPage.css")).toExternalForm());
         temperatureLabel.getStyleClass().add("emoji-label"); // Apply the CSS class
-        descriptionLabel.getStyleClass().add("emoji-label");// Apply the CSS class
         temperatureFeelsLikeLabel.getStyleClass().add("emoji-label");
         Text labelText = new Text("Enter City or Country:");
         Font boldFont = Font.font("Arial", FontWeight.BOLD, 14);
+        descriptionLabel.setMinHeight(30);
         labelText.setFont(boldFont);
         labelText.setFill(Color.WHITE);
         cityLabel.setGraphic(labelText);
@@ -348,10 +358,10 @@ public class Main extends Application {
             JSONObject day5 = daysOfTheWeek[4];
             JSONObject day6 = daysOfTheWeek[5];
             JSONObject day7 = daysOfTheWeek[6];
-            TableView<SevenDayTableApp.DayData> table = new TableView<>();
+            TableView<WeeklyForecastTable> table = new TableView<>();
 
             // Create a "Data Type" column
-            TableColumn<SevenDayTableApp.DayData, String> dataTypeColumn = new TableColumn<>("Day");
+            TableColumn<WeeklyForecastTable, String> dataTypeColumn = new TableColumn<>("Day");
             dataTypeColumn.setCellValueFactory(data -> {
 
                 int rowIndex = data.getTableView().getItems().indexOf(data.getValue());
@@ -380,15 +390,17 @@ public class Main extends Application {
                 } else {
                     return new SimpleStringProperty("");
                 }
+
             });
             dataTypeColumn.setCellFactory(TextFieldTableCell.forTableColumn());
             dataTypeColumn.setEditable(true);
+
             // Create columns for each day of the week (including current day)
             LocalDate currentDate = LocalDate.now();
-            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEE");
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEEE");
             for (int i = 0; i < 7; i++) {
                 final int index = i;
-                TableColumn<SevenDayTableApp.DayData, String> column = new TableColumn<>(currentDate.format(dateFormatter));
+                TableColumn<WeeklyForecastTable, String> column = new TableColumn<>(currentDate.format(dateFormatter));
                 column.setResizable(true);
                 column.setCellValueFactory(data -> {
                     int rowIndex = data.getTableView().getItems().indexOf(data.getValue());
@@ -396,8 +408,8 @@ public class Main extends Application {
                 });
                 column.setCellFactory(TextFieldTableCell.forTableColumn());
                 column.setOnEditCommit(event -> {
-                    SevenDayTableApp.DayData dayData = event.getRowValue();
-                    dayData.setData(event.getTablePosition().getRow(), index, event.getNewValue());
+                    WeeklyForecastTable weeklyForecastTable = event.getRowValue();
+                    weeklyForecastTable.setData(event.getTablePosition().getRow(), index, event.getNewValue());
                 });
                 column.setCellFactory(column1 -> new TableCell<>() {
                     private final Text text;
@@ -428,50 +440,50 @@ public class Main extends Application {
             table.getColumns().add(0, dataTypeColumn);
 
             // Create and add sample data
-            ObservableList<SevenDayTableApp.DayData> data = FXCollections.observableArrayList();
+            ObservableList<WeeklyForecastTable> data = FXCollections.observableArrayList();
             for (int i = 0; i < 11; i++) {
-                data.add(new SevenDayTableApp.DayData());
+                data.add(new WeeklyForecastTable());
             }
             // Add sample temperature data for the second row (Min Temp) and third row (Avg Temp)
-            data.get(0).setData(0, 0,   String.format("%.0f°C",(day1.getJSONObject("day").getDouble("maxtemp_c"))));
-            data.get(0).setData(0, 1, (day2.getJSONObject("day").getDouble("maxtemp_c") + "°C"));
-            data.get(0).setData(0, 2, (day3.getJSONObject("day").getDouble("maxtemp_c") + "°C"));
-            data.get(0).setData(0, 3, (day4.getJSONObject("day").getDouble("maxtemp_c") + "°C"));
-            data.get(0).setData(0, 4, (day5.getJSONObject("day").getDouble("maxtemp_c") + "°C"));
-            data.get(0).setData(0, 5, (day6.getJSONObject("day").getDouble("maxtemp_c") + "°C"));
-            data.get(0).setData(0, 6, (day7.getJSONObject("day").getDouble("maxtemp_c") + "°C"));
+            data.get(0).setData(0, 0, String.format("%.0f°C", (day1.getJSONObject("day").getDouble("maxtemp_c"))));
+            data.get(0).setData(0, 1, String.format("%.0f°C", (day2.getJSONObject("day").getDouble("maxtemp_c"))));
+            data.get(0).setData(0, 2, String.format("%.0f°C", (day3.getJSONObject("day").getDouble("maxtemp_c"))));
+            data.get(0).setData(0, 3, String.format("%.0f°C", (day4.getJSONObject("day").getDouble("maxtemp_c"))));
+            data.get(0).setData(0, 4, String.format("%.0f°C", (day5.getJSONObject("day").getDouble("maxtemp_c"))));
+            data.get(0).setData(0, 5, String.format("%.0f°C", (day6.getJSONObject("day").getDouble("maxtemp_c"))));
+            data.get(0).setData(0, 6, String.format("%.0f°C", (day7.getJSONObject("day").getDouble("maxtemp_c"))));
 
-            data.get(1).setData(1, 0, (day1.getJSONObject("day").getDouble("mintemp_c") + "°C"));
-            data.get(1).setData(1, 1, (day2.getJSONObject("day").getDouble("mintemp_c") + "°C"));
-            data.get(1).setData(1, 2, (day3.getJSONObject("day").getDouble("mintemp_c") + "°C"));
-            data.get(1).setData(1, 3, (day4.getJSONObject("day").getDouble("mintemp_c") + "°C"));
-            data.get(1).setData(1, 4, (day5.getJSONObject("day").getDouble("mintemp_c") + "°C"));
-            data.get(1).setData(1, 5, (day6.getJSONObject("day").getDouble("mintemp_c") + "°C"));
-            data.get(1).setData(1, 6, (day7.getJSONObject("day").getDouble("mintemp_c") + "°C"));
+            data.get(1).setData(1, 0, String.format("%.0f°C", (day1.getJSONObject("day").getDouble("mintemp_c"))));
+            data.get(1).setData(1, 1, String.format("%.0f°C", (day2.getJSONObject("day").getDouble("mintemp_c"))));
+            data.get(1).setData(1, 2, String.format("%.0f°C", (day3.getJSONObject("day").getDouble("mintemp_c"))));
+            data.get(1).setData(1, 3, String.format("%.0f°C", (day4.getJSONObject("day").getDouble("mintemp_c"))));
+            data.get(1).setData(1, 4, String.format("%.0f°C", (day5.getJSONObject("day").getDouble("mintemp_c"))));
+            data.get(1).setData(1, 5, String.format("%.0f°C", (day6.getJSONObject("day").getDouble("mintemp_c"))));
+            data.get(1).setData(1, 6, String.format("%.0f°C", (day7.getJSONObject("day").getDouble("mintemp_c"))));
 
-            data.get(2).setData(2, 0, (day1.getJSONObject("day").getDouble("avgtemp_c") + "°C"));
-            data.get(2).setData(2, 1, (day2.getJSONObject("day").getDouble("avgtemp_c") + "°C"));
-            data.get(2).setData(2, 2, (day3.getJSONObject("day").getDouble("avgtemp_c") + "°C"));
-            data.get(2).setData(2, 3, (day4.getJSONObject("day").getDouble("avgtemp_c") + "°C"));
-            data.get(2).setData(2, 4, (day5.getJSONObject("day").getDouble("avgtemp_c") + "°C"));
-            data.get(2).setData(2, 5, (day6.getJSONObject("day").getDouble("avgtemp_c") + "°C"));
-            data.get(2).setData(2, 6, (day7.getJSONObject("day").getDouble("avgtemp_c") + "°C"));
+            data.get(2).setData(2, 0, String.format("%.0f°C", (day1.getJSONObject("day").getDouble("avgtemp_c"))));
+            data.get(2).setData(2, 1, String.format("%.0f°C", (day2.getJSONObject("day").getDouble("avgtemp_c"))));
+            data.get(2).setData(2, 2, String.format("%.0f°C", (day3.getJSONObject("day").getDouble("avgtemp_c"))));
+            data.get(2).setData(2, 3, String.format("%.0f°C", (day4.getJSONObject("day").getDouble("avgtemp_c"))));
+            data.get(2).setData(2, 4, String.format("%.0f°C", (day5.getJSONObject("day").getDouble("avgtemp_c"))));
+            data.get(2).setData(2, 5, String.format("%.0f°C", (day6.getJSONObject("day").getDouble("avgtemp_c"))));
+            data.get(2).setData(2, 6, String.format("%.0f°C", (day7.getJSONObject("day").getDouble("avgtemp_c"))));
 
-            data.get(3).setData(3, 0, (day1.getJSONObject("day").getDouble("maxwind_kph") + " km/h"));
-            data.get(3).setData(3, 1, (day2.getJSONObject("day").getDouble("maxwind_kph") + " km/h"));
-            data.get(3).setData(3, 2, (day3.getJSONObject("day").getDouble("maxwind_kph") + " km/h"));
-            data.get(3).setData(3, 3, (day4.getJSONObject("day").getDouble("maxwind_kph") + " km/h"));
-            data.get(3).setData(3, 4, (day5.getJSONObject("day").getDouble("maxwind_kph") + " km/h"));
-            data.get(3).setData(3, 5, (day6.getJSONObject("day").getDouble("maxwind_kph") + " km/h"));
-            data.get(3).setData(3, 6, (day7.getJSONObject("day").getDouble("maxwind_kph") + " km/h"));
+            data.get(3).setData(3, 0, String.format("%.0f km/h", (day1.getJSONObject("day").getDouble("maxwind_kph"))));
+            data.get(3).setData(3, 1, String.format("%.0f km/h", (day2.getJSONObject("day").getDouble("maxwind_kph"))));
+            data.get(3).setData(3, 2, String.format("%.0f km/h", (day3.getJSONObject("day").getDouble("maxwind_kph"))));
+            data.get(3).setData(3, 3, String.format("%.0f km/h", (day4.getJSONObject("day").getDouble("maxwind_kph"))));
+            data.get(3).setData(3, 4, String.format("%.0f km/h", (day5.getJSONObject("day").getDouble("maxwind_kph"))));
+            data.get(3).setData(3, 5, String.format("%.0f km/h", (day6.getJSONObject("day").getDouble("maxwind_kph"))));
+            data.get(3).setData(3, 6, String.format("%.0f km/h", (day7.getJSONObject("day").getDouble("maxwind_kph"))));
 
-            data.get(4).setData(4, 0, (day1.getJSONObject("day").getDouble("avghumidity") + "%"));
-            data.get(4).setData(4, 1, (day2.getJSONObject("day").getDouble("avghumidity") + "%"));
-            data.get(4).setData(4, 2, (day3.getJSONObject("day").getDouble("avghumidity") + "%"));
-            data.get(4).setData(4, 3, (day4.getJSONObject("day").getDouble("avghumidity") + "%"));
-            data.get(4).setData(4, 4, (day5.getJSONObject("day").getDouble("avghumidity") + "%"));
-            data.get(4).setData(4, 5, (day6.getJSONObject("day").getDouble("avghumidity") + "%"));
-            data.get(4).setData(4, 6, (day7.getJSONObject("day").getDouble("avghumidity") + "%"));
+            data.get(4).setData(4, 0, String.format("%.0f %%", (day1.getJSONObject("day").getDouble("avghumidity"))));
+            data.get(4).setData(4, 1, String.format("%.0f %%", (day2.getJSONObject("day").getDouble("avghumidity"))));
+            data.get(4).setData(4, 2, String.format("%.0f %%", (day3.getJSONObject("day").getDouble("avghumidity"))));
+            data.get(4).setData(4, 3, String.format("%.0f %%", (day4.getJSONObject("day").getDouble("avghumidity"))));
+            data.get(4).setData(4, 4, String.format("%.0f %%", (day5.getJSONObject("day").getDouble("avghumidity"))));
+            data.get(4).setData(4, 5, String.format("%.0f %%", (day6.getJSONObject("day").getDouble("avghumidity"))));
+            data.get(4).setData(4, 6, String.format("%.0f %%", (day7.getJSONObject("day").getDouble("avghumidity"))));
 
             data.get(5).setData(5, 0, getUvOutputFormat(day1.getJSONObject("day").getDouble("uv")));
             data.get(5).setData(5, 1, getUvOutputFormat(day2.getJSONObject("day").getDouble("uv")));
@@ -481,21 +493,21 @@ public class Main extends Application {
             data.get(5).setData(5, 5, getUvOutputFormat(day6.getJSONObject("day").getDouble("uv")));
             data.get(5).setData(5, 6, getUvOutputFormat(day7.getJSONObject("day").getDouble("uv")));
 
-            data.get(6).setData(6, 0, (day1.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"));
-            data.get(6).setData(6, 1, (day2.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"));
-            data.get(6).setData(6, 2, (day3.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"));
-            data.get(6).setData(6, 3, (day4.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"));
-            data.get(6).setData(6, 4, (day5.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"));
-            data.get(6).setData(6, 5, (day6.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"));
-            data.get(6).setData(6, 6, (day7.getJSONObject("day").getDouble("daily_chance_of_rain") + "%"));
+            data.get(6).setData(6, 0, String.format("%.0f %%", (day1.getJSONObject("day").getDouble("daily_chance_of_rain"))));
+            data.get(6).setData(6, 1, String.format("%.0f %%", (day2.getJSONObject("day").getDouble("daily_chance_of_rain"))));
+            data.get(6).setData(6, 2, String.format("%.0f %%", (day3.getJSONObject("day").getDouble("daily_chance_of_rain"))));
+            data.get(6).setData(6, 3, String.format("%.0f %%", (day4.getJSONObject("day").getDouble("daily_chance_of_rain"))));
+            data.get(6).setData(6, 4, String.format("%.0f %%", (day5.getJSONObject("day").getDouble("daily_chance_of_rain"))));
+            data.get(6).setData(6, 5, String.format("%.0f %%", (day6.getJSONObject("day").getDouble("daily_chance_of_rain"))));
+            data.get(6).setData(6, 6, String.format("%.0f %%", (day7.getJSONObject("day").getDouble("daily_chance_of_rain"))));
 
-            data.get(7).setData(7, 0, (day1.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"));
-            data.get(7).setData(7, 1, (day2.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"));
-            data.get(7).setData(7, 2, (day3.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"));
-            data.get(7).setData(7, 3, (day4.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"));
-            data.get(7).setData(7, 4, (day5.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"));
-            data.get(7).setData(7, 5, (day6.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"));
-            data.get(7).setData(7, 6, (day7.getJSONObject("day").getDouble("daily_chance_of_snow") + "%"));
+            data.get(7).setData(7, 0, String.format("%.0f %%", (day1.getJSONObject("day").getDouble("daily_chance_of_snow"))));
+            data.get(7).setData(7, 1, String.format("%.0f %%", (day2.getJSONObject("day").getDouble("daily_chance_of_snow"))));
+            data.get(7).setData(7, 2, String.format("%.0f %%", (day3.getJSONObject("day").getDouble("daily_chance_of_snow"))));
+            data.get(7).setData(7, 3, String.format("%.0f %%", (day4.getJSONObject("day").getDouble("daily_chance_of_snow"))));
+            data.get(7).setData(7, 4, String.format("%.0f %%", (day5.getJSONObject("day").getDouble("daily_chance_of_snow"))));
+            data.get(7).setData(7, 5, String.format("%.0f %%", (day6.getJSONObject("day").getDouble("daily_chance_of_snow"))));
+            data.get(7).setData(7, 6, String.format("%.0f %%", (day7.getJSONObject("day").getDouble("daily_chance_of_snow"))));
 
             data.get(8).setData(8, 0, (day1.getJSONObject("day").getJSONObject("condition").getString("text")));
             data.get(8).setData(8, 1, (day2.getJSONObject("day").getJSONObject("condition").getString("text")));
@@ -520,6 +532,7 @@ public class Main extends Application {
             data.get(10).setData(10, 4, (day5.getJSONObject("astro").getString("sunset")));
             data.get(10).setData(10, 5, (day6.getJSONObject("astro").getString("sunset")));
             data.get(10).setData(10, 6, (day7.getJSONObject("astro").getString("sunset")));
+
             table.setItems(data);
 
             dataTypeColumn.setCellFactory(column -> new TableCell<>() {
@@ -545,11 +558,12 @@ public class Main extends Application {
             });
 
             table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
             double tableViewWidth = 0;
             for (TableColumn<?, ?> column : table.getColumns()) {
                 tableViewWidth += column.getWidth();
             }
-            table.setPrefHeight(440);
+            table.setPrefHeight(430);
             VBox root = new VBox(table);
             Scene scene = new Scene(root, tableViewWidth, 650);
 
@@ -570,9 +584,9 @@ public class Main extends Application {
         convertWindSpeed.setOnAction(actionEvent -> {
             // Convert wind speed logic
             if (windSpeedLabel.getText().contains("km/h")) {
-                windSpeedLabel.setText(String.format("Wind speed: %.2f mph", getWindSpeedInMiles(weatherData.getWind().getSpeed())));
+                windSpeedLabel.setText(String.format("Wind speed: %.0f mph", getWindSpeedInMiles(weatherData.getWind().getSpeed())));
             } else if (windSpeedLabel.getText().contains("mph")) {
-                windSpeedLabel.setText(String.format("Wind speed: %.2f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
+                windSpeedLabel.setText(String.format("Wind speed: %.0f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
             }
         });
     }
@@ -588,15 +602,15 @@ public class Main extends Application {
                         if (!showWeeklyForecastButton.isVisible()) {
                             showWeeklyForecastButton.setVisible(true);
                         }
-                        dateForecast.setText(String.format("Date: %s", forecastData.getDate()));
+                        dateForecast.setText(String.format("Date: %s", Objects.requireNonNull(forecastData).getDate()));
                         weatherDescriptionForecast.setText("Weather description for the day: " + forecastData.getWeatherDescription());
                         maxTempForecast.setText(String.format("Max temperature for the day: %.0f°C", forecastData.getMaxTemp()));
                         minTempForecast.setText(String.format("Min temperature for the day: %.0f°C", forecastData.getMinTemp()));
                         avgTempForecast.setText(String.format("Average temperature for the day: %.0f°C", forecastData.getAvgTemp()));
-                        maxWindForecast.setText(String.format("Max wind speed for the day: %.2f km/h", forecastData.getMaxWind()));
-                        avgHumidityForecast.setText("Average humidity for the day: " + forecastData.getAvgHumidity() + "%");
-                        chanceOfRainingForecast.setText(String.format("Chance of raining: %d%%", forecastData.getPercentChanceOfRain()));
-                        chanceOfSnowForecast.setText(String.format("Chance of snowing: %d%%", forecastData.getPercentChanceOfSnow()));
+                        maxWindForecast.setText(String.format("Max wind speed for the day: %.0f km/h", forecastData.getMaxWind()));
+                        avgHumidityForecast.setText(String.format("Average humidity for the day: %.0f %%", forecastData.getAvgHumidity()));
+                        chanceOfRainingForecast.setText(String.format("Chance of raining: %d %%", forecastData.getPercentChanceOfRain()));
+                        chanceOfSnowForecast.setText(String.format("Chance of snowing: %d %%", forecastData.getPercentChanceOfSnow()));
                         sunrise.setText("Sunrise: " + forecastData.getSunRise());
                         sunset.setText("Sunset: " + forecastData.getSunSet());
                         dateForecast.setVisible(true);
@@ -695,7 +709,6 @@ public class Main extends Application {
                             }
                             double temp = mainInfo.getTemp();
                             double tempFeelsLike = mainInfo.getFeels_like();
-                            String description = weatherInfo[0].getDescription();
                             int humidity = mainInfo.getHumidity();
 
                             // Update your labels here
@@ -713,17 +726,27 @@ public class Main extends Application {
                             temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21", temperatureCelsius));
                             temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21", temperatureFeelsLikeCelsius));
 
-                            if (description.contains("cloud")) {
-                                descriptionLabel.setText("Weather Description: " + description + " ☁️"); // Emoji added here
-                            } else if (description.contains("rain")) {
-                                descriptionLabel.setText("Weather Description: " + description + " \uD83C\uDF27️");
+                            String weatherConditionAndIcon = getWeatherCondition();
+                            weatherDescriptionLabel.setWrapText(true);
+                            weatherDescriptionLabel.setText("Weather Description: " + weatherConditionAndIcon.split("&")[1]);
+                            String iconUrl = weatherConditionAndIcon.split("&")[0];
+                            String completeIconUrl = "https:" + iconUrl;
+                            Image image = new Image(completeIconUrl);
+                            iconView = new ImageView(image);
+                            iconView.setFitWidth(32);
+                            iconView.setFitHeight(32);
+
+                            if (gridPane.getChildren().size() == 2) {
+                                gridPane.getChildren().remove(1);
+                                gridPane.add(iconView, 1, 0);
                             } else {
-                                descriptionLabel.setText("Weather Description: " + description + " ☀️");
+                                gridPane.add(iconView, 1, 0);
                             }
+
                             if (!humidityLabel.getText().equals("") && humidityLabel.isVisible()) {
-                                humidityLabel.setText(String.format("Humidity: %d%%", humidity));
+                                humidityLabel.setText(String.format("Humidity: %d %%", humidity));
                                 uvLabel.setText("UV Index: " + getUvOutputFormat(getUV(city)));
-                                windSpeedLabel.setText(String.format("Wind speed: %.2f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
+                                windSpeedLabel.setText(String.format("Wind speed: %.0f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
 
                                 if (!dateForecast.getText().equals("") && dateForecast.isVisible()) {
                                     dateForecast.setText(String.format("Date: %s", forecastData.getDate()));
@@ -731,10 +754,10 @@ public class Main extends Application {
                                     maxTempForecast.setText(String.format("Max temperature for the day: %.0f°C", forecastData.getMaxTemp()));
                                     minTempForecast.setText(String.format("Min temperature for the day: %.0f°C", forecastData.getMinTemp()));
                                     avgTempForecast.setText(String.format("Average temperature for the day: %.0f°C", forecastData.getAvgTemp()));
-                                    maxWindForecast.setText(String.format("Max wind speed for the day: %.2f km/h", forecastData.getMaxWind()));
-                                    avgHumidityForecast.setText("Average humidity for the day: " + forecastData.getAvgHumidity() + "%");
-                                    chanceOfRainingForecast.setText(String.format("Chance of raining: %d%%", forecastData.getPercentChanceOfRain()));
-                                    chanceOfSnowForecast.setText(String.format("Chance of snowing: %d%%", forecastData.getPercentChanceOfSnow()));
+                                    maxWindForecast.setText(String.format("Max wind speed for the day: %.0f km/h", forecastData.getMaxWind()));
+                                    avgHumidityForecast.setText(String.format("Average humidity for the day: %.0f %%", forecastData.getAvgHumidity()));
+                                    chanceOfRainingForecast.setText(String.format("Chance of raining: %d %%", forecastData.getPercentChanceOfRain()));
+                                    chanceOfSnowForecast.setText(String.format("Chance of snowing: %d %%", forecastData.getPercentChanceOfSnow()));
                                     sunrise.setText("Sunrise: " + forecastData.getSunRise());
                                     sunset.setText("Sunset: " + forecastData.getSunSet());
                                 } else {
@@ -1015,6 +1038,29 @@ public class Main extends Application {
         return windSpeed * 2.23694;
     }
 
+    private String getWeatherCondition() {
+        String weatherConditionAndIcon = "";
+        String responseBody;
+        if (!responseBodiesSecondAPI.containsKey(city)) {
+            try {
+                responseBody = ForecastAPI.httpResponseForecast(city);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            responseBody = responseBodiesSecondAPI.get(city);
+        }
+        if (responseBody != null && !responseBody.contains("No matching location found.")) {
+            if (!responseBodiesSecondAPI.containsKey(city)) {
+                responseBodiesSecondAPI.put(city, responseBody);
+            }
+            JSONObject response = new JSONObject(responseBody);
+            JSONObject weatherCondition = response.getJSONObject("current").getJSONObject("condition");
+            weatherConditionAndIcon = weatherCondition.getString("icon") + "&" + weatherCondition.get("text");
+        }
+        return weatherConditionAndIcon;
+    }
+
     private void configureShowMoreButtonAction() {
         // Show more weather info logic
         new Thread(() -> {
@@ -1024,9 +1070,9 @@ public class Main extends Application {
             Platform.runLater(() -> {
                 if (humidityLabel.getText().equals("") && !humidityLabel.isVisible()) {
 
-                    humidityLabel.setText(String.format("Humidity: %d%%", mainInfo.getHumidity()));
+                    humidityLabel.setText(String.format("Humidity: %d %%", mainInfo.getHumidity()));
                     uvLabel.setText("UV Index: " + getUvOutputFormat(uvIndex));
-                    windSpeedLabel.setText(String.format("Wind speed: %.2f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
+                    windSpeedLabel.setText(String.format("Wind speed: %.0f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
                     convertWindSpeed.setVisible(true);
                     getDailyForecast.setVisible(true);
                     humidityLabel.setVisible(true);
@@ -1077,20 +1123,6 @@ public class Main extends Application {
             return forecastData.getLocation().getLocaltime();
         }
         return null;
-    }
-
-    private static String formatDateTime(String inputDateTime) {
-        // Date formatting logic
-        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-d");
-        SimpleDateFormat outputFormat = new SimpleDateFormat("EEEE");
-
-        try {
-            Date date = inputFormat.parse(inputDateTime);
-            return outputFormat.format(date);
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return "";
-        }
     }
 
     private String formatDateToDayAndHour(String inputDateTime) {
