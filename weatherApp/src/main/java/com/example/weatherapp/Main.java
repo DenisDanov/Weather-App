@@ -75,7 +75,7 @@ public class Main extends Application {
     private Scene mainScene;
     private StackPane rootLayout = createRootLayout();
     private VBox root;
-    Stage stage;
+    private Stage stage;
     private VBox firstPageVbox;
     private final Label cityStartUpLabel = new Label("Enter City or Country:");
     private final Label invalidInput = new Label();
@@ -84,12 +84,15 @@ public class Main extends Application {
     private GridPane buttonsPane;
     private final Pattern pattern = Pattern.compile("[a-zA-Z]");
     private Color originalTextColor;
-    private MediaPlayer mediaPlayer;
+    private MediaPlayer rainMediaPlayer;
     private final LinkedHashMap<String, String> responseBodiesFirstAPI;
     private final LinkedHashMap<String, String> responseBodiesSecondAPI;
-    ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-    GridPane gridPane;
-    ImageView iconView;
+    private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    private GridPane gridPane = new GridPane();
+    private ImageView iconView = new ImageView();
+    private MediaView rainViewMedia = new MediaView();
+    private MediaView nightViewMedia = new MediaView();
+    private MediaPlayer nightMediaPlayer;
 
     public Main() {
         this.weatherAppAPI = new WeatherAppAPI();
@@ -103,42 +106,110 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        mainScene = new Scene(rootLayout, 868, 700);
-        stage = primaryStage;
-        addStyleSheet(mainScene);
-        configurePrimaryStage(primaryStage, mainScene);
-        configureStartUpScene();
-        configureFetchButton();
-        configureGoBackToFirstPageButton();
-        configureConvertTemperatureButton();
-        configureShowMoreButton();
-        configureConvertWindSpeedButton();
-        configureGetDailyForecastButton();
-        configureWeeklyForecastButton();
-        primaryStage.show();
-        Runnable task = () -> {
-            // Your code here, what you want to execute every 1 minute
-            try {
-                updateAPIData();
-            } catch (ParseException | IOException e) {
-                throw new RuntimeException(e);
-            }
-        };
-        // Schedule the task to run every 1 minute, starting immediately
-        executorService.scheduleAtFixedRate(task, 0, 1, TimeUnit.MINUTES);
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            // Shut down the executor service gracefully
-            executorService.shutdown();
-            try {
-                if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
-                    // Forcefully shutdown if tasks don't finish in time
-                    executorService.shutdownNow();
+        new Thread(() -> {
+            Platform.runLater(() -> {
+                mainScene = new Scene(rootLayout, 868, 700);
+                stage = primaryStage;
+                addStyleSheet(mainScene);
+                configurePrimaryStage(primaryStage, mainScene);
+                configureStartUpScene();
+                configureFetchButton();
+                configureGoBackToFirstPageButton();
+                configureConvertTemperatureButton();
+                configureShowMoreButton();
+                configureConvertWindSpeedButton();
+                configureGetDailyForecastButton();
+                configureWeeklyForecastButton();
+                primaryStage.show();
+            });
+            Runnable task = () -> {
+                // Your code here, what you want to execute every 1 minute
+                try {
+                    updateAPIData();
+                } catch (ParseException | IOException e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (InterruptedException e) {
-                // Handle the InterruptedException, if necessary
-                e.printStackTrace();
-            }
-        }));
+            };
+            // Schedule the task to run every 1 minute, starting immediately
+            executorService.scheduleAtFixedRate(task, 0, 5, TimeUnit.MINUTES);
+        }).start();
+    }
+
+    private StackPane createRootLayout() {
+        new Thread(() -> Platform.runLater(() -> {
+            rootLayout = new StackPane();
+            root = new VBox();
+            root.setSpacing(1.5);
+            setRightMargin(inputTextField);
+
+            iconView = new ImageView();
+            gridPane = new GridPane(); // 10 is the spacing between label text and icon
+            gridPane.add(weatherDescriptionLabel, 0, 0);
+            gridPane.add(iconView, 1, 0);
+
+            descriptionLabel.setGraphic(gridPane);
+            descriptionLabel.setContentDisplay(ContentDisplay.GRAPHIC_ONLY); // Display only the graphic
+
+            buttonsPane = new GridPane();
+            buttonsPane.add(fetchButton, 0, 0);
+            buttonsPane.add(goBackToFirstPage, 1, 0);
+            buttonsPane.setHgap(5);
+
+            // Add the TableView to the root layout
+            Objects.requireNonNull(root).getChildren().addAll(cityLabel, inputTextField,
+                    buttonsPane,
+                    localTimeLabel,
+                    temperatureLabel,
+                    temperatureFeelsLikeLabel,
+                    descriptionLabel);
+
+            root.getChildren().add(6, convertTemperature);
+            root.getChildren().addAll(showMoreWeatherInfo, humidityLabel, uvLabel,
+                    windSpeedLabel, convertWindSpeed, getDailyForecast);
+            root.getChildren().addAll(dateForecast, maxTempForecast, minTempForecast, avgTempForecast,
+                    maxWindForecast, avgHumidityForecast, chanceOfRainingForecast,
+                    chanceOfSnowForecast, weatherDescriptionForecast, sunrise, sunset, showWeeklyForecastButton);
+
+            Media raindMedia;
+            Media nightMedia;
+
+            raindMedia = new Media(Objects.requireNonNull(getClass().getResource("/screen-recorder-08-28-2023-12-54-13-642_tGY0iQ7a (online-video-cutter.com) (2).mp4")).toString());
+            rainMediaPlayer = new MediaPlayer(raindMedia);
+            rainViewMedia = new MediaView(rainMediaPlayer);
+
+            nightMedia = new Media(Objects.requireNonNull(getClass().getResource("/Screen recorder_09-02-2023_12-10-33-248 (online-video-cutter.com).mp4")).toString());
+            nightMediaPlayer = new MediaPlayer(nightMedia);
+            nightViewMedia = new MediaView(nightMediaPlayer);
+
+            rainViewMedia.setVisible(false);
+            nightViewMedia.setVisible(false);
+
+            Objects.requireNonNull(rootLayout).getChildren().addAll(rainViewMedia, nightViewMedia, root);
+
+            showWeeklyForecastButton.setVisible(false);
+            convertTemperature.setVisible(false);
+            showMoreWeatherInfo.setVisible(false);
+            convertWindSpeed.setVisible(false);
+            uvLabel.setVisible(false);
+            humidityLabel.setVisible(false);
+            windSpeedLabel.setVisible(false);
+            Objects.requireNonNull(buttonsPane).setVisible(false);
+
+            dateForecast.setVisible(false);
+            weatherDescriptionForecast.setVisible(false);
+            maxTempForecast.setVisible(false);
+            minTempForecast.setVisible(false);
+            avgTempForecast.setVisible(false);
+            maxWindForecast.setVisible(false);
+            avgHumidityForecast.setVisible(false);
+            chanceOfRainingForecast.setVisible(false);
+            chanceOfSnowForecast.setVisible(false);
+            sunrise.setVisible(false);
+            sunset.setVisible(false);
+
+            getDailyForecast.setVisible(false);
+        })).start();
+        return rootLayout;
     }
 
     private void configureStartUpScene() {
@@ -151,6 +222,26 @@ public class Main extends Application {
         firstPageScene = new Scene(firstPageVbox, 868, 700);
         firstPageScene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/firstPage.css")).toExternalForm());
         stage.setScene(firstPageScene);
+    }
+
+    private void switchVideoBackground(String weatherDescription) {
+        new Thread(() -> Platform.runLater(() -> {
+            if (weatherDescription.contains("rain") || weatherDescription.contains("Rain")) {
+                nightMediaPlayer.stop();
+                rootLayout.getChildren().get(1).setVisible(false);
+
+                rainMediaPlayer.play();
+                rainMediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+                rootLayout.getChildren().get(0).setVisible(true);
+            } else {
+                rainMediaPlayer.stop();
+                rootLayout.getChildren().get(0).setVisible(false);
+
+                nightMediaPlayer.play();
+                nightMediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+                rootLayout.getChildren().get(1).setVisible(true);
+            }
+        })).start();
     }
 
     private void checkForValidInput() throws IOException, ParseException {
@@ -194,77 +285,6 @@ public class Main extends Application {
     private void setRightMargin(Region node) {
         Insets insets = new Insets(0, 590, 0, 0); // top, right, bottom, left
         VBox.setMargin(node, insets);
-    }
-
-    private StackPane createRootLayout() {
-        rootLayout = new StackPane();
-        root = new VBox();
-        root.setSpacing(1.5);
-        setRightMargin(inputTextField);
-
-        iconView = new ImageView();
-        gridPane = new GridPane(); // 10 is the spacing between label text and icon
-        gridPane.add(weatherDescriptionLabel, 0, 0);
-        gridPane.add(iconView, 1, 0);
-
-        descriptionLabel.setGraphic(gridPane);
-        descriptionLabel.setContentDisplay(ContentDisplay.GRAPHIC_ONLY); // Display only the graphic
-
-        Media defaultMedia = new Media(Objects.requireNonNull(getClass().getResource("/screen-recorder-08-28-2023-12-54-13-642_tGY0iQ7a (online-video-cutter.com) (2).mp4")).toString());
-        mediaPlayer = new MediaPlayer(defaultMedia);
-        MediaView mediaView = new MediaView();
-        mediaView.setMediaPlayer(mediaPlayer);
-        Objects.requireNonNull(rootLayout).getChildren().add(mediaView);
-        // Start video playback in a separate thread
-        new Thread(() -> {
-            mediaPlayer.play();
-            mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-        }).start();
-        buttonsPane = new GridPane();
-        buttonsPane.add(fetchButton, 0, 0);
-        buttonsPane.add(goBackToFirstPage, 1, 0);
-        buttonsPane.setHgap(5);
-
-        // Add the TableView to the root layout
-        Objects.requireNonNull(root).getChildren().addAll(cityLabel, inputTextField,
-                buttonsPane,
-                localTimeLabel,
-                temperatureLabel,
-                temperatureFeelsLikeLabel,
-                descriptionLabel);
-
-        root.getChildren().add(6, convertTemperature);
-        root.getChildren().addAll(showMoreWeatherInfo, humidityLabel, uvLabel,
-                windSpeedLabel, convertWindSpeed, getDailyForecast);
-        root.getChildren().addAll(dateForecast, maxTempForecast, minTempForecast, avgTempForecast,
-                maxWindForecast, avgHumidityForecast, chanceOfRainingForecast,
-                chanceOfSnowForecast, weatherDescriptionForecast, sunrise, sunset, showWeeklyForecastButton);
-
-        rootLayout.getChildren().add(root);
-
-        showWeeklyForecastButton.setVisible(false);
-        convertTemperature.setVisible(false);
-        showMoreWeatherInfo.setVisible(false);
-        convertWindSpeed.setVisible(false);
-        uvLabel.setVisible(false);
-        humidityLabel.setVisible(false);
-        windSpeedLabel.setVisible(false);
-        buttonsPane.setVisible(false);
-
-        dateForecast.setVisible(false);
-        weatherDescriptionForecast.setVisible(false);
-        maxTempForecast.setVisible(false);
-        minTempForecast.setVisible(false);
-        avgTempForecast.setVisible(false);
-        maxWindForecast.setVisible(false);
-        avgHumidityForecast.setVisible(false);
-        chanceOfRainingForecast.setVisible(false);
-        chanceOfSnowForecast.setVisible(false);
-        sunrise.setVisible(false);
-        sunset.setVisible(false);
-
-        getDailyForecast.setVisible(false);
-        return rootLayout;
     }
 
     private void addStyleSheet(Scene scene) {
@@ -649,6 +669,7 @@ public class Main extends Application {
 
     private void fetchAndDisplayWeatherData(String cityTextField) throws IOException, ParseException {
         // Fetch and display weather data logic
+
         this.city = cityTextField;
         if (stage.getScene() == firstPageScene) {
             try {
@@ -657,6 +678,7 @@ public class Main extends Application {
                 throw new RuntimeException(e);
             }
         } else {
+
             GridPane checkButtonsPane = (GridPane) root.getChildren().get(2);
             if (!checkButtonsPane.getChildren().contains(fetchButton)) {
                 buttonsPane.add(fetchButton, 0, 0);
@@ -669,6 +691,7 @@ public class Main extends Application {
             Button convertWindSpeedButton = convertWindSpeed;
             new Thread(() -> {
                 // Perform network operations, JSON parsing, and data processing here
+                String weatherConditionAndIcon = getWeatherCondition();
                 String responseBody;
                 ForecastData forecastData;
                 if (!responseBodiesFirstAPI.containsKey(city)) {
@@ -701,6 +724,7 @@ public class Main extends Application {
                             weatherInfo = null;
                         }
                         if (mainInfo != null && weatherInfo != null && weatherInfo.length > 0 && getLocalTime(city) != null && forecastData != null) {
+                            switchVideoBackground(weatherConditionAndIcon.split("&")[1]);
                             if (inputTextField.getStyle().equals("-fx-text-fill: red;")) {
                                 inputTextField.setStyle(temperatureLabel.getStyle());
                             }
@@ -726,7 +750,6 @@ public class Main extends Application {
                             temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21", temperatureCelsius));
                             temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21", temperatureFeelsLikeCelsius));
 
-                            String weatherConditionAndIcon = getWeatherCondition();
                             weatherDescriptionLabel.setWrapText(true);
                             weatherDescriptionLabel.setText("Weather Description: " + weatherConditionAndIcon.split("&")[1]);
                             String iconUrl = weatherConditionAndIcon.split("&")[0];
@@ -1039,8 +1062,8 @@ public class Main extends Application {
     }
 
     private String getWeatherCondition() {
-        String weatherConditionAndIcon = "";
         String responseBody;
+        String weatherConditionAndIcon = "";
         if (!responseBodiesSecondAPI.containsKey(city)) {
             try {
                 responseBody = ForecastAPI.httpResponseForecast(city);
