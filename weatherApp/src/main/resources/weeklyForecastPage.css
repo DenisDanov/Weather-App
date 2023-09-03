@@ -2,20 +2,19 @@
 
 /* Style the table view */
 .table-view {
-    -fx-font-size: 13px;
+    -fx-font-size: 14px;
 }
 
 /* Style the table columns */
 .table-column {
-    -fx-font-size: 12.5px; /* Slightly larger font size for column headers */
-    -fx-padding: 3px; /* Increase the padding slightly */
+    -fx-font-size: 14px; /* Slightly larger font size for column headers */
+    -fx-padding: 1px; /* Increase the padding slightly */
 }
 
 /* Style the table cells */
 .table-cell {
-    -fx-padding: 3px;
+    -fx-padding: 4px;
 }
-
 /* Style the "Go back to the main page" button */
 .button {
     -fx-font-size: 12px;

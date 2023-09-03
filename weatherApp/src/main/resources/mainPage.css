@@ -6,15 +6,12 @@
     -fx-padding: 5px; /* Further reduce the padding */
 }
 
-/* Style the labels */
-
-
 .bubble-label {
     -fx-background-color: #333333;
     -fx-font-size: 15px; /* Larger font size */ /* Charcoal color code */
     -fx-text-fill: white; /* Text color */
     -fx-padding: 2px 2px; /* Padding around the text */
-    -fx-background-radius: 10px; /* Rounded corners to create a bubble effect */
+    -fx-background-radius: 5px; /* Rounded corners to create a bubble effect */
 }
 
 /* Style the button */
