@@ -84,7 +84,6 @@ public class Main extends Application {
     private GridPane buttonsPane;
     private final Pattern pattern = Pattern.compile("[a-zA-Z]");
     private Color originalTextColor;
-    private MediaPlayer rainMediaPlayer;
     private final LinkedHashMap<String, String> responseBodiesFirstAPI;
     private final LinkedHashMap<String, String> responseBodiesSecondAPI;
     private String lastEnteredCity;
@@ -92,8 +91,11 @@ public class Main extends Application {
     private GridPane gridPane = new GridPane();
     private ImageView iconView = new ImageView();
     private MediaView rainViewMedia = new MediaView();
-    private MediaView nightViewMedia = new MediaView();
-    private MediaPlayer nightMediaPlayer;
+    private MediaPlayer rainMediaPlayer;
+    private MediaView cloudyNightMediaView = new MediaView();
+    private MediaPlayer cloudyNightPlayer;
+    private MediaView overcastDayMediaView = new MediaView();
+    private MediaPlayer overcastDayPlayer;
     private String responseBodySecondAPI;
     private String responseBody;
     private String passedFirstPage;
@@ -116,7 +118,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) {
         new Thread(() -> {
             Platform.runLater(() -> {
-                mainScene = new Scene(rootLayout, 868, 700);
+                mainScene = new Scene(rootLayout, 866, 700);
                 stage = primaryStage;
                 addStyleSheet(mainScene);
                 configurePrimaryStage(primaryStage, mainScene);
@@ -179,20 +181,28 @@ public class Main extends Application {
                     chanceOfSnowForecast, weatherDescriptionForecast, sunrise, sunset, showWeeklyForecastButton);
 
             Media raindMedia;
-            Media nightMedia;
+            Media cloudyNightMedia;
+            Media overcastDayMedia;
 
             raindMedia = new Media(Objects.requireNonNull(getClass().getResource("/screen-recorder-08-28-2023-12-54-13-642_tGY0iQ7a (online-video-cutter.com) (2).mp4")).toString());
             rainMediaPlayer = new MediaPlayer(raindMedia);
             rainViewMedia = new MediaView(rainMediaPlayer);
 
-            nightMedia = new Media(Objects.requireNonNull(getClass().getResource("/Screen recorder_09-02-2023_12-10-33-248 (online-video-cutter.com).mp4")).toString());
-            nightMediaPlayer = new MediaPlayer(nightMedia);
-            nightViewMedia = new MediaView(nightMediaPlayer);
+            cloudyNightMedia = new Media(Objects.requireNonNull(getClass().getResource("/Weather-Background-Cloudy-Night.mp4")).toString());
+            cloudyNightPlayer = new MediaPlayer(cloudyNightMedia);
+            cloudyNightPlayer.setMute(true);
+            cloudyNightMediaView = new MediaView(cloudyNightPlayer);
+
+            overcastDayMedia = new Media(Objects.requireNonNull(getClass().getResource("/Weather-Background-Overcast-Day.mp4")).toString());
+            overcastDayPlayer = new MediaPlayer(overcastDayMedia);
+            overcastDayPlayer.setMute(true);
+            overcastDayMediaView = new MediaView(overcastDayPlayer);
 
             rainViewMedia.setVisible(false);
-            nightViewMedia.setVisible(false);
+            overcastDayMediaView.setVisible(false);
+            cloudyNightMediaView.setVisible(false);
 
-            Objects.requireNonNull(rootLayout).getChildren().addAll(rainViewMedia, nightViewMedia, root);
+            Objects.requireNonNull(rootLayout).getChildren().addAll(rainViewMedia, this.cloudyNightMediaView, overcastDayMediaView, root);
 
             showWeeklyForecastButton.setVisible(false);
             convertTemperature.setVisible(false);
@@ -235,19 +245,33 @@ public class Main extends Application {
     private void switchVideoBackground(String weatherDescription) {
         new Thread(() -> Platform.runLater(() -> {
             if (weatherDescription.contains("rain") || weatherDescription.contains("Rain")) {
-                nightMediaPlayer.stop();
+                cloudyNightPlayer.stop();
                 rootLayout.getChildren().get(1).setVisible(false);
 
                 rainMediaPlayer.play();
                 rainMediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
                 rootLayout.getChildren().get(0).setVisible(true);
-            } else {
+            } else if (weatherDescription.contains("cloud") || weatherDescription.contains("Cloud")){
                 rainMediaPlayer.stop();
                 rootLayout.getChildren().get(0).setVisible(false);
 
-                nightMediaPlayer.play();
-                nightMediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+                overcastDayPlayer.stop();
+                rootLayout.getChildren().get(2).setVisible(false);
+
+                cloudyNightPlayer.play();
+                cloudyNightPlayer.setCycleCount(MediaPlayer.INDEFINITE);
                 rootLayout.getChildren().get(1).setVisible(true);
+            } else if (weatherDescription.contains("Overcast")){
+                rainMediaPlayer.stop();
+                rootLayout.getChildren().get(0).setVisible(false);
+
+                cloudyNightPlayer.stop();
+                rootLayout.getChildren().get(1).setVisible(false);
+
+                overcastDayPlayer.play();
+                overcastDayPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+                rootLayout.getChildren().get(2).setVisible(true);
+
             }
         })).start();
     }
