@@ -95,7 +95,7 @@ public class Main extends Application {
     private String responseBodyCheckForValidInput;
     private String responseBodyGetSunsetSunrise;
     private String passedFirstPage;
-    private String lastWeatherDescription;
+    private String lastWeatherDescriptionAndBooleanCheck;
     List<Pair<MediaPlayer, Node>> mediaPlayerNodePairs = new ArrayList<>();
 
     public Main() {
@@ -106,8 +106,8 @@ public class Main extends Application {
         this.responseBodySecondAPI = "";
         this.passedFirstPage = "not passed!";
         this.lastEnteredCity = "";
-        this.lastWeatherDescription = "";
         this.responseBodyGetSunsetSunrise = "";
+        this.lastWeatherDescriptionAndBooleanCheck = "";
     }
 
     public static void main(String[] args) {
@@ -306,95 +306,97 @@ public class Main extends Application {
     }
 
     private void switchVideoBackground(String weatherDescription) {
+        boolean currentTimeIsLaterThanSunsetVar = currentTimeIsLaterThanSunset();
         Platform.runLater(() -> {
-            if (!lastWeatherDescription.equals(weatherDescription)) {
+            if (!lastWeatherDescriptionAndBooleanCheck.contains(weatherDescription)) {
+                System.out.println("Yes");
                 stopAllMediaPlayersAndHideAllNodes();
             }
             if (weatherDescription.toLowerCase().contains("light rain") &&
-                    currentTimeIsLaterThanSunset()) {
+                    currentTimeIsLaterThanSunsetVar) {
 
                 mediaPlayerNodePairs.get(0).getKey().play();
                 mediaPlayerNodePairs.get(0).getKey().setCycleCount(MediaPlayer.INDEFINITE);
                 mediaPlayerNodePairs.get(0).getValue().setVisible(true);
             } else if (weatherDescription.toLowerCase().contains("cloud") &&
-                    !currentTimeIsLaterThanSunset()) {
+                    !currentTimeIsLaterThanSunsetVar) {
 
                 mediaPlayerNodePairs.get(1).getKey().play();
                 mediaPlayerNodePairs.get(1).getKey().setCycleCount(MediaPlayer.INDEFINITE);
                 mediaPlayerNodePairs.get(1).getValue().setVisible(true);
             } else if (weatherDescription.toLowerCase().contains("overcast") &&
-                    currentTimeIsLaterThanSunset()) {
+                    currentTimeIsLaterThanSunsetVar) {
 
                 mediaPlayerNodePairs.get(2).getKey().play();
                 mediaPlayerNodePairs.get(2).getKey().setCycleCount(MediaPlayer.INDEFINITE);
                 mediaPlayerNodePairs.get(2).getValue().setVisible(true);
             } else if (weatherDescription.toLowerCase().contains("clear") &&
-                    !currentTimeIsLaterThanSunset()) {
+                    !currentTimeIsLaterThanSunsetVar) {
 
                 mediaPlayerNodePairs.get(3).getKey().play();
                 mediaPlayerNodePairs.get(3).getKey().setCycleCount(MediaPlayer.INDEFINITE);
                 mediaPlayerNodePairs.get(3).getValue().setVisible(true);
             } else if (weatherDescription.toLowerCase().contains("clear") &&
-                    currentTimeIsLaterThanSunset()) {
+                    currentTimeIsLaterThanSunsetVar) {
 
                 mediaPlayerNodePairs.get(4).getKey().play();
                 mediaPlayerNodePairs.get(4).getKey().setCycleCount(MediaPlayer.INDEFINITE);
                 mediaPlayerNodePairs.get(4).getValue().setVisible(true);
             } else if (weatherDescription.toLowerCase().contains("light rain") &&
-                    !currentTimeIsLaterThanSunset()) {
+                    !currentTimeIsLaterThanSunsetVar) {
 
                 mediaPlayerNodePairs.get(5).getKey().play();
                 mediaPlayerNodePairs.get(5).getKey().setCycleCount(MediaPlayer.INDEFINITE);
                 mediaPlayerNodePairs.get(5).getValue().setVisible(true);
             } else if (weatherDescription.toLowerCase().contains("heavy rain") &&
-                    currentTimeIsLaterThanSunset()) {
+                    currentTimeIsLaterThanSunsetVar) {
 
                 mediaPlayerNodePairs.get(6).getKey().play();
                 mediaPlayerNodePairs.get(6).getKey().setCycleCount(MediaPlayer.INDEFINITE);
                 mediaPlayerNodePairs.get(6).getValue().setVisible(true);
             } else if (weatherDescription.toLowerCase().contains("heavy rain") &&
-                    !currentTimeIsLaterThanSunset()) {
+                    !currentTimeIsLaterThanSunsetVar) {
 
                 mediaPlayerNodePairs.get(7).getKey().play();
                 mediaPlayerNodePairs.get(7).getKey().setCycleCount(MediaPlayer.INDEFINITE);
                 mediaPlayerNodePairs.get(7).getValue().setVisible(true);
-            } else if (weatherDescription.toLowerCase().contains("sunny") && !currentTimeIsLaterThanSunset()) {
+            } else if (weatherDescription.toLowerCase().contains("sunny") && !currentTimeIsLaterThanSunsetVar) {
 
                 mediaPlayerNodePairs.get(3).getKey().play();
                 mediaPlayerNodePairs.get(3).getKey().setCycleCount(MediaPlayer.INDEFINITE);
                 mediaPlayerNodePairs.get(3).getValue().setVisible(true);
-            } else if (weatherDescription.toLowerCase().contains("sunny") && currentTimeIsLaterThanSunset()) {
+            } else if (weatherDescription.toLowerCase().contains("sunny") && currentTimeIsLaterThanSunsetVar) {
 
                 mediaPlayerNodePairs.get(4).getKey().play();
                 mediaPlayerNodePairs.get(4).getKey().setCycleCount(MediaPlayer.INDEFINITE);
                 mediaPlayerNodePairs.get(4).getValue().setVisible(true);
             } else if (weatherDescription.toLowerCase().contains("rain") &&
-                    currentTimeIsLaterThanSunset()) {
+                    currentTimeIsLaterThanSunsetVar) {
 
                 mediaPlayerNodePairs.get(6).getKey().play();
                 mediaPlayerNodePairs.get(6).getKey().setCycleCount(MediaPlayer.INDEFINITE);
                 mediaPlayerNodePairs.get(6).getValue().setVisible(true);
             } else if (weatherDescription.toLowerCase().contains("rain") &&
-                    !currentTimeIsLaterThanSunset()) {
+                    !currentTimeIsLaterThanSunsetVar) {
 
                 mediaPlayerNodePairs.get(7).getKey().play();
                 mediaPlayerNodePairs.get(7).getKey().setCycleCount(MediaPlayer.INDEFINITE);
                 mediaPlayerNodePairs.get(7).getValue().setVisible(true);
             } else if (weatherDescription.toLowerCase().contains("overcast") &&
-                    !currentTimeIsLaterThanSunset()) {
+                    !currentTimeIsLaterThanSunsetVar) {
 
                 mediaPlayerNodePairs.get(9).getKey().play();
                 mediaPlayerNodePairs.get(9).getKey().setCycleCount(MediaPlayer.INDEFINITE);
                 mediaPlayerNodePairs.get(9).getValue().setVisible(true);
             } else if (weatherDescription.toLowerCase().contains("cloud") &&
-                    currentTimeIsLaterThanSunset()) {
+                    currentTimeIsLaterThanSunsetVar) {
 
                 mediaPlayerNodePairs.get(8).getKey().play();
                 mediaPlayerNodePairs.get(8).getKey().setCycleCount(MediaPlayer.INDEFINITE);
                 mediaPlayerNodePairs.get(8).getValue().setVisible(true);
             }
-            if (!lastWeatherDescription.equals(weatherDescription)) {
-                lastWeatherDescription = weatherDescription;
+            if (!lastWeatherDescriptionAndBooleanCheck.contains(weatherDescription)) {
+                lastWeatherDescriptionAndBooleanCheck = weatherDescription;
             }
         });
     }
@@ -426,7 +428,6 @@ public class Main extends Application {
                     if (!responseBodyCheckForValidInput.equals("")) {
                         try {
                             passedFirstPage = "Passed!";
-                            switchVideoBackground(getWeatherCondition().split("&")[1]);
                             fetchAndDisplayWeatherData(cityStartUpTextField.getText());
                         } catch (IOException | ParseException e) {
                             throw new RuntimeException(e);
@@ -839,8 +840,12 @@ public class Main extends Application {
             }
         } else {
             // Perform network operations, JSON parsing, and data processing here
+
             new Thread(() -> {
                 String weatherConditionAndIcon = getWeatherCondition();
+                if (!city.equals(lastEnteredCity)) {
+                    switchVideoBackground(weatherConditionAndIcon.split("&")[1]);
+                }
                 String responseBody;
                 ForecastData forecastData;
 
@@ -881,10 +886,10 @@ public class Main extends Application {
                             weatherInfo = null;
                         }
                         if (mainInfo != null && weatherInfo != null && weatherInfo.length > 0 && getLocalTime(city) != null && forecastData != null) {
-                            stage.setScene(mainScene);
+                            if (stage.getScene() != mainScene) {
+                                stage.setScene(mainScene);
+                            }
                             if (!lastEnteredCity.equals(city)) {
-                                switchVideoBackground(weatherConditionAndIcon.split("&")[1]);
-
                                 if (inputTextField.getStyle().equals("-fx-text-fill: red;")) {
                                     inputTextField.setStyle(temperatureLabel.getStyle());
                                 }
