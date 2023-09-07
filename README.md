@@ -7,7 +7,7 @@ https://github.com/DenisDanov/Weather-App/assets/122882697/018f024e-8ace-427d-b0
 
 ## Description
 
-I developed a JavaFX Weather Application, leveraging my programming skills and passion for weather analysis. This application provides users with real-time weather information and forecasts for locations of their choice. The project consists of three main scenes, each offering distinct features and functionality:
+I developed a JavaFX Weather Application, leveraging my programming skills and passion. This application provides users with real-time weather information and forecasts for locations of their choice. The project consists of three main scenes, each offering distinct features and functionality:
 
 ### Start Scene
 
