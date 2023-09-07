@@ -16,7 +16,7 @@ Detailed Weather Data: A button allows users to access more comprehensive data f
 Daily Forecast: Users can access a daily weather forecast for the current day.
 - Weekly forecast scene:
 The application provides a 7-day forecast, offering detailed insights into upcoming weather conditions.
-Return to Start: A convenient button allows users to return to the initial location input screen.
+- Return to Start: A convenient button allows users to return to the initial location input screen.
 - Technologies Used:
 JavaFX: The graphical user interface framework that facilitated the creation of an interactive and visually appealing interface.
  Weather Data API: To fetch real-time and forecasted weather data for the specified location.
