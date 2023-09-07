@@ -20,9 +20,11 @@ I developed a JavaFX Weather Application, leveraging my programming skills and p
   - **Current Weather Data:** Users can instantly view the current weather conditions, including temperature, wind speed, and other relevant information.
   - **Detailed Weather Data:** A button allows users to access more comprehensive data for the current weather. This includes the capability to convert temperature units and wind speed for user convenience.
   - **Daily Forecast:** Users can access a daily weather forecast for the current day.
-  - **Weekly Forecast:** The application provides a 7-day forecast, offering detailed insights into upcoming weather conditions.
   - **Return to Start:** A convenient button allows users to return to the initial location input screen.
-
+ 
+### Weekly Forecast Scene
+ - **Weekly Forecast:** The application provides a 7-day forecast, offering detailed insights into upcoming weather conditions.
+   
 ## Technologies Used
 
 - **JavaFX:** The graphical user interface framework that facilitated the creation of an interactive and visually appealing interface.
