@@ -7,7 +7,7 @@ https://github.com/DenisDanov/Weather-App/assets/122882697/018f024e-8ace-427d-b0
 
 ## Description
 
-I developed a JavaFX Weather Application, leveraging my programming skills and passion. This application provides users with real-time weather information and forecasts for locations of their choice. The project consists of three main scenes, each offering distinct features and functionality:
+I developed a multi-threaded JavaFX Weather Application, leveraging my programming skills and passion. This application provides users with real-time weather information and forecasts for locations of their choice. The project consists of three main scenes, each offering distinct features and functionality:
 
 ### Start Scene
 
@@ -29,12 +29,13 @@ I developed a JavaFX Weather Application, leveraging my programming skills and p
 
 - **JavaFX:** The graphical user interface framework that facilitated the creation of an interactive and visually appealing interface.
 - **Weather Data API:** To fetch real-time and forecasted weather data for the specified location.
-- **Java Programming:** Utilized Java to create the backend logic for data processing and user interactions.
+- **Java Programming:** Utilized Java to create the backend logic for data processing and user interactions. The application is multi-threaded, enhancing its performance and responsiveness.
 
 ## Key Achievements
 
 - Developed a user-friendly and intuitive application for accessing weather information.
 - Implemented dynamic features such as unit conversion and in-depth weather analysis.
+- Implemented dynamic backgrounds that change based on the weather condition and local time.
 - Efficiently integrated external weather data sources to provide accurate and up-to-date information.
 - Showcased strong problem-solving and programming skills by creating a multi-scene JavaFX application.
 
