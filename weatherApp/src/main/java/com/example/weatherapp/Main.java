@@ -1,6 +1,5 @@
 package com.example.weatherapp;
 
-import com.example.weatherapp.buttons.ButtonDependencyUpdater;
 import com.example.weatherapp.buttons.ConvertTemperature;
 import com.example.weatherapp.buttons.ConvertWindSpeed;
 import com.example.weatherapp.buttons.ReturnToFirstPage;
@@ -102,7 +101,7 @@ public class Main extends Application {
     private String lastWeatherDescription;
     private String lastTimeCheck;
     private final List<Pair<MediaPlayer, Node>> mediaPlayerNodePairs = new ArrayList<>();
-    private ButtonDependencyUpdater buttonDependencyUpdater;
+
     public Main() {
         this.weatherAppAPI = new WeatherAppAPI();
         this.responseBodiesFirstAPI = new LinkedHashMap<>();
@@ -135,7 +134,7 @@ public class Main extends Application {
                 configureGetDailyForecastButton();
                 configureWeeklyForecastButton();
                 primaryStage.show();
-                updateButtonsNodes();
+                updateReturnButtonNodes();
                 System.out.println(23);
             });
             Runnable task = () -> {
@@ -149,6 +148,16 @@ public class Main extends Application {
             // Schedule the task to run every 1 minute, starting immediately
             executorService.scheduleAtFixedRate(task, 0, 5, TimeUnit.MINUTES);
         }).start();
+    }
+    private void updateReturnButtonNodes() {
+        returnBackToFirstPage.setStage(stage);
+        returnBackToFirstPage.setFirstPageScene(firstPageScene);
+        returnBackToFirstPage.setInvalidInput(invalidInput);
+        returnBackToFirstPage.setFirstPageVbox(firstPageVbox);
+        returnBackToFirstPage.setFetchButton(fetchButton);
+        returnBackToFirstPage.setCityStartUpTextField(cityStartUpTextField);
+        returnBackToFirstPage.setInputTextField(inputTextField);
+        returnBackToFirstPage.setTemperatureLabel(temperatureLabel);
     }
 
     private void setUpDynamicBackground() {
@@ -273,9 +282,7 @@ public class Main extends Application {
 
             convertWindSpeed = new ConvertWindSpeed(windSpeedLabel);
             convertWindSpeed.setText("Convert wind speed");
-            buttonDependencyUpdater = new ButtonDependencyUpdater(convertTemperature,
-                    convertWindSpeed,
-                    returnBackToFirstPage);
+
             root.getChildren().addAll(showMoreWeatherInfo, humidityLabel, uvLabel,
                     windSpeedLabel, convertWindSpeed, getDailyForecast);
             root.getChildren().addAll(dateForecast, maxTempForecast, minTempForecast, avgTempForecast,
@@ -1047,18 +1054,6 @@ public class Main extends Application {
         }
     }
 
-    private void updateButtonsNodes() {
-        buttonDependencyUpdater.updateButtonDependencies(weatherData,
-                stage,
-                firstPageScene,
-                invalidInput,
-                firstPageVbox,
-                fetchButton,
-                cityStartUpTextField,
-                inputTextField,
-                temperatureLabel);
-    }
-
     private boolean currentTimeIsLaterThanSunset() {
         String currentTimeTrimmed = formatDateToDayAndHour(getLocalTime(city)).split(", ")[1];
 
@@ -1358,7 +1353,6 @@ public class Main extends Application {
                     chanceOfSnowForecast.setVisible(false);
                     sunrise.setVisible(false);
                     sunset.setVisible(false);
-
                 }
             });
         }).start();
