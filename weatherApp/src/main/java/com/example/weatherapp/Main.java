@@ -1,5 +1,9 @@
 package com.example.weatherapp;
 
+import com.example.weatherapp.buttons.ButtonDependencyUpdater;
+import com.example.weatherapp.buttons.ConvertTemperature;
+import com.example.weatherapp.buttons.ConvertWindSpeed;
+import com.example.weatherapp.buttons.ReturnToFirstPage;
 import com.google.gson.Gson;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -66,11 +70,11 @@ public class Main extends Application {
     private final Label sunrise = new BubbleLabels();
     private final Label sunset = new BubbleLabels();
     private final Button showMoreWeatherInfo = new Button("Show more weather info");
-    private final Button convertTemperature = new Button("Convert temperature");
-    private final Button convertWindSpeed = new Button("Convert wind speed");
+    private ConvertTemperature convertTemperature;
+    private ConvertWindSpeed convertWindSpeed;
     private final Button getDailyForecast = new Button("Show daily forecast");
     private final Button fetchButton = new Button("Show current weather");
-    private final Button goBackToFirstPage = new Button("Return to the first page");
+    private ReturnToFirstPage returnBackToFirstPage;
     private final Label cityLabel = new Label();
     private final Button showWeeklyForecastButton = new Button("Show weekly forecast");
     private Scene mainScene;
@@ -94,18 +98,18 @@ public class Main extends Application {
     private String responseBodySecondAPI;
     private String responseBodyCheckForValidInput;
     private String responseBodyGetSunsetSunrise;
-    private String passedFirstPage;
+    public static String passedFirstPage;
     private String lastWeatherDescription;
     private String lastTimeCheck;
-    List<Pair<MediaPlayer, Node>> mediaPlayerNodePairs = new ArrayList<>();
-
+    private final List<Pair<MediaPlayer, Node>> mediaPlayerNodePairs = new ArrayList<>();
+    private ButtonDependencyUpdater buttonDependencyUpdater;
     public Main() {
         this.weatherAppAPI = new WeatherAppAPI();
         this.responseBodiesFirstAPI = new LinkedHashMap<>();
         this.responseBodiesSecondAPI = new LinkedHashMap<>();
         this.responseBodyCheckForValidInput = "";
         this.responseBodySecondAPI = "";
-        this.passedFirstPage = "not passed!";
+        passedFirstPage = "not passed!";
         this.lastEnteredCity = "";
         this.responseBodyGetSunsetSunrise = "";
         this.lastWeatherDescription = "";
@@ -127,13 +131,12 @@ public class Main extends Application {
                 configureStartUpScene();
                 setUpDynamicBackground();
                 configureFetchButton();
-                configureGoBackToFirstPageButton();
-                configureConvertTemperatureButton();
                 configureShowMoreButton();
-                configureConvertWindSpeedButton();
                 configureGetDailyForecastButton();
                 configureWeeklyForecastButton();
                 primaryStage.show();
+                updateButtonsNodes();
+                System.out.println(23);
             });
             Runnable task = () -> {
                 // Your code here, what you want to execute every 1 minute
@@ -244,7 +247,16 @@ public class Main extends Application {
 
             buttonsPane = new GridPane();
             buttonsPane.add(fetchButton, 0, 0);
-            buttonsPane.add(goBackToFirstPage, 1, 0);
+            returnBackToFirstPage = new ReturnToFirstPage(stage,
+                    firstPageScene,
+                    invalidInput,
+                    firstPageVbox,
+                    fetchButton,
+                    cityStartUpTextField,
+                    inputTextField,
+                    temperatureLabel);
+            returnBackToFirstPage.setText("Return to the first page");
+            buttonsPane.add(returnBackToFirstPage, 1, 0);
             buttonsPane.setHgap(5);
 
             // Add the TableView to the root layout
@@ -255,7 +267,15 @@ public class Main extends Application {
                     temperatureFeelsLikeLabel,
                     descriptionLabel);
 
+            convertTemperature = new ConvertTemperature(temperatureLabel, temperatureFeelsLikeLabel);
+            convertTemperature.setText("Convert temperature");
             root.getChildren().add(6, convertTemperature);
+
+            convertWindSpeed = new ConvertWindSpeed(windSpeedLabel);
+            convertWindSpeed.setText("Convert wind speed");
+            buttonDependencyUpdater = new ButtonDependencyUpdater(convertTemperature,
+                    convertWindSpeed,
+                    returnBackToFirstPage);
             root.getChildren().addAll(showMoreWeatherInfo, humidityLabel, uvLabel,
                     windSpeedLabel, convertWindSpeed, getDailyForecast);
             root.getChildren().addAll(dateForecast, maxTempForecast, minTempForecast, avgTempForecast,
@@ -312,11 +332,6 @@ public class Main extends Application {
         Platform.runLater(() -> {
             if (!lastWeatherDescription.equals(weatherDescription)) {
                 stopAllMediaPlayersAndHideAllNodes();
-
-                System.out.println(lastWeatherDescription);
-                System.out.println(weatherDescription);
-                System.out.println(lastTimeCheck);
-                System.out.println(currentTimeIsLaterThanSunsetVar);
             } else {
                 if (!currentTimeIsLaterThanSunsetVar && lastTimeCheck.equals("Day")) {
                     stopAllMediaPlayersAndHideAllNodes();
@@ -504,21 +519,6 @@ public class Main extends Application {
         primaryStage.setScene(scene);
     }
 
-    private void configureGoBackToFirstPageButton() {
-        goBackToFirstPage.setOnAction(actionEvent -> {
-            stage.setScene(firstPageScene);
-            passedFirstPage = "not passed!";
-            invalidInput.setText("");
-            if (!firstPageVbox.getChildren().contains(fetchButton)) {
-                firstPageVbox.getChildren().add(2, fetchButton);
-                cityStartUpTextField.setText(inputTextField.getText());
-                cityStartUpTextField.setStyle(temperatureLabel.getStyle());
-                inputTextField.setText("");
-                Platform.runLater(() -> cityStartUpTextField.positionCaret(cityStartUpTextField.getText().length()));
-            }
-        });
-    }
-
     private void configureFetchButton() {
         fetchButton.setOnAction(event -> {
             try {
@@ -530,25 +530,6 @@ public class Main extends Application {
                 }
             } catch (IOException | ParseException e) {
                 throw new RuntimeException(e);
-            }
-        });
-    }
-
-    private void configureConvertTemperatureButton() {
-        convertTemperature.setOnAction(actionEvent -> {
-            // Convert temperature logic
-            MainParsedData mainInfo = weatherData.getMain();
-            if (temperatureLabel.getText().contains("°C") &&
-                    temperatureFeelsLikeLabel.getText().contains("°C")) {
-                temperatureLabel.setText(String.format("Temperature: %.0f°F \uD83C\uDF21", getTempInFahrenheit(mainInfo.getTemp())));
-                temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°F \uD83C\uDF21", getTempInFahrenheit(mainInfo.getFeels_like())));
-            } else if (temperatureLabel.getText().contains("°F") &&
-                    temperatureFeelsLikeLabel.getText().contains("°F")) {
-                temperatureLabel.setText(String.format("Temperature: %.0f K \uD83C\uDF21", (mainInfo.getTemp())));
-                temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f K \uD83C\uDF21", (mainInfo.getFeels_like())));
-            } else {
-                temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21", getTempInCelsius(mainInfo.getTemp())));
-                temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21", getTempInCelsius(mainInfo.getFeels_like())));
             }
         });
     }
@@ -802,17 +783,6 @@ public class Main extends Application {
         }
     }
 
-    private void configureConvertWindSpeedButton() {
-        convertWindSpeed.setOnAction(actionEvent -> {
-            // Convert wind speed logic
-            if (windSpeedLabel.getText().contains("km/h")) {
-                windSpeedLabel.setText(String.format("Wind speed: %.0f mph", getWindSpeedInMiles(weatherData.getWind().getSpeed())));
-            } else if (windSpeedLabel.getText().contains("mph")) {
-                windSpeedLabel.setText(String.format("Wind speed: %.0f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
-            }
-        });
-    }
-
     private void configureGetDailyForecastButton() {
         getDailyForecast.setOnAction(actionEvent -> {
             // Get daily forecast logic
@@ -880,7 +850,6 @@ public class Main extends Application {
             }
         } else {
             // Perform network operations, JSON parsing, and data processing here
-
             new Thread(() -> {
                 String weatherConditionAndIcon = getWeatherCondition();
                 if (!city.equals(lastEnteredCity) && !weatherConditionAndIcon.equals("")) {
@@ -904,8 +873,12 @@ public class Main extends Application {
                     weatherData = gson.fromJson(responseBody, WeatherData.class);
                     forecastData = getDailyForecast();
                 }
-
+                convertTemperature.setWeatherData(weatherData);
+                convertWindSpeed.setWeatherData(weatherData);
                 Platform.runLater(() -> {
+                    if (stage.getScene() != mainScene) {
+                        stage.setScene(mainScene);
+                    }
                     GridPane checkButtonsPane = (GridPane) root.getChildren().get(2);
                     if (!checkButtonsPane.getChildren().contains(fetchButton)) {
                         buttonsPane.add(fetchButton, 0, 0);
@@ -926,9 +899,6 @@ public class Main extends Application {
                             weatherInfo = null;
                         }
                         if (mainInfo != null && weatherInfo != null && weatherInfo.length > 0 && getLocalTime(city) != null && forecastData != null) {
-                            if (stage.getScene() != mainScene) {
-                                stage.setScene(mainScene);
-                            }
                             if (!lastEnteredCity.equals(city)) {
                                 if (inputTextField.getStyle().equals("-fx-text-fill: red;")) {
                                     inputTextField.setStyle(temperatureLabel.getStyle());
@@ -947,8 +917,8 @@ public class Main extends Application {
                                 descriptionLabel.setVisible(true);
                                 temperatureFeelsLikeLabel.setVisible(true);
 
-                                double temperatureCelsius = getTempInCelsius(temp);
-                                double temperatureFeelsLikeCelsius = getTempInCelsius(tempFeelsLike);
+                                double temperatureCelsius = (temp - 273.15);
+                                double temperatureFeelsLikeCelsius = tempFeelsLike - 273.15;
                                 localTimeLabel.setText(String.format("Local time: %s", formatDateToDayAndHour(getLocalTime(city))));
                                 originalTextColor = (Color) localTimeLabel.getTextFill();
                                 temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21", temperatureCelsius));
@@ -973,7 +943,7 @@ public class Main extends Application {
                                 if (!humidityLabel.getText().equals("") && humidityLabel.isVisible()) {
                                     humidityLabel.setText(String.format("Humidity: %d %%", humidity));
                                     uvLabel.setText("UV Index: " + getUvOutputFormat(getUV(city)));
-                                    windSpeedLabel.setText(String.format("Wind speed: %.0f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
+                                    windSpeedLabel.setText(String.format("Wind speed: %.0f km/h", (weatherData.getWind().getSpeed() * 3.6)));
 
                                     if (!dateForecast.getText().equals("") && dateForecast.isVisible()) {
                                         dateForecast.setText(String.format("Date: %s", forecastData.getDate()));
@@ -1075,6 +1045,18 @@ public class Main extends Application {
                 });
             }).start();
         }
+    }
+
+    private void updateButtonsNodes() {
+        buttonDependencyUpdater.updateButtonDependencies(weatherData,
+                stage,
+                firstPageScene,
+                invalidInput,
+                firstPageVbox,
+                fetchButton,
+                cityStartUpTextField,
+                inputTextField,
+                temperatureLabel);
     }
 
     private boolean currentTimeIsLaterThanSunset() {
@@ -1313,22 +1295,6 @@ public class Main extends Application {
         return currentObject.getDouble("uv");
     }
 
-    private double getTempInCelsius(double temp) {
-        return temp - 273.15;
-    }
-
-    private double getWindSpeedInKms(double windSpeed) {
-        return windSpeed * 3.6;
-    }
-
-    private double getTempInFahrenheit(double temp) {
-        return (temp - 273.15) * 9 / 5 + 32;
-    }
-
-    private double getWindSpeedInMiles(double windSpeed) {
-        return windSpeed * 2.23694;
-    }
-
     private String getWeatherCondition() {
 
         String responseBody;
@@ -1364,7 +1330,7 @@ public class Main extends Application {
 
                     humidityLabel.setText(String.format("Humidity: %d %%", mainInfo.getHumidity()));
                     uvLabel.setText("UV Index: " + getUvOutputFormat(uvIndex));
-                    windSpeedLabel.setText(String.format("Wind speed: %.0f km/h", getWindSpeedInKms(weatherData.getWind().getSpeed())));
+                    windSpeedLabel.setText(String.format("Wind speed: %.0f km/h", (weatherData.getWind().getSpeed() * 3.6)));
                     convertWindSpeed.setVisible(true);
                     getDailyForecast.setVisible(true);
                     humidityLabel.setVisible(true);
