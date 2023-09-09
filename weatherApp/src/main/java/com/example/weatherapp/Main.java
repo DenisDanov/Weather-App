@@ -3,6 +3,7 @@ package com.example.weatherapp;
 import com.example.weatherapp.buttons.ConvertTemperature;
 import com.example.weatherapp.buttons.ConvertWindSpeed;
 import com.example.weatherapp.buttons.ReturnToFirstPage;
+import com.example.weatherapp.buttons.ShowMoreWeatherData;
 import com.google.gson.Gson;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -49,14 +50,15 @@ public class Main extends Application {
     private WeatherData weatherData;
     private String city;
     private final TextField inputTextField = new TextField(); // Create a TextField for input
+    private final BubbleLabels localTimeLabel = new BubbleLabels();
     private final BubbleLabels temperatureLabel = new BubbleLabels();
     private final BubbleLabels descriptionLabel = new BubbleLabels();
     private final BubbleLabels weatherDescriptionLabel = new BubbleLabels();
     private final BubbleLabels temperatureFeelsLikeLabel = new BubbleLabels();
     private final BubbleLabels humidityLabel = new BubbleLabels();
     private final BubbleLabels windSpeedLabel = new BubbleLabels();
-    private final BubbleLabels localTimeLabel = new BubbleLabels();
     private final BubbleLabels uvLabel = new BubbleLabels();
+    private final Button getDailyForecast = new Button("Show daily forecast");
     private final Label dateForecast = new BubbleLabels();
     private final Label maxTempForecast = new BubbleLabels();
     private final Label minTempForecast = new BubbleLabels();
@@ -68,14 +70,13 @@ public class Main extends Application {
     private final Label weatherDescriptionForecast = new BubbleLabels();
     private final Label sunrise = new BubbleLabels();
     private final Label sunset = new BubbleLabels();
-    private final Button showMoreWeatherInfo = new Button("Show more weather info");
+    private final Button showWeeklyForecastButton = new Button("Show weekly forecast");
+    private ShowMoreWeatherData showMoreWeatherInfo;
     private ConvertTemperature convertTemperature;
     private ConvertWindSpeed convertWindSpeed;
-    private final Button getDailyForecast = new Button("Show daily forecast");
     private final Button fetchButton = new Button("Show current weather");
     private ReturnToFirstPage returnBackToFirstPage;
     private final Label cityLabel = new Label();
-    private final Button showWeeklyForecastButton = new Button("Show weekly forecast");
     private Scene mainScene;
     private StackPane rootLayout = createRootLayout();
     private VBox root;
@@ -130,12 +131,10 @@ public class Main extends Application {
                 configureStartUpScene();
                 setUpDynamicBackground();
                 configureFetchButton();
-                configureShowMoreButton();
                 configureGetDailyForecastButton();
                 configureWeeklyForecastButton();
                 primaryStage.show();
                 updateReturnButtonNodes();
-                System.out.println(23);
             });
             Runnable task = () -> {
                 // Your code here, what you want to execute every 1 minute
@@ -149,6 +148,7 @@ public class Main extends Application {
             executorService.scheduleAtFixedRate(task, 0, 5, TimeUnit.MINUTES);
         }).start();
     }
+
     private void updateReturnButtonNodes() {
         returnBackToFirstPage.setStage(stage);
         returnBackToFirstPage.setFirstPageScene(firstPageScene);
@@ -283,6 +283,28 @@ public class Main extends Application {
             convertWindSpeed = new ConvertWindSpeed(windSpeedLabel);
             convertWindSpeed.setText("Convert wind speed");
 
+            showMoreWeatherInfo = new ShowMoreWeatherData(humidityLabel,
+                    windSpeedLabel,
+                    uvLabel,
+                    getDailyForecast,
+                    dateForecast,
+                    maxTempForecast,
+                    minTempForecast,
+                    avgTempForecast,
+                    maxWindForecast,
+                    avgHumidityForecast,
+                    chanceOfRainingForecast,
+                    chanceOfSnowForecast,
+                    weatherDescriptionForecast,
+                    sunrise,
+                    sunset,
+                    showWeeklyForecastButton,
+                    weatherData,
+                    convertWindSpeed,
+                    responseBodiesSecondAPI,
+                    city);
+            showMoreWeatherInfo.setText("Show more weather info");
+
             root.getChildren().addAll(showMoreWeatherInfo, humidityLabel, uvLabel,
                     windSpeedLabel, convertWindSpeed, getDailyForecast);
             root.getChildren().addAll(dateForecast, maxTempForecast, minTempForecast, avgTempForecast,
@@ -394,11 +416,6 @@ public class Main extends Application {
                 mediaPlayerNodePairs.get(7).getKey().play();
                 mediaPlayerNodePairs.get(7).getKey().setCycleCount(MediaPlayer.INDEFINITE);
                 mediaPlayerNodePairs.get(7).getValue().setVisible(true);
-            } else if (weatherDescription.toLowerCase().contains("sunny") && !currentTimeIsLaterThanSunsetVar) {
-
-                mediaPlayerNodePairs.get(3).getKey().play();
-                mediaPlayerNodePairs.get(3).getKey().setCycleCount(MediaPlayer.INDEFINITE);
-                mediaPlayerNodePairs.get(3).getValue().setVisible(true);
             } else if (weatherDescription.toLowerCase().contains("sunny") && currentTimeIsLaterThanSunsetVar) {
 
                 mediaPlayerNodePairs.get(4).getKey().play();
@@ -538,13 +555,6 @@ public class Main extends Application {
             } catch (IOException | ParseException e) {
                 throw new RuntimeException(e);
             }
-        });
-    }
-
-    private void configureShowMoreButton() {
-        showMoreWeatherInfo.setOnAction(actionEvent -> {
-            // Show more weather info logic
-            configureShowMoreButtonAction();
         });
     }
 
@@ -859,9 +869,7 @@ public class Main extends Application {
             // Perform network operations, JSON parsing, and data processing here
             new Thread(() -> {
                 String weatherConditionAndIcon = getWeatherCondition();
-                if (!city.equals(lastEnteredCity) && !weatherConditionAndIcon.equals("")) {
-                    switchVideoBackground(weatherConditionAndIcon.split("&")[1]);
-                }
+
                 String responseBody;
                 ForecastData forecastData;
 
@@ -880,8 +888,13 @@ public class Main extends Application {
                     weatherData = gson.fromJson(responseBody, WeatherData.class);
                     forecastData = getDailyForecast();
                 }
-                convertTemperature.setWeatherData(weatherData);
-                convertWindSpeed.setWeatherData(weatherData);
+
+                if (!responseBody.equals("{\"cod\":\"400\",\"message\":\"Nothing to geocode\"}") &&
+                        !responseBody.equals("{\"cod\":\"404\",\"message\":\"city not found\"}") &&
+                        !city.equals(lastEnteredCity)) {
+                    switchVideoBackground(weatherConditionAndIcon.split("&")[1]);
+                }
+
                 Platform.runLater(() -> {
                     if (stage.getScene() != mainScene) {
                         stage.setScene(mainScene);
@@ -906,6 +919,7 @@ public class Main extends Application {
                             weatherInfo = null;
                         }
                         if (mainInfo != null && weatherInfo != null && weatherInfo.length > 0 && getLocalTime(city) != null && forecastData != null) {
+                            updateButtonsData();
                             if (!lastEnteredCity.equals(city)) {
                                 if (inputTextField.getStyle().equals("-fx-text-fill: red;")) {
                                     inputTextField.setStyle(temperatureLabel.getStyle());
@@ -1052,6 +1066,13 @@ public class Main extends Application {
                 });
             }).start();
         }
+    }
+
+    private void updateButtonsData() {
+        convertTemperature.setWeatherData(weatherData);
+        convertWindSpeed.setWeatherData(weatherData);
+        showMoreWeatherInfo.setWeatherData(weatherData);
+        showMoreWeatherInfo.setCity(city);
     }
 
     private boolean currentTimeIsLaterThanSunset() {
@@ -1303,7 +1324,8 @@ public class Main extends Application {
         } else {
             responseBody = responseBodiesSecondAPI.get(city);
         }
-        if (responseBody != null && !responseBody.contains("No matching location found.")) {
+        if (responseBody != null && !responseBody.contains("No matching location found.") &&
+                !responseBody.contains("Parameter q is missing.")) {
             if (!responseBodiesSecondAPI.containsKey(city)) {
                 responseBodiesSecondAPI.put(city, responseBody);
             }
@@ -1312,50 +1334,6 @@ public class Main extends Application {
             weatherConditionAndIcon = (weatherCondition.getString("icon") + "&" + weatherCondition.get("text"));
         }
         return weatherConditionAndIcon;
-    }
-
-    private void configureShowMoreButtonAction() {
-        // Show more weather info logic
-        new Thread(() -> {
-            // Perform network operations, JSON parsing, and data processing here
-            MainParsedData mainInfo = weatherData.getMain();
-            double uvIndex = getUV(city);
-            Platform.runLater(() -> {
-                if (humidityLabel.getText().equals("") && !humidityLabel.isVisible()) {
-
-                    humidityLabel.setText(String.format("Humidity: %d %%", mainInfo.getHumidity()));
-                    uvLabel.setText("UV Index: " + getUvOutputFormat(uvIndex));
-                    windSpeedLabel.setText(String.format("Wind speed: %.0f km/h", (weatherData.getWind().getSpeed() * 3.6)));
-                    convertWindSpeed.setVisible(true);
-                    getDailyForecast.setVisible(true);
-                    humidityLabel.setVisible(true);
-                    windSpeedLabel.setVisible(true);
-                    uvLabel.setVisible(true);
-
-                } else {
-                    humidityLabel.setText("");
-                    humidityLabel.setVisible(false);
-                    windSpeedLabel.setVisible(false);
-                    uvLabel.setVisible(false);
-                    convertWindSpeed.setVisible(false);
-                    getDailyForecast.setVisible(false);
-                    showWeeklyForecastButton.setVisible(false);
-
-                    dateForecast.setText("");
-                    dateForecast.setVisible(false);
-                    weatherDescriptionForecast.setVisible(false);
-                    maxTempForecast.setVisible(false);
-                    minTempForecast.setVisible(false);
-                    avgTempForecast.setVisible(false);
-                    maxWindForecast.setVisible(false);
-                    avgHumidityForecast.setVisible(false);
-                    chanceOfRainingForecast.setVisible(false);
-                    chanceOfSnowForecast.setVisible(false);
-                    sunrise.setVisible(false);
-                    sunset.setVisible(false);
-                }
-            });
-        }).start();
     }
 
     private String getLocalTime(String city) {
