@@ -1,21 +1,14 @@
 package com.example.weatherapp;
 
-import com.example.weatherapp.buttons.ConvertTemperature;
-import com.example.weatherapp.buttons.ConvertWindSpeed;
-import com.example.weatherapp.buttons.ReturnToFirstPage;
-import com.example.weatherapp.buttons.ShowMoreWeatherData;
+import com.example.weatherapp.buttons.*;
 import com.google.gson.Gson;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
@@ -37,7 +30,6 @@ import weatherApi.WeatherAppAPI;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -48,17 +40,17 @@ import java.util.regex.Pattern;
 public class Main extends Application {
     private final WeatherAppAPI weatherAppAPI;
     private WeatherData weatherData;
-    private String city;
+    private static String city;
     private final TextField inputTextField = new TextField(); // Create a TextField for input
     private final BubbleLabels localTimeLabel = new BubbleLabels();
     private final BubbleLabels temperatureLabel = new BubbleLabels();
     private final BubbleLabels descriptionLabel = new BubbleLabels();
-    private final BubbleLabels weatherDescriptionLabel = new BubbleLabels();
     private final BubbleLabels temperatureFeelsLikeLabel = new BubbleLabels();
+    private final BubbleLabels weatherDescriptionLabel = new BubbleLabels();
     private final BubbleLabels humidityLabel = new BubbleLabels();
     private final BubbleLabels windSpeedLabel = new BubbleLabels();
     private final BubbleLabels uvLabel = new BubbleLabels();
-    private final Button getDailyForecast = new Button("Show daily forecast");
+    private ShowDailyForecast getDailyForecast;
     private final Label dateForecast = new BubbleLabels();
     private final Label maxTempForecast = new BubbleLabels();
     private final Label minTempForecast = new BubbleLabels();
@@ -70,7 +62,7 @@ public class Main extends Application {
     private final Label weatherDescriptionForecast = new BubbleLabels();
     private final Label sunrise = new BubbleLabels();
     private final Label sunset = new BubbleLabels();
-    private final Button showWeeklyForecastButton = new Button("Show weekly forecast");
+    private ShowWeeklyForecast showWeeklyForecastButton;
     private ShowMoreWeatherData showMoreWeatherInfo;
     private ConvertTemperature convertTemperature;
     private ConvertWindSpeed convertWindSpeed;
@@ -78,9 +70,9 @@ public class Main extends Application {
     private ReturnToFirstPage returnBackToFirstPage;
     private final Label cityLabel = new Label();
     private Scene mainScene;
+    private Stage stage;
     private StackPane rootLayout = createRootLayout();
     private VBox root;
-    private Stage stage;
     private VBox firstPageVbox;
     private final Label cityStartUpLabel = new Label("Enter City or Country:");
     private final Label invalidInput = new Label();
@@ -90,7 +82,7 @@ public class Main extends Application {
     private final Pattern pattern = Pattern.compile("[a-zA-Z]");
     private Color originalTextColor;
     private final LinkedHashMap<String, String> responseBodiesFirstAPI;
-    private final LinkedHashMap<String, String> responseBodiesSecondAPI;
+    private static LinkedHashMap<String, String> responseBodiesSecondAPI;
     private String lastEnteredCity;
     private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     private GridPane gridPane = new GridPane();
@@ -106,7 +98,7 @@ public class Main extends Application {
     public Main() {
         this.weatherAppAPI = new WeatherAppAPI();
         this.responseBodiesFirstAPI = new LinkedHashMap<>();
-        this.responseBodiesSecondAPI = new LinkedHashMap<>();
+        responseBodiesSecondAPI = new LinkedHashMap<>();
         this.responseBodyCheckForValidInput = "";
         this.responseBodySecondAPI = "";
         passedFirstPage = "not passed!";
@@ -131,8 +123,6 @@ public class Main extends Application {
                 configureStartUpScene();
                 setUpDynamicBackground();
                 configureFetchButton();
-                configureGetDailyForecastButton();
-                configureWeeklyForecastButton();
                 primaryStage.show();
                 updateReturnButtonNodes();
             });
@@ -158,6 +148,11 @@ public class Main extends Application {
         returnBackToFirstPage.setCityStartUpTextField(cityStartUpTextField);
         returnBackToFirstPage.setInputTextField(inputTextField);
         returnBackToFirstPage.setTemperatureLabel(temperatureLabel);
+        showWeeklyForecastButton.setRoot(root);
+        showWeeklyForecastButton.setMainScene(mainScene);
+        showWeeklyForecastButton.setStage(stage);
+        showWeeklyForecastButton.setShowMoreWeatherInfo(showMoreWeatherInfo);
+        showWeeklyForecastButton.setGetDailyForecast(getDailyForecast);
     }
 
     private void setUpDynamicBackground() {
@@ -268,7 +263,6 @@ public class Main extends Application {
             buttonsPane.add(returnBackToFirstPage, 1, 0);
             buttonsPane.setHgap(5);
 
-            // Add the TableView to the root layout
             Objects.requireNonNull(root).getChildren().addAll(cityLabel, inputTextField,
                     buttonsPane,
                     localTimeLabel,
@@ -282,6 +276,52 @@ public class Main extends Application {
 
             convertWindSpeed = new ConvertWindSpeed(windSpeedLabel);
             convertWindSpeed.setText("Convert wind speed");
+
+            showWeeklyForecastButton = new ShowWeeklyForecast(root,
+                    cityLabel,
+                    responseBodiesSecondAPI,
+                    city,
+                    humidityLabel,
+                    windSpeedLabel,
+                    uvLabel,
+                    getDailyForecast,
+                    dateForecast,
+                    maxTempForecast,
+                    minTempForecast,
+                    avgTempForecast,
+                    maxWindForecast,
+                    avgHumidityForecast,
+                    chanceOfRainingForecast,
+                    chanceOfSnowForecast,
+                    weatherDescriptionForecast,
+                    sunrise,
+                    sunset,
+                    convertWindSpeed,
+                    inputTextField,
+                    localTimeLabel,
+                    temperatureLabel,
+                    descriptionLabel,
+                    temperatureFeelsLikeLabel,
+                    showMoreWeatherInfo,
+                    convertTemperature,
+                    fetchButton,
+                    mainScene,
+                    stage);
+            showWeeklyForecastButton.setText("Show weekly forecast");
+
+            getDailyForecast = new ShowDailyForecast(dateForecast,
+                    maxTempForecast,
+                    minTempForecast,
+                    avgTempForecast,
+                    maxWindForecast,
+                    avgHumidityForecast,
+                    chanceOfRainingForecast,
+                    chanceOfSnowForecast,
+                    weatherDescriptionForecast,
+                    sunrise,
+                    sunset,
+                    showWeeklyForecastButton);
+            getDailyForecast.setText("Show daily forecast");
 
             showMoreWeatherInfo = new ShowMoreWeatherData(humidityLabel,
                     windSpeedLabel,
@@ -301,7 +341,6 @@ public class Main extends Application {
                     showWeeklyForecastButton,
                     weatherData,
                     convertWindSpeed,
-                    responseBodiesSecondAPI,
                     city);
             showMoreWeatherInfo.setText("Show more weather info");
 
@@ -558,307 +597,9 @@ public class Main extends Application {
         });
     }
 
-    private void configureWeeklyForecastButton() {
-        showWeeklyForecastButton.setOnAction(actionEvent -> configureWeeklyForecastButtonAction());
-    }
-
-    private void configureWeeklyForecastButtonAction() {
-        if (root.getChildren().get(0).equals(cityLabel)) {
-            resetUI();
-            JSONArray weeklyForecast = getWeeklyForecast();
-            JSONObject[] daysOfTheWeek = new JSONObject[7];
-            for (int i = 0; i < weeklyForecast.length(); i++) {
-                daysOfTheWeek[i] = weeklyForecast.getJSONObject(i);
-            }
-            // Add day columns
-            JSONObject day1 = daysOfTheWeek[0];
-            JSONObject day2 = daysOfTheWeek[1];
-            JSONObject day3 = daysOfTheWeek[2];
-            JSONObject day4 = daysOfTheWeek[3];
-            JSONObject day5 = daysOfTheWeek[4];
-            JSONObject day6 = daysOfTheWeek[5];
-            JSONObject day7 = daysOfTheWeek[6];
-            TableView<WeeklyForecastTable> table = new TableView<>();
-
-            // Create a "Data Type" column
-            TableColumn<WeeklyForecastTable, String> dataTypeColumn = new TableColumn<>("Day");
-            dataTypeColumn.setCellValueFactory(data -> {
-
-                int rowIndex = data.getTableView().getItems().indexOf(data.getValue());
-                if (rowIndex == 0) {
-                    return new SimpleStringProperty("Max Temp");
-                } else if (rowIndex == 1) {
-                    return new SimpleStringProperty("Min Temp");
-                } else if (rowIndex == 2) {
-                    return new SimpleStringProperty("Avg Temp");
-                } else if (rowIndex == 3) {
-                    return new SimpleStringProperty("Max Wind");
-                } else if (rowIndex == 4) {
-                    return new SimpleStringProperty("Avg Humidity");
-                } else if (rowIndex == 5) {
-                    return new SimpleStringProperty("UV Index");
-                } else if (rowIndex == 6) {
-                    return new SimpleStringProperty("Chance of Rain");
-                } else if (rowIndex == 7) {
-                    return new SimpleStringProperty("Chance of Snow");
-                } else if (rowIndex == 8) {
-                    return new SimpleStringProperty("Weather Description");
-                } else if (rowIndex == 9) {
-                    return new SimpleStringProperty("Sunrise");
-                } else if (rowIndex == 10) {
-                    return new SimpleStringProperty("Sunset");
-                } else {
-                    return new SimpleStringProperty("");
-                }
-
-            });
-            dataTypeColumn.setCellFactory(TextFieldTableCell.forTableColumn());
-            dataTypeColumn.setEditable(true);
-
-            // Create columns for each day of the week (including current day)
-            LocalDate currentDate = LocalDate.now();
-            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEEE");
-            for (int i = 0; i < 7; i++) {
-                final int index = i;
-                TableColumn<WeeklyForecastTable, String> column = new TableColumn<>(currentDate.format(dateFormatter));
-                column.setResizable(true);
-                column.setCellValueFactory(data -> {
-                    int rowIndex = data.getTableView().getItems().indexOf(data.getValue());
-                    return new SimpleStringProperty(data.getValue().getData(rowIndex, index));
-                });
-                column.setCellFactory(TextFieldTableCell.forTableColumn());
-                column.setOnEditCommit(event -> {
-                    WeeklyForecastTable weeklyForecastTable = event.getRowValue();
-                    weeklyForecastTable.setData(event.getTablePosition().getRow(), index, event.getNewValue());
-                });
-                column.setCellFactory(column1 -> new TableCell<>() {
-                    private final Text text;
-
-                    {
-                        text = new Text();
-                        text.wrappingWidthProperty().bind(column1.widthProperty().subtract(4));
-                        setGraphic(text);
-                    }
-
-                    @Override
-                    protected void updateItem(String item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (item == null || empty) {
-                            setText(null);
-                            setGraphic(null);
-                        } else {
-                            text.setText(item);
-                            setGraphic(text);
-                        }
-                    }
-                });
-                table.getColumns().add(column);
-                currentDate = currentDate.plusDays(1);
-            }
-
-            // Add columns to the table
-            table.getColumns().add(0, dataTypeColumn);
-
-            // Create and add sample data
-            ObservableList<WeeklyForecastTable> data = FXCollections.observableArrayList();
-            for (int i = 0; i < 11; i++) {
-                data.add(new WeeklyForecastTable());
-            }
-            // Add sample temperature data for the second row (Min Temp) and third row (Avg Temp)
-            data.get(0).setData(0, 0, String.format("%.0f°C", (day1.getJSONObject("day").getDouble("maxtemp_c"))));
-            data.get(0).setData(0, 1, String.format("%.0f°C", (day2.getJSONObject("day").getDouble("maxtemp_c"))));
-            data.get(0).setData(0, 2, String.format("%.0f°C", (day3.getJSONObject("day").getDouble("maxtemp_c"))));
-            data.get(0).setData(0, 3, String.format("%.0f°C", (day4.getJSONObject("day").getDouble("maxtemp_c"))));
-            data.get(0).setData(0, 4, String.format("%.0f°C", (day5.getJSONObject("day").getDouble("maxtemp_c"))));
-            data.get(0).setData(0, 5, String.format("%.0f°C", (day6.getJSONObject("day").getDouble("maxtemp_c"))));
-            data.get(0).setData(0, 6, String.format("%.0f°C", (day7.getJSONObject("day").getDouble("maxtemp_c"))));
-
-            data.get(1).setData(1, 0, String.format("%.0f°C", (day1.getJSONObject("day").getDouble("mintemp_c"))));
-            data.get(1).setData(1, 1, String.format("%.0f°C", (day2.getJSONObject("day").getDouble("mintemp_c"))));
-            data.get(1).setData(1, 2, String.format("%.0f°C", (day3.getJSONObject("day").getDouble("mintemp_c"))));
-            data.get(1).setData(1, 3, String.format("%.0f°C", (day4.getJSONObject("day").getDouble("mintemp_c"))));
-            data.get(1).setData(1, 4, String.format("%.0f°C", (day5.getJSONObject("day").getDouble("mintemp_c"))));
-            data.get(1).setData(1, 5, String.format("%.0f°C", (day6.getJSONObject("day").getDouble("mintemp_c"))));
-            data.get(1).setData(1, 6, String.format("%.0f°C", (day7.getJSONObject("day").getDouble("mintemp_c"))));
-
-            data.get(2).setData(2, 0, String.format("%.0f°C", (day1.getJSONObject("day").getDouble("avgtemp_c"))));
-            data.get(2).setData(2, 1, String.format("%.0f°C", (day2.getJSONObject("day").getDouble("avgtemp_c"))));
-            data.get(2).setData(2, 2, String.format("%.0f°C", (day3.getJSONObject("day").getDouble("avgtemp_c"))));
-            data.get(2).setData(2, 3, String.format("%.0f°C", (day4.getJSONObject("day").getDouble("avgtemp_c"))));
-            data.get(2).setData(2, 4, String.format("%.0f°C", (day5.getJSONObject("day").getDouble("avgtemp_c"))));
-            data.get(2).setData(2, 5, String.format("%.0f°C", (day6.getJSONObject("day").getDouble("avgtemp_c"))));
-            data.get(2).setData(2, 6, String.format("%.0f°C", (day7.getJSONObject("day").getDouble("avgtemp_c"))));
-
-            data.get(3).setData(3, 0, String.format("%.0f km/h", (day1.getJSONObject("day").getDouble("maxwind_kph"))));
-            data.get(3).setData(3, 1, String.format("%.0f km/h", (day2.getJSONObject("day").getDouble("maxwind_kph"))));
-            data.get(3).setData(3, 2, String.format("%.0f km/h", (day3.getJSONObject("day").getDouble("maxwind_kph"))));
-            data.get(3).setData(3, 3, String.format("%.0f km/h", (day4.getJSONObject("day").getDouble("maxwind_kph"))));
-            data.get(3).setData(3, 4, String.format("%.0f km/h", (day5.getJSONObject("day").getDouble("maxwind_kph"))));
-            data.get(3).setData(3, 5, String.format("%.0f km/h", (day6.getJSONObject("day").getDouble("maxwind_kph"))));
-            data.get(3).setData(3, 6, String.format("%.0f km/h", (day7.getJSONObject("day").getDouble("maxwind_kph"))));
-
-            data.get(4).setData(4, 0, String.format("%.0f %%", (day1.getJSONObject("day").getDouble("avghumidity"))));
-            data.get(4).setData(4, 1, String.format("%.0f %%", (day2.getJSONObject("day").getDouble("avghumidity"))));
-            data.get(4).setData(4, 2, String.format("%.0f %%", (day3.getJSONObject("day").getDouble("avghumidity"))));
-            data.get(4).setData(4, 3, String.format("%.0f %%", (day4.getJSONObject("day").getDouble("avghumidity"))));
-            data.get(4).setData(4, 4, String.format("%.0f %%", (day5.getJSONObject("day").getDouble("avghumidity"))));
-            data.get(4).setData(4, 5, String.format("%.0f %%", (day6.getJSONObject("day").getDouble("avghumidity"))));
-            data.get(4).setData(4, 6, String.format("%.0f %%", (day7.getJSONObject("day").getDouble("avghumidity"))));
-
-            data.get(5).setData(5, 0, getUvOutputFormat(day1.getJSONObject("day").getDouble("uv")));
-            data.get(5).setData(5, 1, getUvOutputFormat(day2.getJSONObject("day").getDouble("uv")));
-            data.get(5).setData(5, 2, getUvOutputFormat(day3.getJSONObject("day").getDouble("uv")));
-            data.get(5).setData(5, 3, getUvOutputFormat(day4.getJSONObject("day").getDouble("uv")));
-            data.get(5).setData(5, 4, getUvOutputFormat(day5.getJSONObject("day").getDouble("uv")));
-            data.get(5).setData(5, 5, getUvOutputFormat(day6.getJSONObject("day").getDouble("uv")));
-            data.get(5).setData(5, 6, getUvOutputFormat(day7.getJSONObject("day").getDouble("uv")));
-
-            data.get(6).setData(6, 0, String.format("%.0f %%", (day1.getJSONObject("day").getDouble("daily_chance_of_rain"))));
-            data.get(6).setData(6, 1, String.format("%.0f %%", (day2.getJSONObject("day").getDouble("daily_chance_of_rain"))));
-            data.get(6).setData(6, 2, String.format("%.0f %%", (day3.getJSONObject("day").getDouble("daily_chance_of_rain"))));
-            data.get(6).setData(6, 3, String.format("%.0f %%", (day4.getJSONObject("day").getDouble("daily_chance_of_rain"))));
-            data.get(6).setData(6, 4, String.format("%.0f %%", (day5.getJSONObject("day").getDouble("daily_chance_of_rain"))));
-            data.get(6).setData(6, 5, String.format("%.0f %%", (day6.getJSONObject("day").getDouble("daily_chance_of_rain"))));
-            data.get(6).setData(6, 6, String.format("%.0f %%", (day7.getJSONObject("day").getDouble("daily_chance_of_rain"))));
-
-            data.get(7).setData(7, 0, String.format("%.0f %%", (day1.getJSONObject("day").getDouble("daily_chance_of_snow"))));
-            data.get(7).setData(7, 1, String.format("%.0f %%", (day2.getJSONObject("day").getDouble("daily_chance_of_snow"))));
-            data.get(7).setData(7, 2, String.format("%.0f %%", (day3.getJSONObject("day").getDouble("daily_chance_of_snow"))));
-            data.get(7).setData(7, 3, String.format("%.0f %%", (day4.getJSONObject("day").getDouble("daily_chance_of_snow"))));
-            data.get(7).setData(7, 4, String.format("%.0f %%", (day5.getJSONObject("day").getDouble("daily_chance_of_snow"))));
-            data.get(7).setData(7, 5, String.format("%.0f %%", (day6.getJSONObject("day").getDouble("daily_chance_of_snow"))));
-            data.get(7).setData(7, 6, String.format("%.0f %%", (day7.getJSONObject("day").getDouble("daily_chance_of_snow"))));
-
-            data.get(8).setData(8, 0, (day1.getJSONObject("day").getJSONObject("condition").getString("text")));
-            data.get(8).setData(8, 1, (day2.getJSONObject("day").getJSONObject("condition").getString("text")));
-            data.get(8).setData(8, 2, (day3.getJSONObject("day").getJSONObject("condition").getString("text")));
-            data.get(8).setData(8, 3, (day4.getJSONObject("day").getJSONObject("condition").getString("text")));
-            data.get(8).setData(8, 4, (day5.getJSONObject("day").getJSONObject("condition").getString("text")));
-            data.get(8).setData(8, 5, (day6.getJSONObject("day").getJSONObject("condition").getString("text")));
-            data.get(8).setData(8, 6, (day7.getJSONObject("day").getJSONObject("condition").getString("text")));
-
-            data.get(9).setData(9, 0, (day1.getJSONObject("astro").getString("sunrise")));
-            data.get(9).setData(9, 1, (day2.getJSONObject("astro").getString("sunrise")));
-            data.get(9).setData(9, 2, (day3.getJSONObject("astro").getString("sunrise")));
-            data.get(9).setData(9, 3, (day4.getJSONObject("astro").getString("sunrise")));
-            data.get(9).setData(9, 4, (day5.getJSONObject("astro").getString("sunrise")));
-            data.get(9).setData(9, 5, (day6.getJSONObject("astro").getString("sunrise")));
-            data.get(9).setData(9, 6, (day7.getJSONObject("astro").getString("sunrise")));
-
-            data.get(10).setData(10, 0, (day1.getJSONObject("astro").getString("sunset")));
-            data.get(10).setData(10, 1, (day2.getJSONObject("astro").getString("sunset")));
-            data.get(10).setData(10, 2, (day3.getJSONObject("astro").getString("sunset")));
-            data.get(10).setData(10, 3, (day4.getJSONObject("astro").getString("sunset")));
-            data.get(10).setData(10, 4, (day5.getJSONObject("astro").getString("sunset")));
-            data.get(10).setData(10, 5, (day6.getJSONObject("astro").getString("sunset")));
-            data.get(10).setData(10, 6, (day7.getJSONObject("astro").getString("sunset")));
-
-            table.setItems(data);
-
-            dataTypeColumn.setCellFactory(column -> new TableCell<>() {
-                private final Text text;
-
-                {
-                    text = new Text();
-                    text.wrappingWidthProperty().bind(dataTypeColumn.widthProperty().subtract(4.8));
-                    setGraphic(text);
-                }
-
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (item == null || empty) {
-                        setText(null);
-                        setGraphic(null);
-                    } else {
-                        text.setText(item);
-                        setGraphic(text);
-                    }
-                }
-            });
-
-            table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
-            double tableViewWidth = 0;
-            for (TableColumn<?, ?> column : table.getColumns()) {
-                tableViewWidth += column.getWidth();
-            }
-            table.setPrefHeight(430);
-            VBox root = new VBox(table);
-            Scene scene = new Scene(root, tableViewWidth, 650);
-
-            Button getToMainPage = new Button("Return to the main page");
-            root.getChildren().add(getToMainPage);
-            scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/weeklyForecastPage.css")).toExternalForm());
-            stage.setScene(scene);
-
-            stage.show();
-
-            getToMainPage.setOnAction(actionEvent -> returnToMainPage());
-        } else {
-            returnToMainPage();
-        }
-    }
-
-    private void configureGetDailyForecastButton() {
-        getDailyForecast.setOnAction(actionEvent -> {
-            // Get daily forecast logic
-            new Thread(() -> {
-                // Perform network operations, JSON parsing, and data processing here
-                ForecastData forecastData = getDailyForecast();
-                Platform.runLater(() -> {
-                    if (dateForecast.getText().equals("") && !dateForecast.isVisible()) {
-                        if (!showWeeklyForecastButton.isVisible()) {
-                            showWeeklyForecastButton.setVisible(true);
-                        }
-                        dateForecast.setText(String.format("Date: %s", Objects.requireNonNull(forecastData).getDate()));
-                        weatherDescriptionForecast.setText("Weather description for the day: " + forecastData.getWeatherDescription());
-                        maxTempForecast.setText(String.format("Max temperature for the day: %.0f°C", forecastData.getMaxTemp()));
-                        minTempForecast.setText(String.format("Min temperature for the day: %.0f°C", forecastData.getMinTemp()));
-                        avgTempForecast.setText(String.format("Average temperature for the day: %.0f°C", forecastData.getAvgTemp()));
-                        maxWindForecast.setText(String.format("Max wind speed for the day: %.0f km/h", forecastData.getMaxWind()));
-                        avgHumidityForecast.setText(String.format("Average humidity for the day: %.0f %%", forecastData.getAvgHumidity()));
-                        chanceOfRainingForecast.setText(String.format("Chance of raining: %d %%", forecastData.getPercentChanceOfRain()));
-                        chanceOfSnowForecast.setText(String.format("Chance of snowing: %d %%", forecastData.getPercentChanceOfSnow()));
-                        sunrise.setText("Sunrise: " + forecastData.getSunRise());
-                        sunset.setText("Sunset: " + forecastData.getSunSet());
-                        dateForecast.setVisible(true);
-                        weatherDescriptionForecast.setVisible(true);
-                        maxTempForecast.setVisible(true);
-                        minTempForecast.setVisible(true);
-                        avgTempForecast.setVisible(true);
-                        maxWindForecast.setVisible(true);
-                        avgHumidityForecast.setVisible(true);
-                        chanceOfRainingForecast.setVisible(true);
-                        chanceOfSnowForecast.setVisible(true);
-                        sunrise.setVisible(true);
-                        sunset.setVisible(true);
-                    } else {
-                        if (showWeeklyForecastButton.isVisible()) {
-                            showWeeklyForecastButton.setVisible(false);
-                        }
-                        dateForecast.setText("");
-                        dateForecast.setVisible(false);
-                        weatherDescriptionForecast.setVisible(false);
-                        maxTempForecast.setVisible(false);
-                        minTempForecast.setVisible(false);
-                        avgTempForecast.setVisible(false);
-                        maxWindForecast.setVisible(false);
-                        avgHumidityForecast.setVisible(false);
-                        chanceOfRainingForecast.setVisible(false);
-                        chanceOfSnowForecast.setVisible(false);
-                        sunrise.setVisible(false);
-                        sunset.setVisible(false);
-                    }
-                });
-            }).start();
-        });
-
-    }
-
     private void fetchAndDisplayWeatherData(String cityTextField) throws IOException, ParseException {
         // Fetch and display weather data logic
-        this.city = cityTextField;
+        city = cityTextField;
         if (stage.getScene() == firstPageScene && !passedFirstPage.equals("Passed!")) {
             try {
                 checkForValidInput();
@@ -1073,6 +814,7 @@ public class Main extends Application {
         convertWindSpeed.setWeatherData(weatherData);
         showMoreWeatherInfo.setWeatherData(weatherData);
         showMoreWeatherInfo.setCity(city);
+        showWeeklyForecastButton.setCity(city);
     }
 
     private boolean currentTimeIsLaterThanSunset() {
@@ -1098,7 +840,7 @@ public class Main extends Application {
         }
     }
 
-    private String getUvOutputFormat(double uvIndex) {
+    public static String getUvOutputFormat(double uvIndex) {
         if (uvIndex <= 2) {
             return "Low";
         } else if (uvIndex <= 5) {
@@ -1110,84 +852,6 @@ public class Main extends Application {
         } else {
             return "Extreme";
         }
-    }
-
-    private void returnToMainPage() {
-        Platform.runLater(() -> {
-            stage.setScene(mainScene);
-            stage.show();
-            temperatureLabel.setVisible(true);
-            descriptionLabel.setVisible(true);
-            temperatureFeelsLikeLabel.setVisible(true);
-            convertTemperature.setVisible(true);
-            showMoreWeatherInfo.setVisible(true);
-            humidityLabel.setVisible(true);
-            windSpeedLabel.setVisible(true);
-            convertWindSpeed.setVisible(true);
-            uvLabel.setVisible(true);
-            getDailyForecast.setVisible(true);
-            dateForecast.setVisible(true);
-            maxTempForecast.setVisible(true);
-            minTempForecast.setVisible(true);
-            avgTempForecast.setVisible(true);
-            maxWindForecast.setVisible(true);
-            avgHumidityForecast.setVisible(true);
-            chanceOfRainingForecast.setVisible(true);
-            chanceOfSnowForecast.setVisible(true);
-            weatherDescriptionForecast.setVisible(true);
-            sunrise.setVisible(true);
-            sunset.setVisible(true);
-            localTimeLabel.setVisible(true);
-            inputTextField.setVisible(true);
-            fetchButton.setVisible(true);
-            cityLabel.setVisible(true);
-        });
-    }
-
-    private void resetUI() {
-        Platform.runLater(() -> {
-            temperatureLabel.setVisible(false);
-            descriptionLabel.setVisible(false);
-            temperatureFeelsLikeLabel.setVisible(false);
-            convertTemperature.setVisible(false);
-            showMoreWeatherInfo.setVisible(false);
-            humidityLabel.setVisible(false);
-            windSpeedLabel.setVisible(false);
-            convertWindSpeed.setVisible(false);
-            uvLabel.setVisible(false);
-            getDailyForecast.setVisible(false);
-            dateForecast.setVisible(false);
-            maxTempForecast.setVisible(false);
-            minTempForecast.setVisible(false);
-            avgTempForecast.setVisible(false);
-            maxWindForecast.setVisible(false);
-            avgHumidityForecast.setVisible(false);
-            chanceOfRainingForecast.setVisible(false);
-            chanceOfSnowForecast.setVisible(false);
-            weatherDescriptionForecast.setVisible(false);
-            sunrise.setVisible(false);
-            sunset.setVisible(false);
-            localTimeLabel.setVisible(false);
-            inputTextField.setVisible(false);
-            fetchButton.setVisible(false);
-            cityLabel.setVisible(false);
-        });
-    }
-
-    private JSONArray getWeeklyForecast() {
-        String responseBody;
-        if (!responseBodiesSecondAPI.containsKey(city)) {
-            try {
-                responseBody = ForecastAPI.httpResponseForecast(city);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            responseBodiesSecondAPI.put(city, responseBody);
-        } else {
-            responseBody = responseBodiesSecondAPI.get(city);
-        }
-        JSONObject response = new JSONObject(responseBody);
-        return response.getJSONObject("forecast").getJSONArray("forecastday");
     }
 
     private void updateAPIData() throws ParseException, IOException {
@@ -1211,7 +875,7 @@ public class Main extends Application {
         }).start();
     }
 
-    private ForecastData getDailyForecast() {
+    public static ForecastData getDailyForecast() {
         String responseBody;
         if (!responseBodiesSecondAPI.containsKey(city)) {
             try {
@@ -1292,7 +956,7 @@ public class Main extends Application {
         return sunsetAndSunrise;
     }
 
-    private double getUV(String city) {
+    public static double getUV(String city) {
         String responseBody;
         if (!responseBodiesSecondAPI.containsKey(city)) {
             try {
