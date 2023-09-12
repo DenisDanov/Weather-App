@@ -11,6 +11,7 @@ import java.net.URLEncoder;
 public class ForecastAPI {
 
     private static final String API_KEY = "d9b2b634fbcf4c9190680834231109";
+
     private static final String API_ENDPOINT = "http://api.weatherapi.com/v1";
 
     public static String httpResponseForecast(String city) throws IOException {
