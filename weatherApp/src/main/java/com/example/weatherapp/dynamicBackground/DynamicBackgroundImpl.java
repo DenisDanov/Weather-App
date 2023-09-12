@@ -346,5 +346,4 @@ public class DynamicBackgroundImpl {
         }
         return sunsetAndSunrise;
     }
-
 }

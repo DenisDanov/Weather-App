@@ -94,7 +94,6 @@ public class ShowMoreWeatherData extends Button {
             double uvIndex = Main.getUV(city);
             Platform.runLater(() -> {
                 if (humidityLabel.getText().equals("") && !humidityLabel.isVisible()) {
-
                     humidityLabel.setText(String.format("Humidity: %d %%", mainInfo.getHumidity()));
                     uvLabel.setText("UV Index: " + Main.getUvOutputFormat(uvIndex));
                     windSpeedLabel.setText(String.format("Wind speed: %.0f km/h", (weatherData.getWind().getSpeed() * 3.6)));
@@ -103,7 +102,6 @@ public class ShowMoreWeatherData extends Button {
                     humidityLabel.setVisible(true);
                     windSpeedLabel.setVisible(true);
                     uvLabel.setVisible(true);
-
                 } else {
                     humidityLabel.setText("");
                     humidityLabel.setVisible(false);

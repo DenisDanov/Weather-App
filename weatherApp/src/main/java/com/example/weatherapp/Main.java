@@ -146,10 +146,12 @@ public class Main extends Application {
     }
 
     private void setUpDynamicBackground() {
-        dynamicBackground = new DynamicBackgroundImpl(rootLayout,
+        dynamicBackground = new DynamicBackgroundImpl(
+                rootLayout,
                 root,
                 city,
-                responseBodiesSecondAPI);
+                responseBodiesSecondAPI
+        );
 
         dynamicBackground.setUpDynamicBackground();
     }
@@ -171,24 +173,29 @@ public class Main extends Application {
 
             buttonsPane = new GridPane();
             buttonsPane.add(fetchButton, 0, 0);
-            returnBackToFirstPage = new ReturnToFirstPage(stage,
+            returnBackToFirstPage = new ReturnToFirstPage(
+                    stage,
                     firstPageScene,
                     invalidInput,
                     firstPageVbox,
                     fetchButton,
                     cityStartUpTextField,
                     inputTextField,
-                    temperatureLabel);
+                    temperatureLabel
+            );
             returnBackToFirstPage.setText("Return to the first page");
             buttonsPane.add(returnBackToFirstPage, 1, 0);
             buttonsPane.setHgap(5);
 
-            Objects.requireNonNull(root).getChildren().addAll(cityLabel, inputTextField,
+            Objects.requireNonNull(root).getChildren().addAll(
+                    cityLabel,
+                    inputTextField,
                     buttonsPane,
                     localTimeLabel,
                     temperatureLabel,
                     temperatureFeelsLikeLabel,
-                    descriptionLabel);
+                    descriptionLabel
+            );
 
             convertTemperature = new ConvertTemperature(temperatureLabel, temperatureFeelsLikeLabel);
             convertTemperature.setText("Convert temperature");
@@ -197,7 +204,8 @@ public class Main extends Application {
             convertWindSpeed = new ConvertWindSpeed(windSpeedLabel);
             convertWindSpeed.setText("Convert wind speed");
 
-            showWeeklyForecastButton = new ShowWeeklyForecast(root,
+            showWeeklyForecastButton = new ShowWeeklyForecast(
+                    root,
                     cityLabel,
                     responseBodiesSecondAPI,
                     city,
@@ -226,10 +234,12 @@ public class Main extends Application {
                     convertTemperature,
                     fetchButton,
                     mainScene,
-                    stage);
+                    stage
+            );
             showWeeklyForecastButton.setText("Show weekly forecast");
 
-            getDailyForecast = new ShowDailyForecast(dateForecast,
+            getDailyForecast = new ShowDailyForecast(
+                    dateForecast,
                     maxTempForecast,
                     minTempForecast,
                     avgTempForecast,
@@ -240,10 +250,12 @@ public class Main extends Application {
                     weatherDescriptionForecast,
                     sunrise,
                     sunset,
-                    showWeeklyForecastButton);
+                    showWeeklyForecastButton
+            );
             getDailyForecast.setText("Show daily forecast");
 
-            showMoreWeatherInfo = new ShowMoreWeatherData(humidityLabel,
+            showMoreWeatherInfo = new ShowMoreWeatherData(
+                    humidityLabel,
                     windSpeedLabel,
                     uvLabel,
                     getDailyForecast,
@@ -261,14 +273,33 @@ public class Main extends Application {
                     showWeeklyForecastButton,
                     weatherData,
                     convertWindSpeed,
-                    city);
+                    city
+            );
             showMoreWeatherInfo.setText("Show more weather info");
 
-            root.getChildren().addAll(showMoreWeatherInfo, humidityLabel, uvLabel,
-                    windSpeedLabel, convertWindSpeed, getDailyForecast);
-            root.getChildren().addAll(dateForecast, maxTempForecast, minTempForecast, avgTempForecast,
-                    maxWindForecast, avgHumidityForecast, chanceOfRainingForecast,
-                    chanceOfSnowForecast, weatherDescriptionForecast, sunrise, sunset, showWeeklyForecastButton);
+            root.getChildren().addAll(
+                    showMoreWeatherInfo,
+                    humidityLabel,
+                    uvLabel,
+                    windSpeedLabel,
+                    convertWindSpeed,
+                    getDailyForecast
+            );
+
+            root.getChildren().addAll(
+                    dateForecast,
+                    maxTempForecast,
+                    minTempForecast,
+                    avgTempForecast,
+                    maxWindForecast,
+                    avgHumidityForecast,
+                    chanceOfRainingForecast,
+                    chanceOfSnowForecast,
+                    weatherDescriptionForecast,
+                    sunrise,
+                    sunset,
+                    showWeeklyForecastButton
+            );
 
             showWeeklyForecastButton.setVisible(false);
             convertTemperature.setVisible(false);
@@ -302,7 +333,12 @@ public class Main extends Application {
         firstPageVbox.setPadding(new Insets(250));
 
         // Add the label and text field to the VBox
-        firstPageVbox.getChildren().addAll(cityStartUpLabel, cityStartUpTextField, fetchButton, invalidInput);
+        firstPageVbox.getChildren().addAll(
+                cityStartUpLabel,
+                cityStartUpTextField,
+                fetchButton,
+                invalidInput
+        );
         firstPageScene = new Scene(firstPageVbox, 868, 700);
         firstPageScene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/firstPage.css")).toExternalForm());
         stage.setScene(firstPageScene);
@@ -326,8 +362,9 @@ public class Main extends Application {
             }
             Platform.runLater(() -> {
                 if (responseBodyCheckForValidInput.equals("{\"cod\":\"400\",\"message\":\"Nothing to geocode\"}") ||
-                        responseBodyCheckForValidInput.equals("{\"cod\":\"404\",\"message\":\"city not found\"}") || !matcher.find()
-                        || responseBodySecondAPI == null) {
+                        responseBodyCheckForValidInput.equals("{\"cod\":\"404\",\"message\":\"city not found\"}") ||
+                        !matcher.find() ||
+                        responseBodySecondAPI == null) {
                     invalidInput.setText("Enter valid city or country");
                     invalidInput.setStyle("-fx-text-fill: red;");
                     cityStartUpTextField.setStyle("-fx-text-fill: red;");
@@ -633,6 +670,7 @@ public class Main extends Application {
             }
         }
         System.out.printf("Updated %d APIs!\n", responseBodiesSecondAPI.size());
+
         for (String cityKey : responseBodiesFirstAPI.keySet()) {
             try {
                 responseBodiesFirstAPI.replace(cityKey, weatherAppAPI.httpResponse(cityKey));
@@ -654,8 +692,11 @@ public class Main extends Application {
         } else {
             responseBody = responseBodiesSecondAPI.get(city);
         }
-        if (responseBody != null && !responseBody.contains("No matching location found.") &&
-                !responseBody.contains("Parameter q is missing.")) {
+
+        if (responseBody != null &&
+                !responseBody.contains("No matching location found.") &&
+                !responseBody.contains("Parameter q is missing.")
+        ) {
             if (!responseBodiesSecondAPI.containsKey(city)) {
                 responseBodiesSecondAPI.put(city, responseBody);
             }
@@ -719,7 +760,9 @@ public class Main extends Application {
         } else {
             responseBody = responseBodiesSecondAPI.get(city);
         }
-        if (responseBody != null && !responseBody.contains("No matching location found.") &&
+
+        if (responseBody != null &&
+                !responseBody.contains("No matching location found.") &&
                 !responseBody.contains("Parameter q is missing.")) {
             if (!responseBodiesSecondAPI.containsKey(city)) {
                 responseBodiesSecondAPI.put(city, responseBody);
@@ -742,7 +785,8 @@ public class Main extends Application {
         } else {
             responseBody = responseBodiesSecondAPI.get(city);
         }
-        if (responseBody != null && !responseBody.contains("No matching location found.") &&
+        if (responseBody != null &&
+                !responseBody.contains("No matching location found.") &&
                 !responseBody.contains("Parameter q is missing.")) {
             Gson gson = new Gson();
             ForecastAPIData forecastData = gson.fromJson(responseBody, ForecastAPIData.class);
