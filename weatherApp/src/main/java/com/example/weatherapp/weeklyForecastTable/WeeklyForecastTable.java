@@ -1,4 +1,4 @@
-package com.example.weatherapp;
+package com.example.weatherapp.weeklyForecastTable;
 import javafx.beans.property.*;
 import java.util.*;
 

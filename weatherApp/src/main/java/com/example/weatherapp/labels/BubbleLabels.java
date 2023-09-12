@@ -1,4 +1,4 @@
-package com.example.weatherapp;
+package com.example.weatherapp.labels;
 
 import javafx.scene.control.Label;
 
