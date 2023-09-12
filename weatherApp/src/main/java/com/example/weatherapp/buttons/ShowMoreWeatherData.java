@@ -10,6 +10,7 @@ import parsingWeatherData.WeatherData;
 
 
 public class ShowMoreWeatherData extends Button {
+
     private final BubbleLabels humidityLabel;
     private final BubbleLabels windSpeedLabel;
     private final BubbleLabels uvLabel;
@@ -29,25 +30,27 @@ public class ShowMoreWeatherData extends Button {
     private WeatherData weatherData;
     private final ConvertWindSpeed convertWindSpeed;
     private String city;
+
     public ShowMoreWeatherData(BubbleLabels humidityLabel,
-                               BubbleLabels windSpeedLabel,
-                               BubbleLabels uvLabel,
-                               Button getDailyForecast,
-                               Label dateForecast,
-                               Label maxTempForecast,
-                               Label minTempForecast,
-                               Label avgTempForecast,
-                               Label maxWindForecast,
-                               Label avgHumidityForecast,
-                               Label chanceOfRainingForecast,
-                               Label chanceOfSnowForecast,
-                               Label weatherDescriptionForecast,
-                               Label sunrise,
-                               Label sunset,
-                               Button showWeeklyForecastButton,
-                               WeatherData weatherData,
-                               ConvertWindSpeed convertWindSpeed,
-                               String city) {
+            BubbleLabels windSpeedLabel,
+            BubbleLabels uvLabel,
+            Button getDailyForecast,
+            Label dateForecast,
+            Label maxTempForecast,
+            Label minTempForecast,
+            Label avgTempForecast,
+            Label maxWindForecast,
+            Label avgHumidityForecast,
+            Label chanceOfRainingForecast,
+            Label chanceOfSnowForecast,
+            Label weatherDescriptionForecast,
+            Label sunrise,
+            Label sunset,
+            Button showWeeklyForecastButton,
+            WeatherData weatherData,
+            ConvertWindSpeed convertWindSpeed,
+            String city) {
+
         this.humidityLabel = humidityLabel;
         this.windSpeedLabel = windSpeedLabel;
         this.uvLabel = uvLabel;
@@ -74,12 +77,15 @@ public class ShowMoreWeatherData extends Button {
     public void setCity(String city) {
         this.city = city;
     }
+
     public void setWeatherData(WeatherData weatherData) {
         this.weatherData = weatherData;
     }
+
     private void configureButton() {
         setOnAction(actionEvent -> showMoreButtonAction());
     }
+
     private void showMoreButtonAction() {
         // Show more weather info logic
         new Thread(() -> {

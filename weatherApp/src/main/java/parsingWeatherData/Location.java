@@ -1,8 +1,8 @@
 package parsingWeatherData;
 
 public class Location {
-    private String localtime;
 
+    private String localtime;
     public String getLocaltime() {
         return localtime;
     }

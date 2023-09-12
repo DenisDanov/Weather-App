@@ -3,8 +3,10 @@ import javafx.beans.property.*;
 import java.util.*;
 
 public class WeeklyForecastTable {
+
     private final List<SimpleStringProperty> temperatures;
     private final List<List<SimpleStringProperty>> data;
+
     public WeeklyForecastTable() {
         temperatures = new ArrayList<>(7);
         data = new ArrayList<>(11);

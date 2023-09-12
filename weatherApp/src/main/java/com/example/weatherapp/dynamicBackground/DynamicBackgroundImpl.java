@@ -25,6 +25,7 @@ import static com.example.weatherapp.Main.formatDateToDayAndHour;
 import static com.example.weatherapp.Main.getLocalTime;
 
 public class DynamicBackgroundImpl {
+
     private StackPane rootLayout;
     private VBox root;
     private final List<Pair<MediaPlayer, Node>> mediaPlayerNodePairs = new ArrayList<>();
@@ -33,10 +34,12 @@ public class DynamicBackgroundImpl {
     private String city;
     private LinkedHashMap<String, String> responseBodiesSecondAPI;
     private String responseBodyGetSunsetSunrise;
+
     public DynamicBackgroundImpl(StackPane rootLayout,
-                                 VBox root,
-                                 String city,
-                                 LinkedHashMap<String, String> responseBodiesSecondAPI) {
+            VBox root,
+            String city,
+            LinkedHashMap<String,
+            String> responseBodiesSecondAPI) {
         this.setRootLayout(rootLayout);
         this.setRoot(root);
         this.lastWeatherDescription = "";
@@ -61,6 +64,7 @@ public class DynamicBackgroundImpl {
     public void setResponseBodiesSecondAPI(LinkedHashMap<String, String> responseBodiesSecondAPI) {
         this.responseBodiesSecondAPI = responseBodiesSecondAPI;
     }
+
     public void setUpDynamicBackground() {
         Media cloudyNightMedia;
         Media cloudyDayMedia;
@@ -150,6 +154,7 @@ public class DynamicBackgroundImpl {
         mediaPlayerNodePairs.get(8).getKey().setCycleCount(MediaPlayer.INDEFINITE);
         mediaPlayerNodePairs.get(9).getKey().setCycleCount(MediaPlayer.INDEFINITE);
     }
+
     public void stopAllMediaPlayersAndHideAllNodes() {
         for (Pair<MediaPlayer, Node> pair : mediaPlayerNodePairs) {
             if (pair.getKey().getStatus() == MediaPlayer.Status.PLAYING &&
@@ -158,13 +163,14 @@ public class DynamicBackgroundImpl {
                 pair.getKey().stop();
                 pair.getValue().setVisible(false);
             } else if (pair.getKey().getStatus() == MediaPlayer.Status.READY &&
-                    pair.getValue().isVisible()){
+                    pair.getValue().isVisible()) {
                 pair.getKey().seek(Duration.ZERO);
                 pair.getKey().stop();
                 pair.getValue().setVisible(false);
             }
         }
     }
+
     public void switchVideoBackground(String weatherDescription) {
         boolean currentTimeIsLaterThanSunsetVar = currentTimeIsLaterThanSunset();
         if (!lastWeatherDescription.equals(weatherDescription)) {
@@ -188,6 +194,7 @@ public class DynamicBackgroundImpl {
             lastTimeCheck = "Day";
         }
     }
+
     public void playDesiredVideo(String weatherDescription, boolean currentTimeIsLaterThanSunsetVar) {
         if (weatherDescription.toLowerCase().contains("light rain") &&
                 currentTimeIsLaterThanSunsetVar) {
@@ -279,6 +286,7 @@ public class DynamicBackgroundImpl {
             mediaPlayerNodePairs.get(4).getValue().setVisible(true);
         }
     }
+
     private boolean currentTimeIsLaterThanSunset() {
         String currentTimeTrimmed = formatDateToDayAndHour(getLocalTime(city)).split(", ")[1];
 
@@ -301,6 +309,7 @@ public class DynamicBackgroundImpl {
             return false; // It's nighttime
         }
     }
+
     private List<String> getSunsetAndSunrise() {
         List<String> sunsetAndSunrise = new CopyOnWriteArrayList<>();
         Thread thread = new Thread(() -> {

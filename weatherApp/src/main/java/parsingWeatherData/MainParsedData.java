@@ -1,6 +1,7 @@
 package parsingWeatherData;
 
 public class MainParsedData {
+
     private double temp;
     private int humidity;
     private double feels_like;

@@ -1,10 +1,11 @@
 package parsingWeatherData;
 
 public class ForecastData {
+
     private String date;
     private double maxTemp;
     private double minTemp;
-    private double avgTemp;
+    private double uvIndex;
     private double maxWind;
     private double avgHumidity;
     private int percentChanceOfRain;
@@ -14,20 +15,21 @@ public class ForecastData {
     private String sunSet;
 
     public ForecastData(String date,
-                        double maxTemp,
-                        double minTemp,
-                        double avgTemp,
-                        double maxWind,
-                        double avgHumidity,
-                        int percentChanceOfRain,
-                        int percentChanceOfSnow,
-                        String weatherDescription,
-                        String sunRise,
-                        String sunSet) {
+            double maxTemp,
+            double minTemp,
+            double uvIndex,
+            double maxWind,
+            double avgHumidity,
+            int percentChanceOfRain,
+            int percentChanceOfSnow,
+            String weatherDescription,
+            String sunRise,
+            String sunSet) {
+
         this.date = date;
         this.maxTemp = maxTemp;
         this.minTemp = minTemp;
-        this.avgTemp = avgTemp;
+        this.uvIndex = uvIndex;
         this.maxWind = maxWind;
         this.avgHumidity = avgHumidity;
         this.percentChanceOfRain = percentChanceOfRain;
@@ -49,8 +51,8 @@ public class ForecastData {
         return minTemp;
     }
 
-    public double getAvgTemp() {
-        return avgTemp;
+    public double getUvIndex() {
+        return uvIndex;
     }
 
     public double getMaxWind() {

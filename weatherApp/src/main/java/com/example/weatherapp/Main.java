@@ -33,6 +33,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Main extends Application {
+
     private final WeatherAppAPI weatherAppAPI;
     private WeatherData weatherData;
     private static String city;
@@ -57,13 +58,13 @@ public class Main extends Application {
     private final Label weatherDescriptionForecast = new BubbleLabels();
     private final Label sunrise = new BubbleLabels();
     private final Label sunset = new BubbleLabels();
+    private final Label cityLabel = new Label();
     private ShowWeeklyForecast showWeeklyForecastButton;
     private ShowMoreWeatherData showMoreWeatherInfo;
     private ConvertTemperature convertTemperature;
     private ConvertWindSpeed convertWindSpeed;
     private final Button fetchButton = new Button("Show current weather");
     private ReturnToFirstPage returnBackToFirstPage;
-    private final Label cityLabel = new Label();
     private Scene mainScene;
     private Stage stage;
     private StackPane rootLayout = createRootLayout();
@@ -85,6 +86,7 @@ public class Main extends Application {
     private String responseBodyCheckForValidInput;
     public static String passedFirstPage;
     private DynamicBackgroundImpl dynamicBackground;
+
     public Main() {
         this.weatherAppAPI = new WeatherAppAPI();
         this.responseBodiesFirstAPI = new LinkedHashMap<>();
@@ -114,14 +116,13 @@ public class Main extends Application {
                 updateReturnButtonNodes();
             });
             Runnable task = () -> {
-                // Your code here, what you want to execute every 1 minute
+                // Executes the code every minute
                 try {
                     updateAPIData();
                 } catch (ParseException | IOException e) {
                     throw new RuntimeException(e);
                 }
             };
-            // Schedule the task to run every 1 minute, starting every minute
             executorService.scheduleAtFixedRate(task, 1, 1, TimeUnit.MINUTES);
         }).start();
     }
@@ -395,7 +396,7 @@ public class Main extends Application {
                 throw new RuntimeException(e);
             }
         } else {
-            // Perform network operations, JSON parsing, and data processing here
+            // Perform network operations, JSON parsing, and data processing
             new Thread(() -> {
                 String weatherConditionAndIcon = getWeatherCondition();
 
@@ -422,9 +423,10 @@ public class Main extends Application {
                     if (!responseBody.equals("{\"cod\":\"400\",\"message\":\"Nothing to geocode\"}") &&
                             !responseBody.equals("{\"cod\":\"404\",\"message\":\"city not found\"}") &&
                             weatherData != null &&
-                            forecastData != null){
+                            forecastData != null) {
                         updateButtonsData();
                     }
+
                     if (!responseBody.equals("{\"cod\":\"400\",\"message\":\"Nothing to geocode\"}") &&
                             !responseBody.equals("{\"cod\":\"404\",\"message\":\"city not found\"}") &&
                             !city.equals(lastEnteredCity) &&
@@ -432,25 +434,29 @@ public class Main extends Application {
                             forecastData != null) {
                         dynamicBackground.switchVideoBackground(weatherConditionAndIcon.split("&")[1]);
                     }
+
                     GridPane checkButtonsPane = (GridPane) root.getChildren().get(2);
+
                     if (!checkButtonsPane.getChildren().contains(fetchButton)) {
                         buttonsPane.add(fetchButton, 0, 0);
                     }
+
                     if (localTimeLabel.getTextFill().equals(Color.RED)) {
                         localTimeLabel.setTextFill(Color.WHITE);
                     }
+
                     try {
                         MainParsedData mainInfo;
                         WeatherInfo[] weatherInfo;
                         Matcher matcher = pattern.matcher(city);
                         if (matcher.find()) {
-
                             mainInfo = weatherData.getMain();
                             weatherInfo = weatherData.getWeather();
                         } else {
                             mainInfo = null;
                             weatherInfo = null;
                         }
+
                         if (mainInfo != null && weatherInfo != null && weatherInfo.length > 0 && forecastData != null) {
                             if (inputTextField.getStyle().equals("-fx-text-fill: red;")) {
                                 inputTextField.setStyle(temperatureLabel.getStyle());
@@ -462,7 +468,7 @@ public class Main extends Application {
                                 double temp = mainInfo.getTemp();
                                 double tempFeelsLike = mainInfo.getFeels_like();
                                 int humidity = mainInfo.getHumidity();
-                                // Update your labels here
+
                                 buttonsPane.setVisible(true);
                                 convertTemperature.setVisible(true);
                                 showMoreWeatherInfo.setVisible(true);
@@ -472,12 +478,17 @@ public class Main extends Application {
 
                                 double temperatureCelsius = (temp - 273.15);
                                 double temperatureFeelsLikeCelsius = tempFeelsLike - 273.15;
-                                localTimeLabel.setText(String.format("Local time: %s", formatDateToDayAndHour(getLocalTime(city))));
-                                temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21", temperatureCelsius));
-                                temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21", temperatureFeelsLikeCelsius));
+                                localTimeLabel.setText(String.format("Local time: %s",
+                                        formatDateToDayAndHour(getLocalTime(city))));
+                                temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21",
+                                        temperatureCelsius));
+                                temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21",
+                                        temperatureFeelsLikeCelsius));
 
                                 weatherDescriptionLabel.setWrapText(true);
-                                weatherDescriptionLabel.setText("Weather Description: " + weatherConditionAndIcon.split("&")[1]);
+                                weatherDescriptionLabel.setText("Weather Description: " +
+                                        weatherConditionAndIcon.split("&")[1]);
+
                                 String iconUrl = weatherConditionAndIcon.split("&")[0];
                                 String completeIconUrl = "https:" + iconUrl;
                                 Image image = new Image(completeIconUrl);
@@ -495,18 +506,27 @@ public class Main extends Application {
                                 if (!humidityLabel.getText().equals("") && humidityLabel.isVisible()) {
                                     humidityLabel.setText(String.format("Humidity: %d %%", humidity));
                                     uvLabel.setText("UV Index: " + getUvOutputFormat(getUV(city)));
-                                    windSpeedLabel.setText(String.format("Wind speed: %.0f km/h", (weatherData.getWind().getSpeed() * 3.6)));
+                                    windSpeedLabel.setText(String.format("Wind speed: %.0f km/h",
+                                            (weatherData.getWind().getSpeed() * 3.6)));
 
                                     if (!dateForecast.getText().equals("") && dateForecast.isVisible()) {
                                         dateForecast.setText(String.format("Date: %s", forecastData.getDate()));
-                                        weatherDescriptionForecast.setText("Weather description for the day: " + forecastData.getWeatherDescription());
-                                        maxTempForecast.setText(String.format("Max temperature for the day: %.0f°C", forecastData.getMaxTemp()));
-                                        minTempForecast.setText(String.format("Min temperature for the day: %.0f°C", forecastData.getMinTemp()));
-                                        avgTempForecast.setText(String.format("UV Index for the day: %s", getUvOutputFormat(forecastData.getUvIndex())));
-                                        maxWindForecast.setText(String.format("Max wind speed for the day: %.0f km/h", forecastData.getMaxWind()));
-                                        avgHumidityForecast.setText(String.format("Average humidity for the day: %.0f %%", forecastData.getAvgHumidity()));
-                                        chanceOfRainingForecast.setText(String.format("Chance of raining: %d %%", forecastData.getPercentChanceOfRain()));
-                                        chanceOfSnowForecast.setText(String.format("Chance of snowing: %d %%", forecastData.getPercentChanceOfSnow()));
+                                        weatherDescriptionForecast.setText("Weather description for the day: " +
+                                                forecastData.getWeatherDescription());
+                                        maxTempForecast.setText(String.format("Max temperature for the day: %.0f°C",
+                                                forecastData.getMaxTemp()));
+                                        minTempForecast.setText(String.format("Min temperature for the day: %.0f°C",
+                                                forecastData.getMinTemp()));
+                                        avgTempForecast.setText(String.format("UV Index for the day: %s",
+                                                getUvOutputFormat(forecastData.getUvIndex())));
+                                        maxWindForecast.setText(String.format("Max wind speed for the day: %.0f km/h",
+                                                forecastData.getMaxWind()));
+                                        avgHumidityForecast.setText(String.format("Average humidity for the day: %.0f %%",
+                                                forecastData.getAvgHumidity()));
+                                        chanceOfRainingForecast.setText(String.format("Chance of raining: %d %%",
+                                                forecastData.getPercentChanceOfRain()));
+                                        chanceOfSnowForecast.setText(String.format("Chance of snowing: %d %%",
+                                                forecastData.getPercentChanceOfSnow()));
                                         sunrise.setText("Sunrise: " + forecastData.getSunRise());
                                         sunset.setText("Sunset: " + forecastData.getSunSet());
                                     } else {
@@ -537,8 +557,7 @@ public class Main extends Application {
                         localTimeLabel.setText("An error occurred.");
                         hideAllNodes();
                     }
-                    if (inputTextField.getText().equals("") &&
-                            stage.getScene() == firstPageScene) {
+                    if (inputTextField.getText().equals("") && stage.getScene() == firstPageScene) {
                         inputTextField.setText(cityStartUpTextField.getText());
                         inputTextField.deselect();
                         Platform.runLater(() -> inputTextField.positionCaret(cityStartUpTextField.getText().length()));

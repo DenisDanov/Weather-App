@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.Objects;
 
 public class ShowWeeklyForecast extends Button {
+
     private VBox root;
     private final Label cityLabel;
     private final LinkedHashMap<String, String> responseBodiesSecondAPI;
@@ -54,35 +55,37 @@ public class ShowWeeklyForecast extends Button {
     private final Button fetchButton;
     private Scene mainScene;
     private Stage stage;
+
     public ShowWeeklyForecast(VBox root,
-                              Label cityLabel,
-                              LinkedHashMap<String, String> responseBodiesSecondAPI,
-                              String city, BubbleLabels humidityLabel,
-                              BubbleLabels windSpeedLabel,
-                              BubbleLabels uvLabel,
-                              ShowDailyForecast getDailyForecast,
-                              Label dateForecast,
-                              Label maxTempForecast,
-                              Label minTempForecast,
-                              Label avgTempForecast,
-                              Label maxWindForecast,
-                              Label avgHumidityForecast,
-                              Label chanceOfRainingForecast,
-                              Label chanceOfSnowForecast,
-                              Label weatherDescriptionForecast,
-                              Label sunrise,
-                              Label sunset,
-                              ConvertWindSpeed convertWindSpeed,
-                              TextField inputTextField,
-                              BubbleLabels localTimeLabel,
-                              BubbleLabels temperatureLabel,
-                              BubbleLabels descriptionLabel,
-                              BubbleLabels temperatureFeelsLikeLabel,
-                              ShowMoreWeatherData showMoreWeatherInfo,
-                              ConvertTemperature convertTemperature,
-                              Button fetchButton,
-                              Scene mainScene,
-                              Stage stage) {
+            Label cityLabel,
+            LinkedHashMap<String, String> responseBodiesSecondAPI,
+            String city, BubbleLabels humidityLabel,
+            BubbleLabels windSpeedLabel,
+            BubbleLabels uvLabel,
+            ShowDailyForecast getDailyForecast,
+            Label dateForecast,
+            Label maxTempForecast,
+            Label minTempForecast,
+            Label avgTempForecast,
+            Label maxWindForecast,
+            Label avgHumidityForecast,
+            Label chanceOfRainingForecast,
+            Label chanceOfSnowForecast,
+            Label weatherDescriptionForecast,
+            Label sunrise,
+            Label sunset,
+            ConvertWindSpeed convertWindSpeed,
+            TextField inputTextField,
+            BubbleLabels localTimeLabel,
+            BubbleLabels temperatureLabel,
+            BubbleLabels descriptionLabel,
+            BubbleLabels temperatureFeelsLikeLabel,
+            ShowMoreWeatherData showMoreWeatherInfo,
+            ConvertTemperature convertTemperature,
+            Button fetchButton,
+            Scene mainScene,
+            Stage stage) {
+
         this.setRoot(root);
         this.cityLabel = cityLabel;
         this.responseBodiesSecondAPI = responseBodiesSecondAPI;
@@ -161,7 +164,6 @@ public class ShowWeeklyForecast extends Button {
             JSONObject day5 = daysOfTheWeek[4];
             JSONObject day6 = daysOfTheWeek[5];
             JSONObject day7 = daysOfTheWeek[6];
-            TableView<WeeklyForecastTable> table = new TableView<>();
 
             // Create a "Data Type" column
             TableColumn<WeeklyForecastTable, String> dataTypeColumn = new TableColumn<>("Day");
@@ -201,6 +203,8 @@ public class ShowWeeklyForecast extends Button {
             // Create columns for each day of the week (including current day)
             LocalDate currentDate = LocalDate.now();
             DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEEE");
+            TableView<WeeklyForecastTable> table = new TableView<>();
+
             for (int i = 0; i < 7; i++) {
                 final int index = i;
                 TableColumn<WeeklyForecastTable, String> column = new TableColumn<>(currentDate.format(dateFormatter));

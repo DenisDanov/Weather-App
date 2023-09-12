@@ -11,6 +11,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 public class ReturnToFirstPage extends Button {
+
     private Stage stage;
     private Scene firstPageScene;
     private Label invalidInput;
@@ -21,13 +22,14 @@ public class ReturnToFirstPage extends Button {
     private BubbleLabels temperatureLabel;
 
     public ReturnToFirstPage(Stage stage,
-                             Scene firstPageScene,
-                             Label invalidInput,
-                             VBox firstPageVbox,
-                             Button fetchButton,
-                             TextField cityStartUpTextField,
-                             TextField inputTextField,
-                             BubbleLabels temperatureLabel) {
+            Scene firstPageScene,
+            Label invalidInput,
+            VBox firstPageVbox,
+            Button fetchButton,
+            TextField cityStartUpTextField,
+            TextField inputTextField,
+            BubbleLabels temperatureLabel) {
+
         this.setStage(stage);
         this.setFirstPageScene(firstPageScene);
         this.setInvalidInput(invalidInput);
@@ -39,10 +41,12 @@ public class ReturnToFirstPage extends Button {
 
         configureButton();
     }
+
     private void returnBackToFirstPage() {
         stage.setScene(firstPageScene);
         Main.passedFirstPage = "not passed";
         invalidInput.setText("");
+
         if (!firstPageVbox.getChildren().contains(fetchButton)) {
             firstPageVbox.getChildren().add(2, fetchButton);
             cityStartUpTextField.setText(inputTextField.getText());
@@ -51,6 +55,7 @@ public class ReturnToFirstPage extends Button {
             Platform.runLater(() -> cityStartUpTextField.positionCaret(cityStartUpTextField.getText().length()));
         }
     }
+
     public void setStage(Stage stage) {
         this.stage = stage;
     }

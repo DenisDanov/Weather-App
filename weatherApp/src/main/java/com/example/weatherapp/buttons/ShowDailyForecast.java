@@ -5,13 +5,11 @@ import javafx.application.Platform;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import parsingWeatherData.ForecastData;
-
-
 import java.util.Objects;
-
 import static com.example.weatherapp.Main.getUvOutputFormat;
 
 public class ShowDailyForecast extends Button {
+
     private final Label dateForecast;
     private final Label maxTempForecast;
     private final Label minTempForecast;
@@ -26,17 +24,18 @@ public class ShowDailyForecast extends Button {
     private final Button showWeeklyForecastButton;
 
     public ShowDailyForecast(Label dateForecast,
-                             Label maxTempForecast,
-                             Label minTempForecast,
-                             Label avgTempForecast,
-                             Label maxWindForecast,
-                             Label avgHumidityForecast,
-                             Label chanceOfRainingForecast,
-                             Label chanceOfSnowForecast,
-                             Label weatherDescriptionForecast,
-                             Label sunrise,
-                             Label sunset,
-                             Button showWeeklyForecastButton) {
+            Label maxTempForecast,
+            Label minTempForecast,
+            Label avgTempForecast,
+            Label maxWindForecast,
+            Label avgHumidityForecast,
+            Label chanceOfRainingForecast,
+            Label chanceOfSnowForecast,
+            Label weatherDescriptionForecast,
+            Label sunrise,
+            Label sunset,
+            Button showWeeklyForecastButton) {
+
         this.dateForecast = dateForecast;
         this.maxTempForecast = maxTempForecast;
         this.minTempForecast = minTempForecast;
@@ -109,6 +108,5 @@ public class ShowDailyForecast extends Button {
             });
         }).start();
     }
-
 }
 
