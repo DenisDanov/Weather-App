@@ -12,10 +12,13 @@ import java.net.URLEncoder;
 public class WeatherAppAPI {
 
     private final String API_KEY = "b896eb8dd2f04cf32fa3faf6927120d0";
+
     private final String API_ENDPOINT = "http://api.openweathermap.org/data/2.5/weather";
+
     public String getAPI_KEY() {
         return API_KEY;
     }
+
     public String getAPI_ENDPOINT() {
         return API_ENDPOINT;
     }
