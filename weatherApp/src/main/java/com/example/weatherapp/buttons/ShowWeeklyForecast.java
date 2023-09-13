@@ -22,12 +22,13 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ShowWeeklyForecast extends Button {
 
     private VBox root;
     private final Label cityLabel;
-    private final LinkedHashMap<String, String> responseBodiesSecondAPI;
+    private final ConcurrentHashMap<String, String> responseBodiesSecondAPI;
     private String city;
     private final BubbleLabels humidityLabel;
     private final BubbleLabels windSpeedLabel;
@@ -57,34 +58,34 @@ public class ShowWeeklyForecast extends Button {
     private Stage stage;
 
     public ShowWeeklyForecast(VBox root,
-            Label cityLabel,
-            LinkedHashMap<String, String> responseBodiesSecondAPI,
-            String city, BubbleLabels humidityLabel,
-            BubbleLabels windSpeedLabel,
-            BubbleLabels uvLabel,
-            ShowDailyForecast getDailyForecast,
-            Label dateForecast,
-            Label maxTempForecast,
-            Label minTempForecast,
-            Label avgTempForecast,
-            Label maxWindForecast,
-            Label avgHumidityForecast,
-            Label chanceOfRainingForecast,
-            Label chanceOfSnowForecast,
-            Label weatherDescriptionForecast,
-            Label sunrise,
-            Label sunset,
-            ConvertWindSpeed convertWindSpeed,
-            TextField inputTextField,
-            BubbleLabels localTimeLabel,
-            BubbleLabels temperatureLabel,
-            BubbleLabels descriptionLabel,
-            BubbleLabels temperatureFeelsLikeLabel,
-            ShowMoreWeatherData showMoreWeatherInfo,
-            ConvertTemperature convertTemperature,
-            Button fetchButton,
-            Scene mainScene,
-            Stage stage) {
+                              Label cityLabel,
+                              ConcurrentHashMap<String, String> responseBodiesSecondAPI,
+                              String city, BubbleLabels humidityLabel,
+                              BubbleLabels windSpeedLabel,
+                              BubbleLabels uvLabel,
+                              ShowDailyForecast getDailyForecast,
+                              Label dateForecast,
+                              Label maxTempForecast,
+                              Label minTempForecast,
+                              Label avgTempForecast,
+                              Label maxWindForecast,
+                              Label avgHumidityForecast,
+                              Label chanceOfRainingForecast,
+                              Label chanceOfSnowForecast,
+                              Label weatherDescriptionForecast,
+                              Label sunrise,
+                              Label sunset,
+                              ConvertWindSpeed convertWindSpeed,
+                              TextField inputTextField,
+                              BubbleLabels localTimeLabel,
+                              BubbleLabels temperatureLabel,
+                              BubbleLabels descriptionLabel,
+                              BubbleLabels temperatureFeelsLikeLabel,
+                              ShowMoreWeatherData showMoreWeatherInfo,
+                              ConvertTemperature convertTemperature,
+                              Button fetchButton,
+                              Scene mainScene,
+                              Stage stage) {
 
         this.setRoot(root);
         this.cityLabel = cityLabel;

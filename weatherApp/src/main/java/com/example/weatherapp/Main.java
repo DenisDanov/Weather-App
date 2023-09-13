@@ -27,6 +27,7 @@ import weatherApi.WeatherAppAPI;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.Matcher;
@@ -67,7 +68,7 @@ public class Main extends Application {
     private ReturnToFirstPage returnBackToFirstPage;
     private Scene mainScene;
     private Stage stage;
-    private StackPane rootLayout = createRootLayout();
+    private StackPane rootLayout;
     private VBox root;
     private VBox firstPageVbox;
     private final Label cityStartUpLabel = new Label("Enter City or Country:");
@@ -76,8 +77,8 @@ public class Main extends Application {
     private Scene firstPageScene;
     private GridPane buttonsPane;
     private final Pattern pattern = Pattern.compile("[a-zA-Z]");
-    private final LinkedHashMap<String, String> responseBodiesFirstAPI;
-    private static LinkedHashMap<String, String> responseBodiesSecondAPI;
+    private final ConcurrentHashMap<String, String> responseBodiesFirstAPI;
+    private static ConcurrentHashMap<String, String> responseBodiesSecondAPI;
     private String lastEnteredCity;
     private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     private GridPane gridPane = new GridPane();
@@ -89,8 +90,8 @@ public class Main extends Application {
 
     public Main() {
         this.weatherAppAPI = new WeatherAppAPI();
-        this.responseBodiesFirstAPI = new LinkedHashMap<>();
-        responseBodiesSecondAPI = new LinkedHashMap<>();
+        this.responseBodiesFirstAPI = new ConcurrentHashMap<>();
+        responseBodiesSecondAPI = new ConcurrentHashMap<>();
         this.responseBodyCheckForValidInput = "";
         this.responseBodySecondAPI = "";
         passedFirstPage = "not passed!";
@@ -103,28 +104,19 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        new Thread(() -> {
-            Platform.runLater(() -> {
-                mainScene = new Scene(rootLayout, 866, 700);
-                stage = primaryStage;
-                addStyleSheet(mainScene);
-                configurePrimaryStage(primaryStage, mainScene);
-                configureStartUpScene();
-                setUpDynamicBackground();
-                configureFetchButton();
-                primaryStage.show();
-                updateReturnButtonNodes();
-            });
-            Runnable task = () -> {
-                // Executes the code every minute
-                try {
-                    updateAPIData();
-                } catch (ParseException | IOException e) {
-                    throw new RuntimeException(e);
-                }
-            };
-            executorService.scheduleAtFixedRate(task, 1, 1, TimeUnit.MINUTES);
-        }).start();
+        Platform.runLater(() -> {
+            rootLayout = createRootLayout();
+            mainScene = new Scene(rootLayout, 866, 700);
+            stage = primaryStage;
+            addStyleSheet(mainScene);
+            configurePrimaryStage(primaryStage, mainScene);
+            configureStartUpScene();
+            setUpDynamicBackground();
+            configureFetchButton();
+            primaryStage.show();
+            updateReturnButtonNodes();
+        });
+        startScheduledTask();
     }
 
     private void updateReturnButtonNodes() {
@@ -141,7 +133,6 @@ public class Main extends Application {
         showWeeklyForecastButton.setStage(stage);
         showWeeklyForecastButton.setShowMoreWeatherInfo(showMoreWeatherInfo);
         showWeeklyForecastButton.setGetDailyForecast(getDailyForecast);
-        dynamicBackground.setRoot(root);
         dynamicBackground.setRootLayout(rootLayout);
     }
 
@@ -152,178 +143,187 @@ public class Main extends Application {
                 city,
                 responseBodiesSecondAPI
         );
+    }
 
-        dynamicBackground.setUpDynamicBackground();
+    public void startScheduledTask() {
+        Runnable task = () -> {
+            // Executes the code every 1 minute
+            try {
+                updateAPIData();
+            } catch (ParseException | IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
+        // Schedule the task to run every 5 minutes
+        executorService.scheduleAtFixedRate(task, 0, 5, TimeUnit.MINUTES);
     }
 
     private StackPane createRootLayout() {
-        new Thread(() -> Platform.runLater(() -> {
-            rootLayout = new StackPane();
-            root = new VBox();
-            root.setSpacing(1.5);
-            setRightMargin(inputTextField);
+        rootLayout = new StackPane();
+        root = new VBox();
+        root.setSpacing(1.5);
+        setRightMargin(inputTextField);
 
-            iconView = new ImageView();
-            gridPane = new GridPane(); // 10 is the spacing between label text and icon
-            gridPane.add(weatherDescriptionLabel, 0, 0);
-            gridPane.add(iconView, 1, 0);
+        iconView = new ImageView();
+        gridPane = new GridPane(); // 10 is the spacing between label text and icon
+        gridPane.add(weatherDescriptionLabel, 0, 0);
+        gridPane.add(iconView, 1, 0);
 
-            descriptionLabel.setGraphic(gridPane);
-            descriptionLabel.setContentDisplay(ContentDisplay.GRAPHIC_ONLY); // Display only the graphic
+        descriptionLabel.setGraphic(gridPane);
+        descriptionLabel.setContentDisplay(ContentDisplay.GRAPHIC_ONLY); // Display only the graphic
 
-            buttonsPane = new GridPane();
-            buttonsPane.add(fetchButton, 0, 0);
-            returnBackToFirstPage = new ReturnToFirstPage(
-                    stage,
-                    firstPageScene,
-                    invalidInput,
-                    firstPageVbox,
-                    fetchButton,
-                    cityStartUpTextField,
-                    inputTextField,
-                    temperatureLabel
-            );
-            returnBackToFirstPage.setText("Return to the first page");
-            buttonsPane.add(returnBackToFirstPage, 1, 0);
-            buttonsPane.setHgap(5);
+        buttonsPane = new GridPane();
+        buttonsPane.add(fetchButton, 0, 0);
+        returnBackToFirstPage = new ReturnToFirstPage(
+                stage,
+                firstPageScene,
+                invalidInput,
+                firstPageVbox,
+                fetchButton,
+                cityStartUpTextField,
+                inputTextField,
+                temperatureLabel
+        );
+        returnBackToFirstPage.setText("Return to the first page");
+        buttonsPane.add(returnBackToFirstPage, 1, 0);
+        buttonsPane.setHgap(5);
 
-            Objects.requireNonNull(root).getChildren().addAll(
-                    cityLabel,
-                    inputTextField,
-                    buttonsPane,
-                    localTimeLabel,
-                    temperatureLabel,
-                    temperatureFeelsLikeLabel,
-                    descriptionLabel
-            );
+        Objects.requireNonNull(root).getChildren().addAll(
+                cityLabel,
+                inputTextField,
+                buttonsPane,
+                localTimeLabel,
+                temperatureLabel,
+                temperatureFeelsLikeLabel,
+                descriptionLabel
+        );
 
-            convertTemperature = new ConvertTemperature(temperatureLabel, temperatureFeelsLikeLabel);
-            convertTemperature.setText("Convert temperature");
-            root.getChildren().add(6, convertTemperature);
+        convertTemperature = new ConvertTemperature(temperatureLabel, temperatureFeelsLikeLabel);
+        convertTemperature.setText("Convert temperature");
+        root.getChildren().add(6, convertTemperature);
 
-            convertWindSpeed = new ConvertWindSpeed(windSpeedLabel);
-            convertWindSpeed.setText("Convert wind speed");
+        convertWindSpeed = new ConvertWindSpeed(windSpeedLabel);
+        convertWindSpeed.setText("Convert wind speed");
 
-            showWeeklyForecastButton = new ShowWeeklyForecast(
-                    root,
-                    cityLabel,
-                    responseBodiesSecondAPI,
-                    city,
-                    humidityLabel,
-                    windSpeedLabel,
-                    uvLabel,
-                    getDailyForecast,
-                    dateForecast,
-                    maxTempForecast,
-                    minTempForecast,
-                    avgTempForecast,
-                    maxWindForecast,
-                    avgHumidityForecast,
-                    chanceOfRainingForecast,
-                    chanceOfSnowForecast,
-                    weatherDescriptionForecast,
-                    sunrise,
-                    sunset,
-                    convertWindSpeed,
-                    inputTextField,
-                    localTimeLabel,
-                    temperatureLabel,
-                    descriptionLabel,
-                    temperatureFeelsLikeLabel,
-                    showMoreWeatherInfo,
-                    convertTemperature,
-                    fetchButton,
-                    mainScene,
-                    stage
-            );
-            showWeeklyForecastButton.setText("Show weekly forecast");
+        showWeeklyForecastButton = new ShowWeeklyForecast(
+                root,
+                cityLabel,
+                responseBodiesSecondAPI,
+                city,
+                humidityLabel,
+                windSpeedLabel,
+                uvLabel,
+                getDailyForecast,
+                dateForecast,
+                maxTempForecast,
+                minTempForecast,
+                avgTempForecast,
+                maxWindForecast,
+                avgHumidityForecast,
+                chanceOfRainingForecast,
+                chanceOfSnowForecast,
+                weatherDescriptionForecast,
+                sunrise,
+                sunset,
+                convertWindSpeed,
+                inputTextField,
+                localTimeLabel,
+                temperatureLabel,
+                descriptionLabel,
+                temperatureFeelsLikeLabel,
+                showMoreWeatherInfo,
+                convertTemperature,
+                fetchButton,
+                mainScene,
+                stage
+        );
+        showWeeklyForecastButton.setText("Show weekly forecast");
 
-            getDailyForecast = new ShowDailyForecast(
-                    dateForecast,
-                    maxTempForecast,
-                    minTempForecast,
-                    avgTempForecast,
-                    maxWindForecast,
-                    avgHumidityForecast,
-                    chanceOfRainingForecast,
-                    chanceOfSnowForecast,
-                    weatherDescriptionForecast,
-                    sunrise,
-                    sunset,
-                    showWeeklyForecastButton
-            );
-            getDailyForecast.setText("Show daily forecast");
+        getDailyForecast = new ShowDailyForecast(
+                dateForecast,
+                maxTempForecast,
+                minTempForecast,
+                avgTempForecast,
+                maxWindForecast,
+                avgHumidityForecast,
+                chanceOfRainingForecast,
+                chanceOfSnowForecast,
+                weatherDescriptionForecast,
+                sunrise,
+                sunset,
+                showWeeklyForecastButton
+        );
+        getDailyForecast.setText("Show daily forecast");
 
-            showMoreWeatherInfo = new ShowMoreWeatherData(
-                    humidityLabel,
-                    windSpeedLabel,
-                    uvLabel,
-                    getDailyForecast,
-                    dateForecast,
-                    maxTempForecast,
-                    minTempForecast,
-                    avgTempForecast,
-                    maxWindForecast,
-                    avgHumidityForecast,
-                    chanceOfRainingForecast,
-                    chanceOfSnowForecast,
-                    weatherDescriptionForecast,
-                    sunrise,
-                    sunset,
-                    showWeeklyForecastButton,
-                    weatherData,
-                    convertWindSpeed,
-                    city
-            );
-            showMoreWeatherInfo.setText("Show more weather info");
+        showMoreWeatherInfo = new ShowMoreWeatherData(
+                humidityLabel,
+                windSpeedLabel,
+                uvLabel,
+                getDailyForecast,
+                dateForecast,
+                maxTempForecast,
+                minTempForecast,
+                avgTempForecast,
+                maxWindForecast,
+                avgHumidityForecast,
+                chanceOfRainingForecast,
+                chanceOfSnowForecast,
+                weatherDescriptionForecast,
+                sunrise,
+                sunset,
+                showWeeklyForecastButton,
+                weatherData,
+                convertWindSpeed,
+                city
+        );
+        showMoreWeatherInfo.setText("Show more weather info");
 
-            root.getChildren().addAll(
-                    showMoreWeatherInfo,
-                    humidityLabel,
-                    uvLabel,
-                    windSpeedLabel,
-                    convertWindSpeed,
-                    getDailyForecast
-            );
+        root.getChildren().addAll(
+                showMoreWeatherInfo,
+                humidityLabel,
+                uvLabel,
+                windSpeedLabel,
+                convertWindSpeed,
+                getDailyForecast
+        );
 
-            root.getChildren().addAll(
-                    dateForecast,
-                    maxTempForecast,
-                    minTempForecast,
-                    avgTempForecast,
-                    maxWindForecast,
-                    avgHumidityForecast,
-                    chanceOfRainingForecast,
-                    chanceOfSnowForecast,
-                    weatherDescriptionForecast,
-                    sunrise,
-                    sunset,
-                    showWeeklyForecastButton
-            );
+        root.getChildren().addAll(
+                dateForecast,
+                maxTempForecast,
+                minTempForecast,
+                avgTempForecast,
+                maxWindForecast,
+                avgHumidityForecast,
+                chanceOfRainingForecast,
+                chanceOfSnowForecast,
+                weatherDescriptionForecast,
+                sunrise,
+                sunset,
+                showWeeklyForecastButton
+        );
 
-            showWeeklyForecastButton.setVisible(false);
-            convertTemperature.setVisible(false);
-            showMoreWeatherInfo.setVisible(false);
-            convertWindSpeed.setVisible(false);
-            uvLabel.setVisible(false);
-            humidityLabel.setVisible(false);
-            windSpeedLabel.setVisible(false);
-            Objects.requireNonNull(buttonsPane).setVisible(false);
+        showWeeklyForecastButton.setVisible(false);
+        convertTemperature.setVisible(false);
+        showMoreWeatherInfo.setVisible(false);
+        convertWindSpeed.setVisible(false);
+        uvLabel.setVisible(false);
+        humidityLabel.setVisible(false);
+        windSpeedLabel.setVisible(false);
+        Objects.requireNonNull(buttonsPane).setVisible(false);
 
-            dateForecast.setVisible(false);
-            weatherDescriptionForecast.setVisible(false);
-            maxTempForecast.setVisible(false);
-            minTempForecast.setVisible(false);
-            avgTempForecast.setVisible(false);
-            maxWindForecast.setVisible(false);
-            avgHumidityForecast.setVisible(false);
-            chanceOfRainingForecast.setVisible(false);
-            chanceOfSnowForecast.setVisible(false);
-            sunrise.setVisible(false);
-            sunset.setVisible(false);
+        dateForecast.setVisible(false);
+        weatherDescriptionForecast.setVisible(false);
+        maxTempForecast.setVisible(false);
+        minTempForecast.setVisible(false);
+        avgTempForecast.setVisible(false);
+        maxWindForecast.setVisible(false);
+        avgHumidityForecast.setVisible(false);
+        chanceOfRainingForecast.setVisible(false);
+        chanceOfSnowForecast.setVisible(false);
+        sunrise.setVisible(false);
+        sunset.setVisible(false);
 
-            getDailyForecast.setVisible(false);
-        })).start();
+        getDailyForecast.setVisible(false);
         return rootLayout;
     }
 
@@ -358,7 +358,7 @@ public class Main extends Application {
                 } else {
                     responseBodyCheckForValidInput = responseBodiesFirstAPI.get(city);
                 }
-                responseBodySecondAPI = getLocalTime(city);
+                responseBodySecondAPI = getLocalTime();
             }
             Platform.runLater(() -> {
                 if (responseBodyCheckForValidInput.equals("{\"cod\":\"400\",\"message\":\"Nothing to geocode\"}") ||
@@ -434,9 +434,9 @@ public class Main extends Application {
             }
         } else {
             // Perform network operations, JSON parsing, and data processing
+
             new Thread(() -> {
                 String weatherConditionAndIcon = getWeatherCondition();
-
                 String responseBody;
                 ForecastData forecastData;
 
@@ -471,7 +471,6 @@ public class Main extends Application {
                             forecastData != null) {
                         dynamicBackground.switchVideoBackground(weatherConditionAndIcon.split("&")[1]);
                     }
-
                     GridPane checkButtonsPane = (GridPane) root.getChildren().get(2);
 
                     if (!checkButtonsPane.getChildren().contains(fetchButton)) {
@@ -516,7 +515,7 @@ public class Main extends Application {
                                 double temperatureCelsius = (temp - 273.15);
                                 double temperatureFeelsLikeCelsius = tempFeelsLike - 273.15;
                                 localTimeLabel.setText(String.format("Local time: %s",
-                                        formatDateToDayAndHour(getLocalTime(city))));
+                                        formatDateToDayAndHour(getLocalTime())));
                                 temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21",
                                         temperatureCelsius));
                                 temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21",
@@ -662,23 +661,27 @@ public class Main extends Application {
     }
 
     private void updateAPIData() throws ParseException, IOException {
-        for (String cityKey : responseBodiesSecondAPI.keySet()) {
-            try {
-                responseBodiesSecondAPI.replace(cityKey, ForecastAPI.httpResponseForecast(cityKey));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        new Thread(() -> {
+            for (String cityKey : responseBodiesSecondAPI.keySet()) {
+                try {
+                    responseBodiesSecondAPI.replace(cityKey, ForecastAPI.httpResponseForecast(cityKey));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
-        }
-        System.out.printf("Updated %d APIs!\n", responseBodiesSecondAPI.size());
+            LocalTime time = LocalTime.now();
+            String timeFormat = (time.toString().split("\\.")[0].substring(0, 5));
+            System.out.printf("Updated %d APIs at %s!\n", responseBodiesSecondAPI.size(), timeFormat);
 
-        for (String cityKey : responseBodiesFirstAPI.keySet()) {
-            try {
-                responseBodiesFirstAPI.replace(cityKey, weatherAppAPI.httpResponse(cityKey));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            for (String cityKey : responseBodiesFirstAPI.keySet()) {
+                try {
+                    responseBodiesFirstAPI.replace(cityKey, weatherAppAPI.httpResponse(cityKey));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
-        }
-        System.out.printf("Updated %d APIs!\n", responseBodiesFirstAPI.size());
+            System.out.printf("Updated %d APIs at %s!\n", responseBodiesFirstAPI.size(), timeFormat);
+        }).start();
     }
 
     public static ForecastData getDailyForecast() {
@@ -774,7 +777,7 @@ public class Main extends Application {
         return weatherConditionAndIcon;
     }
 
-    public static String getLocalTime(String city) {
+    public static String getLocalTime() {
         String responseBody;
         if (!responseBodiesSecondAPI.containsKey(city)) {
             try {
