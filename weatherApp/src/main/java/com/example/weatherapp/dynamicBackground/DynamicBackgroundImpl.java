@@ -24,7 +24,6 @@ import static com.example.weatherapp.Main.getLocalTime;
 
 public class DynamicBackgroundImpl {
 
-    private StackPane rootLayout;
     private String lastWeatherDescription;
     private String lastTimeCheck;
     private String city;
@@ -32,14 +31,13 @@ public class DynamicBackgroundImpl {
     private String responseBodyGetSunsetSunrise;
     private MediaPlayer mediaPlayer;
     MediaView mediaView = new MediaView();
-    MediaView mediaView1 = new MediaView();
-    int counter = 0;
+    FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.2), mediaView);
+    FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.2), mediaView);
 
     public DynamicBackgroundImpl(StackPane rootLayout,
                                  VBox root,
                                  String city,
                                  ConcurrentHashMap<String, String> responseBodiesSecondAPI) {
-        this.setRootLayout(rootLayout);
         this.lastWeatherDescription = "";
         this.lastTimeCheck = "";
         this.setCity(city);
@@ -48,9 +46,6 @@ public class DynamicBackgroundImpl {
         Objects.requireNonNull(rootLayout).getChildren().addAll(mediaView, root);
     }
 
-    public void setRootLayout(StackPane rootLayout) {
-        this.rootLayout = rootLayout;
-    }
 
     public void setCity(String city) {
         this.city = city;
@@ -59,42 +54,69 @@ public class DynamicBackgroundImpl {
     public void setResponseBodiesSecondAPI(ConcurrentHashMap<String, String> responseBodiesSecondAPI) {
         this.responseBodiesSecondAPI = responseBodiesSecondAPI;
     }
+    private void fadeInToNewVideo(MediaView mediaView, MediaPlayer newMediaPlayer) {
+        newMediaPlayer.play();
 
-    private MediaPlayer createMediaPlayer(String resourcePath) {
-        counter++;
-        Media media = new Media(Objects.requireNonNull(getClass().getResource(resourcePath)).toString());
-        MediaPlayer mediaPlayer = new MediaPlayer(media);
-        mediaPlayer.setAutoPlay(false); // Prevent immediate playback
-        mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-        mediaPlayer.setMute(true);
+        // Create a crossfade transition when switching between videos
+        fadeIn.setFromValue(1.0);
+        fadeIn.setToValue(1.0);
 
-        mediaView.setMediaPlayer(mediaPlayer);
-        mediaView.setSmooth(true);
-        mediaView.setVisible(true);
-        mediaPlayer.play();
+        // Start the fade-in animation
+        fadeIn.play();
 
-        return mediaPlayer;
+        // Set the new MediaPlayer for the MediaView
+        mediaView.getMediaPlayer().dispose();
+        mediaView.setMediaPlayer(newMediaPlayer);
     }
+    private MediaPlayer createMediaPlayer(String resourcePath) {
 
-    public void stopAllMediaPlayersAndHideAllNodes() {
-        if (mediaPlayer != null) {
-            mediaPlayer.stop();
-            mediaPlayer.dispose();// Release associated resources
-            mediaPlayer = null;
+        if (mediaView.getMediaPlayer() != null) {
+
+            // Create a new MediaPlayer for the second video
+            MediaPlayer newMediaPlayer = new MediaPlayer(
+                    new Media(Objects.requireNonNull(getClass().getResource(resourcePath)).toString()));
+            newMediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+            newMediaPlayer.setMute(true);
+
+            // Create a crossfade transition when switching between videos
+            fadeOut.setFromValue(1.0);
+            fadeOut.setToValue(1.0);
+
+            // Set an event handler for when the fade-out animation is finished
+            fadeOut.setOnFinished(event -> {
+                // Crossfade to the second video
+                fadeInToNewVideo(mediaView, newMediaPlayer);
+            });
+
+            // Start the fade-out animation
+            fadeOut.play();
+
+            // Dispose of the old MediaPlayer to free up resources
+            mediaPlayer.dispose();
+        } else {
+            Media media = new Media(Objects.requireNonNull(getClass().getResource(resourcePath)).toString());
+            mediaPlayer = new MediaPlayer(media);
+            mediaPlayer.setAutoPlay(false); // Prevent immediate playback
+            mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+            mediaPlayer.setMute(true);
+
+            mediaView.setMediaPlayer(mediaPlayer);
+            mediaView.setSmooth(true);
+            mediaView.setVisible(true);
+
+            mediaPlayer.play();
         }
+        return mediaPlayer;
     }
 
     public void switchVideoBackground(String weatherDescription) {
         boolean currentTimeIsLaterThanSunsetVar = currentTimeIsLaterThanSunset();
         if (!lastWeatherDescription.equals(weatherDescription)) {
-            stopAllMediaPlayersAndHideAllNodes();
             playDesiredVideo(weatherDescription, currentTimeIsLaterThanSunsetVar);
         } else {
             if (!currentTimeIsLaterThanSunsetVar && lastTimeCheck.equals("Day")) {
-                stopAllMediaPlayersAndHideAllNodes();
                 playDesiredVideo(weatherDescription, false);
             } else if (currentTimeIsLaterThanSunsetVar && lastTimeCheck.equals("Night")) {
-                stopAllMediaPlayersAndHideAllNodes();
                 playDesiredVideo(weatherDescription, true);
             }
         }

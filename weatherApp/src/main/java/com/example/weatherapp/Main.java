@@ -133,7 +133,6 @@ public class Main extends Application {
         showWeeklyForecastButton.setStage(stage);
         showWeeklyForecastButton.setShowMoreWeatherInfo(showMoreWeatherInfo);
         showWeeklyForecastButton.setGetDailyForecast(getDailyForecast);
-        dynamicBackground.setRootLayout(rootLayout);
     }
 
     private void setUpDynamicBackground() {
@@ -143,6 +142,7 @@ public class Main extends Application {
                 city,
                 responseBodiesSecondAPI
         );
+
     }
 
     public void startScheduledTask() {
