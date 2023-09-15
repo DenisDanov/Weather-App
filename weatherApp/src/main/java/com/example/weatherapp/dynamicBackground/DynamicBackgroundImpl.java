@@ -30,9 +30,10 @@ public class DynamicBackgroundImpl {
     private ConcurrentHashMap<String, String> responseBodiesSecondAPI;
     private String responseBodyGetSunsetSunrise;
     private MediaPlayer mediaPlayer;
-    MediaView mediaView = new MediaView();
-    FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.2), mediaView);
-    FadeTransition fadeIn = new FadeTransition(Duration.seconds(0.2), mediaView);
+    private MediaView mediaView = new MediaView();
+    private FadeTransition fadeOut;
+    private FadeTransition fadeIn;
+    private MediaPlayer newMediaPlayer;
 
     public DynamicBackgroundImpl(StackPane rootLayout,
                                  VBox root,
@@ -54,9 +55,13 @@ public class DynamicBackgroundImpl {
     public void setResponseBodiesSecondAPI(ConcurrentHashMap<String, String> responseBodiesSecondAPI) {
         this.responseBodiesSecondAPI = responseBodiesSecondAPI;
     }
-    private void fadeInToNewVideo(MediaView mediaView, MediaPlayer newMediaPlayer) {
+
+    private void fadeInToNewVideo() {
         newMediaPlayer.play();
 
+        if (fadeIn == null) {
+            fadeIn = new FadeTransition(Duration.seconds(0.1), mediaView);
+        }
         // Create a crossfade transition when switching between videos
         fadeIn.setFromValue(1.0);
         fadeIn.setToValue(1.0);
@@ -68,34 +73,34 @@ public class DynamicBackgroundImpl {
         mediaView.getMediaPlayer().dispose();
         mediaView.setMediaPlayer(newMediaPlayer);
     }
+
     private MediaPlayer createMediaPlayer(String resourcePath) {
 
         if (mediaView.getMediaPlayer() != null) {
-
             // Create a new MediaPlayer for the second video
-            MediaPlayer newMediaPlayer = new MediaPlayer(
+            newMediaPlayer = new MediaPlayer(
                     new Media(Objects.requireNonNull(getClass().getResource(resourcePath)).toString()));
             newMediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
             newMediaPlayer.setMute(true);
+
+            if (fadeOut == null) {
+                fadeOut = new FadeTransition(Duration.seconds(0.1), mediaView);
+            }
 
             // Create a crossfade transition when switching between videos
             fadeOut.setFromValue(1.0);
             fadeOut.setToValue(1.0);
 
-            // Set an event handler for when the fade-out animation is finished
+            // Set an event handler for when the fade out animation is finished
             fadeOut.setOnFinished(event -> {
                 // Crossfade to the second video
-                fadeInToNewVideo(mediaView, newMediaPlayer);
+                fadeInToNewVideo();
             });
 
             // Start the fade-out animation
             fadeOut.play();
-
-            // Dispose of the old MediaPlayer to free up resources
-            mediaPlayer.dispose();
         } else {
-            Media media = new Media(Objects.requireNonNull(getClass().getResource(resourcePath)).toString());
-            mediaPlayer = new MediaPlayer(media);
+            mediaPlayer = new MediaPlayer(new Media(Objects.requireNonNull(getClass().getResource(resourcePath)).toString()));
             mediaPlayer.setAutoPlay(false); // Prevent immediate playback
             mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
             mediaPlayer.setMute(true);
@@ -185,7 +190,6 @@ public class DynamicBackgroundImpl {
         } else if (weatherDescription.toLowerCase().contains("sunny") && !currentTimeIsLaterThanSunsetVar) {
 
             playSeamlessVideo("/Weather-Background-Clear-Night.mp4");
-
         }
     }
 
