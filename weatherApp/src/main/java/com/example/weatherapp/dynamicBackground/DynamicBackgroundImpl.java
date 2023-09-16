@@ -1,11 +1,13 @@
 package com.example.weatherapp.dynamicBackground;
 
 import javafx.animation.FadeTransition;
+import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -30,23 +32,38 @@ public class DynamicBackgroundImpl {
     private ConcurrentHashMap<String, String> responseBodiesSecondAPI;
     private String responseBodyGetSunsetSunrise;
     private MediaPlayer mediaPlayer;
-    private MediaView mediaView = new MediaView();
-    private FadeTransition fadeOut;
-    private FadeTransition fadeIn;
+    private final MediaView mediaView = new MediaView();
+    private final FadeTransition fadeOut;
+    private final FadeTransition fadeIn;
     private MediaPlayer newMediaPlayer;
+    private Stage stage;
+    private Scene mainScene;
 
     public DynamicBackgroundImpl(StackPane rootLayout,
                                  VBox root,
                                  String city,
-                                 ConcurrentHashMap<String, String> responseBodiesSecondAPI) {
+                                 ConcurrentHashMap<String, String> responseBodiesSecondAPI,
+                                 Stage stage,
+                                 Scene mainScene) {
         this.lastWeatherDescription = "";
         this.lastTimeCheck = "";
         this.setCity(city);
         this.setResponseBodiesSecondAPI(responseBodiesSecondAPI);
         this.responseBodyGetSunsetSunrise = "";
+        this.setStage(stage);
+        this.setMainScene(mainScene);
+        this.fadeOut = new FadeTransition();
+        this.fadeIn = new FadeTransition();
         Objects.requireNonNull(rootLayout).getChildren().addAll(mediaView, root);
     }
 
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
+    public void setMainScene(Scene mainScene) {
+        this.mainScene = mainScene;
+    }
 
     public void setCity(String city) {
         this.city = city;
@@ -57,21 +74,18 @@ public class DynamicBackgroundImpl {
     }
 
     private void fadeInToNewVideo() {
-        newMediaPlayer.play();
+        mediaView.getMediaPlayer().dispose();
+        mediaView.setMediaPlayer(newMediaPlayer);
 
-        if (fadeIn == null) {
-            fadeIn = new FadeTransition(Duration.seconds(0.1), mediaView);
-        }
-        // Create a crossfade transition when switching between videos
+        fadeIn.setNode(mediaView);
         fadeIn.setFromValue(1.0);
         fadeIn.setToValue(1.0);
 
         // Start the fade-in animation
         fadeIn.play();
 
-        // Set the new MediaPlayer for the MediaView
-        mediaView.getMediaPlayer().dispose();
-        mediaView.setMediaPlayer(newMediaPlayer);
+        newMediaPlayer.play();
+        System.out.println(fadeIn.getDuration());
     }
 
     private MediaPlayer createMediaPlayer(String resourcePath) {
@@ -83,8 +97,13 @@ public class DynamicBackgroundImpl {
             newMediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
             newMediaPlayer.setMute(true);
 
-            if (fadeOut == null) {
-                fadeOut = new FadeTransition(Duration.seconds(0.1), mediaView);
+            fadeOut.setNode(mediaView);
+            if (stage.getScene() == mainScene) {
+                fadeOut.setDuration(Duration.seconds(0.1));
+                fadeIn.setDuration(Duration.seconds(0.1));
+            } else {
+                fadeOut.setDuration(Duration.millis(1));
+                fadeIn.setDuration(Duration.millis(1));
             }
 
             // Create a crossfade transition when switching between videos
@@ -99,6 +118,7 @@ public class DynamicBackgroundImpl {
 
             // Start the fade-out animation
             fadeOut.play();
+            System.out.println(fadeOut.getDuration());
         } else {
             mediaPlayer = new MediaPlayer(new Media(Objects.requireNonNull(getClass().getResource(resourcePath)).toString()));
             mediaPlayer.setAutoPlay(false); // Prevent immediate playback

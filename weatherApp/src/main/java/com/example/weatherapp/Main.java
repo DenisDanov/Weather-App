@@ -140,7 +140,9 @@ public class Main extends Application {
                 rootLayout,
                 root,
                 city,
-                responseBodiesSecondAPI
+                responseBodiesSecondAPI,
+                stage,
+                mainScene
         );
 
     }
@@ -644,6 +646,8 @@ public class Main extends Application {
         showWeeklyForecastButton.setCity(city);
         dynamicBackground.setCity(city);
         dynamicBackground.setResponseBodiesSecondAPI(responseBodiesSecondAPI);
+        dynamicBackground.setStage(stage);
+        dynamicBackground.setMainScene(mainScene);
     }
 
     public static String getUvOutputFormat(double uvIndex) {
