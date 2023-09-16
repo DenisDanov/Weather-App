@@ -1,0 +1,33 @@
+/* Apply styles to the main container, such as a VBox or a StackPane */
+#main-container {
+    -fx-background-color: #6DA5C0; /* Background color */
+    -fx-padding: 20px; /* Padding around the container */
+    -fx-alignment: center; /* Center content horizontally */
+    -fx-spacing: 10px; /* Spacing between children */
+}
+
+/* Style for the label */
+.label {
+    -fx-font-size: 18px; /* Font size */
+    -fx-font-weight: bold; /* Font weight */
+    -fx-text-fill: #333; /* Text color */
+}
+
+/* Style for the text field */
+.text-field {
+    -fx-pref-width: 300px; /* Preferred width of the text field */
+    -fx-font-size: 14px; /* Font size */
+}
+
+/* Style for the button */
+.button {
+    -fx-background-color: #0077cc; /* Background color */
+    -fx-text-fill: white; /* Text color */
+    -fx-font-size: 16px; /* Font size */
+    -fx-pref-width: 200px; /* Preferred width of the button */
+}
+
+/* Hover effect for the button */
+.button:hover {
+    -fx-background-color: #4690cc; /* Hover background color */
+}

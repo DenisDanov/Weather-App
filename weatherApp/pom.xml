@@ -69,11 +69,6 @@
             <version>20230618</version>
         </dependency>
         <dependency>
-            <groupId>io.xiandan</groupId>
-            <artifactId>gson-ktx</artifactId>
-            <version>1.0.2</version>
-        </dependency>
-        <dependency>
             <groupId>io.github.privettoli</groupId>
             <artifactId>vertx-json-value-mapper</artifactId>
             <version>0.0.1</version>
@@ -84,9 +79,9 @@
             <version>0.1.3</version>
         </dependency>
         <dependency>
-            <groupId>com.yashoid</groupId>
-            <artifactId>jsonparsable</artifactId>
-            <version>1.0.4</version>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-media</artifactId>
+            <version>21-ea+24</version>
         </dependency>
     </dependencies>
 

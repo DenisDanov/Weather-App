@@ -1,0 +1,39 @@
+/* Corrected CSS with a subtle text shadow */
+
+/* Style the table view */
+.table-view {
+    -fx-font-size: 14px;
+}
+
+/* Style the table columns */
+.table-column {
+    -fx-font-size: 14px; /* Slightly larger font size for column headers */
+    -fx-padding: 1px; /* Increase the padding slightly */
+}
+
+/* Style the table cells */
+.table-cell {
+    -fx-padding: 4px;
+}
+/* Style the "Go back to the main page" button */
+.button {
+    -fx-font-size: 12px;
+    -fx-padding: 10px 15px;
+    -fx-background-color: #4690cc;
+    -fx-text-fill: white; /* Adjust text color to improve contrast */
+}
+.button:hover {
+    -fx-background-color: #619cd7; /* Hover background color */
+}
+
+
+/* Style the "Weather Description" row */
+.table-row-cell:filled:selected .table-cell {
+    -fx-background-color: #cceeff; /* Adjust background color for selected row */
+}
+
+/* Style the text to make it more visible */
+.label {
+    -fx-text-fill: #333; /* Adjust text color to improve contrast */
+    -fx-shadow-highlight-color: #aaa; /* Add a subtle text shadow */
+}
