@@ -20,7 +20,6 @@ import weatherApi.ForecastAPI;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -46,7 +45,7 @@ public class ShowWeeklyForecast extends Button {
     private final Label sunrise;
     private final Label sunset;
     private final ConvertWindSpeed convertWindSpeed;
-    private final TextField inputTextField; // Create a TextField for input
+    private final TextField inputTextField;
     private final BubbleLabels localTimeLabel;
     private final BubbleLabels temperatureLabel;
     private final BubbleLabels descriptionLabel;
@@ -157,14 +156,6 @@ public class ShowWeeklyForecast extends Button {
             for (int i = 0; i < weeklyForecast.length(); i++) {
                 daysOfTheWeek[i] = weeklyForecast.getJSONObject(i);
             }
-            // Add day columns
-            JSONObject day1 = daysOfTheWeek[0];
-            JSONObject day2 = daysOfTheWeek[1];
-            JSONObject day3 = daysOfTheWeek[2];
-            JSONObject day4 = daysOfTheWeek[3];
-            JSONObject day5 = daysOfTheWeek[4];
-            JSONObject day6 = daysOfTheWeek[5];
-            JSONObject day7 = daysOfTheWeek[6];
 
             // Create a "Data Type" column
             TableColumn<WeeklyForecastTable, String> dataTypeColumn = new TableColumn<>("Day");
@@ -219,27 +210,7 @@ public class ShowWeeklyForecast extends Button {
                     WeeklyForecastTable weeklyForecastTable = event.getRowValue();
                     weeklyForecastTable.setData(event.getTablePosition().getRow(), index, event.getNewValue());
                 });
-                column.setCellFactory(column1 -> new TableCell<>() {
-                    private final Text text;
-
-                    {
-                        text = new Text();
-                        text.wrappingWidthProperty().bind(column1.widthProperty().subtract(4));
-                        setGraphic(text);
-                    }
-
-                    @Override
-                    protected void updateItem(String item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (item == null || empty) {
-                            setText(null);
-                            setGraphic(null);
-                        } else {
-                            text.setText(item);
-                            setGraphic(text);
-                        }
-                    }
-                });
+                fixTruncatedText(column);
                 table.getColumns().add(column);
                 currentDate = currentDate.plusDays(1);
             }
@@ -252,118 +223,10 @@ public class ShowWeeklyForecast extends Button {
             for (int i = 0; i < 11; i++) {
                 data.add(new WeeklyForecastTable());
             }
-            // Add sample temperature data for the second row (Min Temp) and third row (Avg Temp)
-            data.get(0).setData(0, 0, String.format("%.0f°C", (day1.getJSONObject("day").getDouble("maxtemp_c"))));
-            data.get(0).setData(0, 1, String.format("%.0f°C", (day2.getJSONObject("day").getDouble("maxtemp_c"))));
-            data.get(0).setData(0, 2, String.format("%.0f°C", (day3.getJSONObject("day").getDouble("maxtemp_c"))));
-            data.get(0).setData(0, 3, String.format("%.0f°C", (day4.getJSONObject("day").getDouble("maxtemp_c"))));
-            data.get(0).setData(0, 4, String.format("%.0f°C", (day5.getJSONObject("day").getDouble("maxtemp_c"))));
-            data.get(0).setData(0, 5, String.format("%.0f°C", (day6.getJSONObject("day").getDouble("maxtemp_c"))));
-            data.get(0).setData(0, 6, String.format("%.0f°C", (day7.getJSONObject("day").getDouble("maxtemp_c"))));
 
-            data.get(1).setData(1, 0, String.format("%.0f°C", (day1.getJSONObject("day").getDouble("mintemp_c"))));
-            data.get(1).setData(1, 1, String.format("%.0f°C", (day2.getJSONObject("day").getDouble("mintemp_c"))));
-            data.get(1).setData(1, 2, String.format("%.0f°C", (day3.getJSONObject("day").getDouble("mintemp_c"))));
-            data.get(1).setData(1, 3, String.format("%.0f°C", (day4.getJSONObject("day").getDouble("mintemp_c"))));
-            data.get(1).setData(1, 4, String.format("%.0f°C", (day5.getJSONObject("day").getDouble("mintemp_c"))));
-            data.get(1).setData(1, 5, String.format("%.0f°C", (day6.getJSONObject("day").getDouble("mintemp_c"))));
-            data.get(1).setData(1, 6, String.format("%.0f°C", (day7.getJSONObject("day").getDouble("mintemp_c"))));
-
-            data.get(2).setData(2, 0, String.format("%.0f°C", (day1.getJSONObject("day").getDouble("avgtemp_c"))));
-            data.get(2).setData(2, 1, String.format("%.0f°C", (day2.getJSONObject("day").getDouble("avgtemp_c"))));
-            data.get(2).setData(2, 2, String.format("%.0f°C", (day3.getJSONObject("day").getDouble("avgtemp_c"))));
-            data.get(2).setData(2, 3, String.format("%.0f°C", (day4.getJSONObject("day").getDouble("avgtemp_c"))));
-            data.get(2).setData(2, 4, String.format("%.0f°C", (day5.getJSONObject("day").getDouble("avgtemp_c"))));
-            data.get(2).setData(2, 5, String.format("%.0f°C", (day6.getJSONObject("day").getDouble("avgtemp_c"))));
-            data.get(2).setData(2, 6, String.format("%.0f°C", (day7.getJSONObject("day").getDouble("avgtemp_c"))));
-
-            data.get(3).setData(3, 0, String.format("%.0f km/h", (day1.getJSONObject("day").getDouble("maxwind_kph"))));
-            data.get(3).setData(3, 1, String.format("%.0f km/h", (day2.getJSONObject("day").getDouble("maxwind_kph"))));
-            data.get(3).setData(3, 2, String.format("%.0f km/h", (day3.getJSONObject("day").getDouble("maxwind_kph"))));
-            data.get(3).setData(3, 3, String.format("%.0f km/h", (day4.getJSONObject("day").getDouble("maxwind_kph"))));
-            data.get(3).setData(3, 4, String.format("%.0f km/h", (day5.getJSONObject("day").getDouble("maxwind_kph"))));
-            data.get(3).setData(3, 5, String.format("%.0f km/h", (day6.getJSONObject("day").getDouble("maxwind_kph"))));
-            data.get(3).setData(3, 6, String.format("%.0f km/h", (day7.getJSONObject("day").getDouble("maxwind_kph"))));
-
-            data.get(4).setData(4, 0, String.format("%.0f %%", (day1.getJSONObject("day").getDouble("avghumidity"))));
-            data.get(4).setData(4, 1, String.format("%.0f %%", (day2.getJSONObject("day").getDouble("avghumidity"))));
-            data.get(4).setData(4, 2, String.format("%.0f %%", (day3.getJSONObject("day").getDouble("avghumidity"))));
-            data.get(4).setData(4, 3, String.format("%.0f %%", (day4.getJSONObject("day").getDouble("avghumidity"))));
-            data.get(4).setData(4, 4, String.format("%.0f %%", (day5.getJSONObject("day").getDouble("avghumidity"))));
-            data.get(4).setData(4, 5, String.format("%.0f %%", (day6.getJSONObject("day").getDouble("avghumidity"))));
-            data.get(4).setData(4, 6, String.format("%.0f %%", (day7.getJSONObject("day").getDouble("avghumidity"))));
-
-            data.get(5).setData(5, 0, Main.getUvOutputFormat(day1.getJSONObject("day").getDouble("uv")));
-            data.get(5).setData(5, 1, Main.getUvOutputFormat(day2.getJSONObject("day").getDouble("uv")));
-            data.get(5).setData(5, 2, Main.getUvOutputFormat(day3.getJSONObject("day").getDouble("uv")));
-            data.get(5).setData(5, 3, Main.getUvOutputFormat(day4.getJSONObject("day").getDouble("uv")));
-            data.get(5).setData(5, 4, Main.getUvOutputFormat(day5.getJSONObject("day").getDouble("uv")));
-            data.get(5).setData(5, 5, Main.getUvOutputFormat(day6.getJSONObject("day").getDouble("uv")));
-            data.get(5).setData(5, 6, Main.getUvOutputFormat(day7.getJSONObject("day").getDouble("uv")));
-
-            data.get(6).setData(6, 0, String.format("%.0f %%", (day1.getJSONObject("day").getDouble("daily_chance_of_rain"))));
-            data.get(6).setData(6, 1, String.format("%.0f %%", (day2.getJSONObject("day").getDouble("daily_chance_of_rain"))));
-            data.get(6).setData(6, 2, String.format("%.0f %%", (day3.getJSONObject("day").getDouble("daily_chance_of_rain"))));
-            data.get(6).setData(6, 3, String.format("%.0f %%", (day4.getJSONObject("day").getDouble("daily_chance_of_rain"))));
-            data.get(6).setData(6, 4, String.format("%.0f %%", (day5.getJSONObject("day").getDouble("daily_chance_of_rain"))));
-            data.get(6).setData(6, 5, String.format("%.0f %%", (day6.getJSONObject("day").getDouble("daily_chance_of_rain"))));
-            data.get(6).setData(6, 6, String.format("%.0f %%", (day7.getJSONObject("day").getDouble("daily_chance_of_rain"))));
-
-            data.get(7).setData(7, 0, String.format("%.0f %%", (day1.getJSONObject("day").getDouble("daily_chance_of_snow"))));
-            data.get(7).setData(7, 1, String.format("%.0f %%", (day2.getJSONObject("day").getDouble("daily_chance_of_snow"))));
-            data.get(7).setData(7, 2, String.format("%.0f %%", (day3.getJSONObject("day").getDouble("daily_chance_of_snow"))));
-            data.get(7).setData(7, 3, String.format("%.0f %%", (day4.getJSONObject("day").getDouble("daily_chance_of_snow"))));
-            data.get(7).setData(7, 4, String.format("%.0f %%", (day5.getJSONObject("day").getDouble("daily_chance_of_snow"))));
-            data.get(7).setData(7, 5, String.format("%.0f %%", (day6.getJSONObject("day").getDouble("daily_chance_of_snow"))));
-            data.get(7).setData(7, 6, String.format("%.0f %%", (day7.getJSONObject("day").getDouble("daily_chance_of_snow"))));
-
-            data.get(8).setData(8, 0, (day1.getJSONObject("day").getJSONObject("condition").getString("text")));
-            data.get(8).setData(8, 1, (day2.getJSONObject("day").getJSONObject("condition").getString("text")));
-            data.get(8).setData(8, 2, (day3.getJSONObject("day").getJSONObject("condition").getString("text")));
-            data.get(8).setData(8, 3, (day4.getJSONObject("day").getJSONObject("condition").getString("text")));
-            data.get(8).setData(8, 4, (day5.getJSONObject("day").getJSONObject("condition").getString("text")));
-            data.get(8).setData(8, 5, (day6.getJSONObject("day").getJSONObject("condition").getString("text")));
-            data.get(8).setData(8, 6, (day7.getJSONObject("day").getJSONObject("condition").getString("text")));
-
-            data.get(9).setData(9, 0, (day1.getJSONObject("astro").getString("sunrise")));
-            data.get(9).setData(9, 1, (day2.getJSONObject("astro").getString("sunrise")));
-            data.get(9).setData(9, 2, (day3.getJSONObject("astro").getString("sunrise")));
-            data.get(9).setData(9, 3, (day4.getJSONObject("astro").getString("sunrise")));
-            data.get(9).setData(9, 4, (day5.getJSONObject("astro").getString("sunrise")));
-            data.get(9).setData(9, 5, (day6.getJSONObject("astro").getString("sunrise")));
-            data.get(9).setData(9, 6, (day7.getJSONObject("astro").getString("sunrise")));
-
-            data.get(10).setData(10, 0, (day1.getJSONObject("astro").getString("sunset")));
-            data.get(10).setData(10, 1, (day2.getJSONObject("astro").getString("sunset")));
-            data.get(10).setData(10, 2, (day3.getJSONObject("astro").getString("sunset")));
-            data.get(10).setData(10, 3, (day4.getJSONObject("astro").getString("sunset")));
-            data.get(10).setData(10, 4, (day5.getJSONObject("astro").getString("sunset")));
-            data.get(10).setData(10, 5, (day6.getJSONObject("astro").getString("sunset")));
-            data.get(10).setData(10, 6, (day7.getJSONObject("astro").getString("sunset")));
-
+            addDataToTable(data,daysOfTheWeek);
             table.setItems(data);
-
-            dataTypeColumn.setCellFactory(column -> new TableCell<>() {
-                private final Text text;
-
-                {
-                    text = new Text();
-                    text.wrappingWidthProperty().bind(dataTypeColumn.widthProperty().subtract(4.8));
-                    setGraphic(text);
-                }
-
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (item == null || empty) {
-                        setText(null);
-                        setGraphic(null);
-                    } else {
-                        text.setText(item);
-                        setGraphic(text);
-                    }
-                }
-            });
+            fixTruncatedText(dataTypeColumn);
 
             table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
@@ -386,6 +249,128 @@ public class ShowWeeklyForecast extends Button {
         } else {
             returnToMainPage();
         }
+    }
+
+    private void fixTruncatedText(TableColumn<WeeklyForecastTable, String> column){
+        column.setCellFactory(column1 -> new TableCell<>() {
+            private final Text text;
+
+            {
+                text = new Text();
+                text.wrappingWidthProperty().bind(column1.widthProperty().subtract(4));
+                setGraphic(text);
+            }
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item == null || empty) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    text.setText(item);
+                    setGraphic(text);
+                }
+            }
+        });
+    }
+
+    private void addDataToTable(ObservableList<WeeklyForecastTable> data, JSONObject[] daysOfTheWeek){
+        JSONObject day1 = daysOfTheWeek[0];
+        JSONObject day2 = daysOfTheWeek[1];
+        JSONObject day3 = daysOfTheWeek[2];
+        JSONObject day4 = daysOfTheWeek[3];
+        JSONObject day5 = daysOfTheWeek[4];
+        JSONObject day6 = daysOfTheWeek[5];
+        JSONObject day7 = daysOfTheWeek[6];
+        // Add sample temperature data for the second row (Min Temp) and third row (Avg Temp)
+        data.get(0).setData(0, 0, String.format("%.0f°C", (day1.getJSONObject("day").getDouble("maxtemp_c"))));
+        data.get(0).setData(0, 1, String.format("%.0f°C", (day2.getJSONObject("day").getDouble("maxtemp_c"))));
+        data.get(0).setData(0, 2, String.format("%.0f°C", (day3.getJSONObject("day").getDouble("maxtemp_c"))));
+        data.get(0).setData(0, 3, String.format("%.0f°C", (day4.getJSONObject("day").getDouble("maxtemp_c"))));
+        data.get(0).setData(0, 4, String.format("%.0f°C", (day5.getJSONObject("day").getDouble("maxtemp_c"))));
+        data.get(0).setData(0, 5, String.format("%.0f°C", (day6.getJSONObject("day").getDouble("maxtemp_c"))));
+        data.get(0).setData(0, 6, String.format("%.0f°C", (day7.getJSONObject("day").getDouble("maxtemp_c"))));
+
+        data.get(1).setData(1, 0, String.format("%.0f°C", (day1.getJSONObject("day").getDouble("mintemp_c"))));
+        data.get(1).setData(1, 1, String.format("%.0f°C", (day2.getJSONObject("day").getDouble("mintemp_c"))));
+        data.get(1).setData(1, 2, String.format("%.0f°C", (day3.getJSONObject("day").getDouble("mintemp_c"))));
+        data.get(1).setData(1, 3, String.format("%.0f°C", (day4.getJSONObject("day").getDouble("mintemp_c"))));
+        data.get(1).setData(1, 4, String.format("%.0f°C", (day5.getJSONObject("day").getDouble("mintemp_c"))));
+        data.get(1).setData(1, 5, String.format("%.0f°C", (day6.getJSONObject("day").getDouble("mintemp_c"))));
+        data.get(1).setData(1, 6, String.format("%.0f°C", (day7.getJSONObject("day").getDouble("mintemp_c"))));
+
+        data.get(2).setData(2, 0, String.format("%.0f°C", (day1.getJSONObject("day").getDouble("avgtemp_c"))));
+        data.get(2).setData(2, 1, String.format("%.0f°C", (day2.getJSONObject("day").getDouble("avgtemp_c"))));
+        data.get(2).setData(2, 2, String.format("%.0f°C", (day3.getJSONObject("day").getDouble("avgtemp_c"))));
+        data.get(2).setData(2, 3, String.format("%.0f°C", (day4.getJSONObject("day").getDouble("avgtemp_c"))));
+        data.get(2).setData(2, 4, String.format("%.0f°C", (day5.getJSONObject("day").getDouble("avgtemp_c"))));
+        data.get(2).setData(2, 5, String.format("%.0f°C", (day6.getJSONObject("day").getDouble("avgtemp_c"))));
+        data.get(2).setData(2, 6, String.format("%.0f°C", (day7.getJSONObject("day").getDouble("avgtemp_c"))));
+
+        data.get(3).setData(3, 0, String.format("%.0f km/h", (day1.getJSONObject("day").getDouble("maxwind_kph"))));
+        data.get(3).setData(3, 1, String.format("%.0f km/h", (day2.getJSONObject("day").getDouble("maxwind_kph"))));
+        data.get(3).setData(3, 2, String.format("%.0f km/h", (day3.getJSONObject("day").getDouble("maxwind_kph"))));
+        data.get(3).setData(3, 3, String.format("%.0f km/h", (day4.getJSONObject("day").getDouble("maxwind_kph"))));
+        data.get(3).setData(3, 4, String.format("%.0f km/h", (day5.getJSONObject("day").getDouble("maxwind_kph"))));
+        data.get(3).setData(3, 5, String.format("%.0f km/h", (day6.getJSONObject("day").getDouble("maxwind_kph"))));
+        data.get(3).setData(3, 6, String.format("%.0f km/h", (day7.getJSONObject("day").getDouble("maxwind_kph"))));
+
+        data.get(4).setData(4, 0, String.format("%.0f %%", (day1.getJSONObject("day").getDouble("avghumidity"))));
+        data.get(4).setData(4, 1, String.format("%.0f %%", (day2.getJSONObject("day").getDouble("avghumidity"))));
+        data.get(4).setData(4, 2, String.format("%.0f %%", (day3.getJSONObject("day").getDouble("avghumidity"))));
+        data.get(4).setData(4, 3, String.format("%.0f %%", (day4.getJSONObject("day").getDouble("avghumidity"))));
+        data.get(4).setData(4, 4, String.format("%.0f %%", (day5.getJSONObject("day").getDouble("avghumidity"))));
+        data.get(4).setData(4, 5, String.format("%.0f %%", (day6.getJSONObject("day").getDouble("avghumidity"))));
+        data.get(4).setData(4, 6, String.format("%.0f %%", (day7.getJSONObject("day").getDouble("avghumidity"))));
+
+        data.get(5).setData(5, 0, Main.getUvOutputFormat(day1.getJSONObject("day").getDouble("uv")));
+        data.get(5).setData(5, 1, Main.getUvOutputFormat(day2.getJSONObject("day").getDouble("uv")));
+        data.get(5).setData(5, 2, Main.getUvOutputFormat(day3.getJSONObject("day").getDouble("uv")));
+        data.get(5).setData(5, 3, Main.getUvOutputFormat(day4.getJSONObject("day").getDouble("uv")));
+        data.get(5).setData(5, 4, Main.getUvOutputFormat(day5.getJSONObject("day").getDouble("uv")));
+        data.get(5).setData(5, 5, Main.getUvOutputFormat(day6.getJSONObject("day").getDouble("uv")));
+        data.get(5).setData(5, 6, Main.getUvOutputFormat(day7.getJSONObject("day").getDouble("uv")));
+
+        data.get(6).setData(6, 0, String.format("%.0f %%", (day1.getJSONObject("day").getDouble("daily_chance_of_rain"))));
+        data.get(6).setData(6, 1, String.format("%.0f %%", (day2.getJSONObject("day").getDouble("daily_chance_of_rain"))));
+        data.get(6).setData(6, 2, String.format("%.0f %%", (day3.getJSONObject("day").getDouble("daily_chance_of_rain"))));
+        data.get(6).setData(6, 3, String.format("%.0f %%", (day4.getJSONObject("day").getDouble("daily_chance_of_rain"))));
+        data.get(6).setData(6, 4, String.format("%.0f %%", (day5.getJSONObject("day").getDouble("daily_chance_of_rain"))));
+        data.get(6).setData(6, 5, String.format("%.0f %%", (day6.getJSONObject("day").getDouble("daily_chance_of_rain"))));
+        data.get(6).setData(6, 6, String.format("%.0f %%", (day7.getJSONObject("day").getDouble("daily_chance_of_rain"))));
+
+        data.get(7).setData(7, 0, String.format("%.0f %%", (day1.getJSONObject("day").getDouble("daily_chance_of_snow"))));
+        data.get(7).setData(7, 1, String.format("%.0f %%", (day2.getJSONObject("day").getDouble("daily_chance_of_snow"))));
+        data.get(7).setData(7, 2, String.format("%.0f %%", (day3.getJSONObject("day").getDouble("daily_chance_of_snow"))));
+        data.get(7).setData(7, 3, String.format("%.0f %%", (day4.getJSONObject("day").getDouble("daily_chance_of_snow"))));
+        data.get(7).setData(7, 4, String.format("%.0f %%", (day5.getJSONObject("day").getDouble("daily_chance_of_snow"))));
+        data.get(7).setData(7, 5, String.format("%.0f %%", (day6.getJSONObject("day").getDouble("daily_chance_of_snow"))));
+        data.get(7).setData(7, 6, String.format("%.0f %%", (day7.getJSONObject("day").getDouble("daily_chance_of_snow"))));
+
+        data.get(8).setData(8, 0, (day1.getJSONObject("day").getJSONObject("condition").getString("text")));
+        data.get(8).setData(8, 1, (day2.getJSONObject("day").getJSONObject("condition").getString("text")));
+        data.get(8).setData(8, 2, (day3.getJSONObject("day").getJSONObject("condition").getString("text")));
+        data.get(8).setData(8, 3, (day4.getJSONObject("day").getJSONObject("condition").getString("text")));
+        data.get(8).setData(8, 4, (day5.getJSONObject("day").getJSONObject("condition").getString("text")));
+        data.get(8).setData(8, 5, (day6.getJSONObject("day").getJSONObject("condition").getString("text")));
+        data.get(8).setData(8, 6, (day7.getJSONObject("day").getJSONObject("condition").getString("text")));
+
+        data.get(9).setData(9, 0, (day1.getJSONObject("astro").getString("sunrise")));
+        data.get(9).setData(9, 1, (day2.getJSONObject("astro").getString("sunrise")));
+        data.get(9).setData(9, 2, (day3.getJSONObject("astro").getString("sunrise")));
+        data.get(9).setData(9, 3, (day4.getJSONObject("astro").getString("sunrise")));
+        data.get(9).setData(9, 4, (day5.getJSONObject("astro").getString("sunrise")));
+        data.get(9).setData(9, 5, (day6.getJSONObject("astro").getString("sunrise")));
+        data.get(9).setData(9, 6, (day7.getJSONObject("astro").getString("sunrise")));
+
+        data.get(10).setData(10, 0, (day1.getJSONObject("astro").getString("sunset")));
+        data.get(10).setData(10, 1, (day2.getJSONObject("astro").getString("sunset")));
+        data.get(10).setData(10, 2, (day3.getJSONObject("astro").getString("sunset")));
+        data.get(10).setData(10, 3, (day4.getJSONObject("astro").getString("sunset")));
+        data.get(10).setData(10, 4, (day5.getJSONObject("astro").getString("sunset")));
+        data.get(10).setData(10, 5, (day6.getJSONObject("astro").getString("sunset")));
+        data.get(10).setData(10, 6, (day7.getJSONObject("astro").getString("sunset")));
     }
 
     private void returnToMainPage() {

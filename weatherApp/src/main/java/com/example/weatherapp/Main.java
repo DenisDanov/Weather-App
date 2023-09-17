@@ -667,24 +667,23 @@ public class Main extends Application {
 
     private void updateAPIData() throws ParseException, IOException {
         new Thread(() -> {
-            for (String cityKey : responseBodiesSecondAPI.keySet()) {
+            responseBodiesFirstAPI.entrySet().forEach(entry -> {
                 try {
-                    responseBodiesSecondAPI.replace(cityKey, ForecastAPI.httpResponseForecast(cityKey));
+                    entry.setValue(ForecastAPI.httpResponseForecast(entry.getKey()));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-            }
+            });
             LocalTime time = LocalTime.now();
             String timeFormat = (time.toString().split("\\.")[0].substring(0, 5));
             System.out.printf("Updated %d APIs at %s!\n", responseBodiesSecondAPI.size(), timeFormat);
-
-            for (String cityKey : responseBodiesFirstAPI.keySet()) {
+            responseBodiesSecondAPI.entrySet().forEach(entry -> {
                 try {
-                    responseBodiesFirstAPI.replace(cityKey, weatherAppAPI.httpResponse(cityKey));
+                    entry.setValue(weatherAppAPI.httpResponse(entry.getKey()));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-            }
+            });
             System.out.printf("Updated %d APIs at %s!\n", responseBodiesFirstAPI.size(), timeFormat);
         }).start();
     }

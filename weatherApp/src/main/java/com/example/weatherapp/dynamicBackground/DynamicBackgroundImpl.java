@@ -173,12 +173,12 @@ public class DynamicBackgroundImpl {
             booleanConvert = "Day";
         }
         String finalBooleanConvert = booleanConvert;
-        String videoPath = String.valueOf((videoPaths.entrySet().
+        String videoPath = (videoPaths.entrySet().
                 stream()
                 .filter(entry -> weatherDescriptionRefactor.contains(entry.getKey().split(" ")[0]) &&
                         finalBooleanConvert.equals(entry.getKey().split(" ")[1]))
                 .map(Map.Entry::getValue)
-                .findFirst()));
+                .findFirst()).toString();
         createMediaPlayerAndPlayIt(videoPath.substring(9, videoPath.length() - 1));
     }
 
