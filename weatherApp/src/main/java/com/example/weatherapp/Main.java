@@ -133,6 +133,8 @@ public class Main extends Application {
         showWeeklyForecastButton.setStage(stage);
         showWeeklyForecastButton.setShowMoreWeatherInfo(showMoreWeatherInfo);
         showWeeklyForecastButton.setGetDailyForecast(getDailyForecast);
+        dynamicBackground.setMainScene(mainScene);
+        dynamicBackground.setStage(stage);
     }
 
     private void setUpDynamicBackground() {
@@ -144,7 +146,7 @@ public class Main extends Application {
                 stage,
                 mainScene
         );
-
+        dynamicBackground.addVideosPaths();
     }
 
     public void startScheduledTask() {
@@ -438,6 +440,7 @@ public class Main extends Application {
             // Perform network operations, JSON parsing, and data processing
 
             new Thread(() -> {
+
                 String weatherConditionAndIcon = getWeatherCondition();
                 String responseBody;
                 ForecastData forecastData;
@@ -646,8 +649,6 @@ public class Main extends Application {
         showWeeklyForecastButton.setCity(city);
         dynamicBackground.setCity(city);
         dynamicBackground.setResponseBodiesSecondAPI(responseBodiesSecondAPI);
-        dynamicBackground.setStage(stage);
-        dynamicBackground.setMainScene(mainScene);
     }
 
     public static String getUvOutputFormat(double uvIndex) {

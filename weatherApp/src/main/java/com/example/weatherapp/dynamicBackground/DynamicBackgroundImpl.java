@@ -16,7 +16,9 @@ import weatherApi.ForecastAPI;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -31,13 +33,10 @@ public class DynamicBackgroundImpl {
     private String city;
     private ConcurrentHashMap<String, String> responseBodiesSecondAPI;
     private String responseBodyGetSunsetSunrise;
-    private MediaPlayer mediaPlayer;
     private final MediaView mediaView = new MediaView();
-    private final FadeTransition fadeOut;
-    private final FadeTransition fadeIn;
-    private MediaPlayer newMediaPlayer;
     private Stage stage;
     private Scene mainScene;
+    private final Map<String, String> videoPaths;
 
     public DynamicBackgroundImpl(StackPane rootLayout,
                                  VBox root,
@@ -52,8 +51,8 @@ public class DynamicBackgroundImpl {
         this.responseBodyGetSunsetSunrise = "";
         this.setStage(stage);
         this.setMainScene(mainScene);
-        this.fadeOut = new FadeTransition();
-        this.fadeIn = new FadeTransition();
+        this.videoPaths = new HashMap<>();
+
         Objects.requireNonNull(rootLayout).getChildren().addAll(mediaView, root);
     }
 
@@ -73,54 +72,65 @@ public class DynamicBackgroundImpl {
         this.responseBodiesSecondAPI = responseBodiesSecondAPI;
     }
 
-    private void fadeInToNewVideo() {
+    private void fadeInToNewVideo(MediaPlayer newMediaPlayer,FadeTransition fadeIn) {
         mediaView.getMediaPlayer().dispose();
         mediaView.setMediaPlayer(newMediaPlayer);
 
         fadeIn.setNode(mediaView);
-        fadeIn.setFromValue(1.0);
-        fadeIn.setToValue(1.0);
 
         // Start the fade-in animation
-        fadeIn.play();
-
         newMediaPlayer.play();
-        System.out.println(fadeIn.getDuration());
+        fadeIn.play();
     }
 
-    private MediaPlayer createMediaPlayer(String resourcePath) {
+    public void addVideosPaths() {
+        videoPaths.put("lightrain Day", "Weather-Background-LightRain-Day.mp4");
+        videoPaths.put("lightrain Night", "Weather-Background-LightRain-Night.mp4");
+        videoPaths.put("lightdrizzle Day", "Weather-Background-LightRain-Day.mp4");
+        videoPaths.put("lightdrizzle Night", "Weather-Background-LightRain-Night.mp4");
+        videoPaths.put("cloud Day", "Weather-Background-Cloudy-Day.mp4");
+        videoPaths.put("cloud Night", "Weather-Background-Cloudy-Night.mp4");
+        videoPaths.put("overcast Day", "Weather-Background-Overcast-Day.mp4");
+        videoPaths.put("overcast Night", "Weather-Background-Overcast-Night.mp4");
+        videoPaths.put("clear Day", "Weather-Background-Clear-Day.mp4");
+        videoPaths.put("clear Night", "Weather-Background-Clear-Night.mp4");
+        videoPaths.put("sunny Day", "Weather-Background-Clear-Day.mp4");
+        videoPaths.put("sunny Night", "Weather-Background-Clear-Night.mp4");
+        videoPaths.put("rain Day", "Weather-Background-HeavyRain-Day.mp4");
+        videoPaths.put("rain Night", "Weather-Background-HeavyRain-Night.mp4");
+        videoPaths.put("mist Day", "Weather-Background-Overcast-Day.mp4");
+        videoPaths.put("mist Night", "Weather-Background-Overcast-Night.mp4");
+        videoPaths.put("fog Day", "Weather-Background-Overcast-Day.mp4");
+        videoPaths.put("fog Night", "Weather-Background-Overcast-Night.mp4");
+    }
 
+    private void createMediaPlayerAndPlayIt(String resourcePath) {
         if (mediaView.getMediaPlayer() != null) {
             // Create a new MediaPlayer for the second video
-            newMediaPlayer = new MediaPlayer(
-                    new Media(Objects.requireNonNull(getClass().getResource(resourcePath)).toString()));
+            MediaPlayer newMediaPlayer = new MediaPlayer(
+                    new Media(Objects.requireNonNull(getClass().getResource("/" + resourcePath)).toString()));
             newMediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
             newMediaPlayer.setMute(true);
 
-            fadeOut.setNode(mediaView);
-            if (stage.getScene() == mainScene) {
-                fadeOut.setDuration(Duration.seconds(0.1));
-                fadeIn.setDuration(Duration.seconds(0.1));
-            } else {
+            FadeTransition fadeOut = new FadeTransition(Duration.millis(100),mediaView);
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(100),mediaView);
+
+            if (stage.getScene() != mainScene) {
                 fadeOut.setDuration(Duration.millis(1));
                 fadeIn.setDuration(Duration.millis(1));
             }
 
-            // Create a crossfade transition when switching between videos
-            fadeOut.setFromValue(1.0);
-            fadeOut.setToValue(1.0);
-
             // Set an event handler for when the fade out animation is finished
             fadeOut.setOnFinished(event -> {
                 // Crossfade to the second video
-                fadeInToNewVideo();
+                fadeInToNewVideo(newMediaPlayer,fadeIn);
             });
 
             // Start the fade-out animation
             fadeOut.play();
-            System.out.println(fadeOut.getDuration());
         } else {
-            mediaPlayer = new MediaPlayer(new Media(Objects.requireNonNull(getClass().getResource(resourcePath)).toString()));
+            MediaPlayer mediaPlayer = new MediaPlayer(new Media(Objects.requireNonNull
+                    (getClass().getResource("/" + resourcePath)).toString()));
             mediaPlayer.setAutoPlay(false); // Prevent immediate playback
             mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
             mediaPlayer.setMute(true);
@@ -131,7 +141,6 @@ public class DynamicBackgroundImpl {
 
             mediaPlayer.play();
         }
-        return mediaPlayer;
     }
 
     public void switchVideoBackground(String weatherDescription) {
@@ -156,65 +165,21 @@ public class DynamicBackgroundImpl {
     }
 
     public void playDesiredVideo(String weatherDescription, boolean currentTimeIsLaterThanSunsetVar) {
-        if (weatherDescription.toLowerCase().contains("light rain") && currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-LightRain-Day.mp4");
-        } else if (weatherDescription.toLowerCase().contains("cloud") && !currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-Cloudy-Night.mp4");
-        } else if (weatherDescription.toLowerCase().contains("overcast") && currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-Overcast-Day.mp4");
-        } else if (weatherDescription.toLowerCase().contains("clear") && !currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-Clear-Night.mp4");
-        } else if (weatherDescription.toLowerCase().contains("clear") && currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-Clear-Day.mp4");
-        } else if (weatherDescription.toLowerCase().contains("light rain") && !currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-LightRain-Night.mp4");
-        } else if (weatherDescription.toLowerCase().contains("heavy rain") && currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-HeavyRain-Day.mp4");
-        } else if (weatherDescription.toLowerCase().contains("heavy rain") && !currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-HeavyRain-Night.mp4");
-        } else if (weatherDescription.toLowerCase().contains("sunny") && currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-Clear-Day.mp4");
-        } else if (weatherDescription.toLowerCase().contains("rain") && currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-HeavyRain-Day.mp4");
-        } else if (weatherDescription.toLowerCase().contains("rain") && !currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-HeavyRain-Night.mp4");
-        } else if (weatherDescription.toLowerCase().contains("overcast") && !currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-Overcast-Night.mp4");
-        } else if (weatherDescription.toLowerCase().contains("cloud") && currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-Cloudy-Day.mp4");
-        } else if (weatherDescription.toLowerCase().contains("mist") && currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-Overcast-Day.mp4");
-        } else if (weatherDescription.toLowerCase().contains("fog") && currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-Overcast-Day.mp4");
-        } else if (weatherDescription.toLowerCase().contains("mist") && !currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-Overcast-Night.mp4");
-        } else if (weatherDescription.toLowerCase().contains("fog") && !currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-Overcast-Night.mp4");
-        } else if (weatherDescription.toLowerCase().contains("sunny") && !currentTimeIsLaterThanSunsetVar) {
-
-            playSeamlessVideo("/Weather-Background-Clear-Night.mp4");
+        String weatherDescriptionRefactor = weatherDescription.toLowerCase().replaceAll("\\s", "");
+        String booleanConvert;
+        if (!currentTimeIsLaterThanSunsetVar) {
+            booleanConvert = "Night";
+        } else {
+            booleanConvert = "Day";
         }
-    }
-
-    private void playSeamlessVideo(String videoPath) {
-        mediaPlayer = createMediaPlayer(videoPath);
+        String finalBooleanConvert = booleanConvert;
+        String videoPath = String.valueOf((videoPaths.entrySet().
+                stream()
+                .filter(entry -> weatherDescriptionRefactor.contains(entry.getKey().split(" ")[0]) &&
+                        finalBooleanConvert.equals(entry.getKey().split(" ")[1]))
+                .map(Map.Entry::getValue)
+                .findFirst()));
+        createMediaPlayerAndPlayIt(videoPath.substring(9, videoPath.length() - 1));
     }
 
     private boolean currentTimeIsLaterThanSunset() {
