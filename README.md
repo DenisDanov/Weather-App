@@ -39,7 +39,7 @@ I developed a multi-threaded JavaFX Weather Application, leveraging my programmi
 - Efficiently integrated external weather data sources to provide accurate and up-to-date information.
 - Showcased strong problem-solving and programming skills by creating a multi-scene JavaFX application.
 
-This project demonstrates my skills in Java and JavaFX and also highlights my ability to design and develop user-centric applications that provide valuable information in an accessible and engaging manner. It showcases my dedication to delivering functional and aesthetically pleasing software solutions to meet user needs.
+This project demonstrates my skills in Java and JavaFX and also highlights my ability to design and develop applications that provide valuable information in an accessible and engaging manner. It showcases my dedication to delivering functional and aesthetically pleasing software solutions to meet user needs.
 
 
 
