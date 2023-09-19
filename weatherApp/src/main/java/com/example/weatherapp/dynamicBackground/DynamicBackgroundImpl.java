@@ -1,6 +1,7 @@
 package com.example.weatherapp.dynamicBackground;
 
 import javafx.animation.FadeTransition;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -72,17 +73,6 @@ public class DynamicBackgroundImpl {
         this.responseBodiesSecondAPI = responseBodiesSecondAPI;
     }
 
-    private void fadeInToNewVideo(MediaPlayer newMediaPlayer,FadeTransition fadeIn) {
-        mediaView.getMediaPlayer().dispose();
-        mediaView.setMediaPlayer(newMediaPlayer);
-
-        fadeIn.setNode(mediaView);
-
-        // Start the fade-in animation
-        newMediaPlayer.play();
-        fadeIn.play();
-    }
-
     public void addVideosPaths() {
         videoPaths.put("lightrain Day", "Weather-Background-LightRain-Day.mp4");
         videoPaths.put("lightrain Night", "Weather-Background-LightRain-Night.mp4");
@@ -105,42 +95,55 @@ public class DynamicBackgroundImpl {
     }
 
     private void createMediaPlayerAndPlayIt(String resourcePath) {
-        if (mediaView.getMediaPlayer() != null) {
-            // Create a new MediaPlayer for the second video
-            MediaPlayer newMediaPlayer = new MediaPlayer(
-                    new Media(Objects.requireNonNull(getClass().getResource("/" + resourcePath)).toString()));
-            newMediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-            newMediaPlayer.setMute(true);
+        Platform.runLater(() -> {
+            if (mediaView.getMediaPlayer() != null) {
+                // Create a new MediaPlayer for the second video
+                MediaPlayer newMediaPlayer = new MediaPlayer(
+                        new Media(Objects.requireNonNull(getClass().getResource("/" + resourcePath)).toString()));
+                newMediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+                newMediaPlayer.setMute(true);
 
-            FadeTransition fadeOut = new FadeTransition(Duration.millis(100),mediaView);
-            FadeTransition fadeIn = new FadeTransition(Duration.millis(100),mediaView);
+                FadeTransition fadeOut = new FadeTransition(Duration.millis(100), mediaView);
+                FadeTransition fadeIn = new FadeTransition(Duration.millis(100), mediaView);
 
-            if (stage.getScene() != mainScene) {
-                fadeOut.setDuration(Duration.millis(1));
-                fadeIn.setDuration(Duration.millis(1));
+                if (stage.getScene() != mainScene) {
+                    fadeOut.setDuration(Duration.millis(1));
+                    fadeIn.setDuration(Duration.millis(1));
+                }
+
+                // Set an event handler for when the fade out animation is finished
+                fadeOut.setOnFinished(event -> {
+                    // Crossfade to the second video
+                    fadeInToNewVideo(newMediaPlayer, fadeIn);
+                });
+
+                // Start the fade-out animation
+                fadeOut.play();
+            } else {
+                MediaPlayer mediaPlayer = new MediaPlayer(new Media(Objects.requireNonNull
+                        (getClass().getResource("/" + resourcePath)).toString()));
+                mediaPlayer.setAutoPlay(false); // Prevent immediate playback
+                mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+                mediaPlayer.setMute(true);
+
+                mediaView.setMediaPlayer(mediaPlayer);
+                mediaView.setSmooth(true);
+                mediaView.setVisible(true);
+
+                mediaPlayer.play();
             }
+        });
+    }
 
-            // Set an event handler for when the fade out animation is finished
-            fadeOut.setOnFinished(event -> {
-                // Crossfade to the second video
-                fadeInToNewVideo(newMediaPlayer,fadeIn);
-            });
+    private void fadeInToNewVideo(MediaPlayer newMediaPlayer, FadeTransition fadeIn) {
+        mediaView.getMediaPlayer().dispose();
+        mediaView.setMediaPlayer(newMediaPlayer);
 
-            // Start the fade-out animation
-            fadeOut.play();
-        } else {
-            MediaPlayer mediaPlayer = new MediaPlayer(new Media(Objects.requireNonNull
-                    (getClass().getResource("/" + resourcePath)).toString()));
-            mediaPlayer.setAutoPlay(false); // Prevent immediate playback
-            mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-            mediaPlayer.setMute(true);
+        fadeIn.setNode(mediaView);
 
-            mediaView.setMediaPlayer(mediaPlayer);
-            mediaView.setSmooth(true);
-            mediaView.setVisible(true);
-
-            mediaPlayer.play();
-        }
+        // Start the fade-in animation
+        newMediaPlayer.play();
+        fadeIn.play();
     }
 
     public void switchVideoBackground(String weatherDescription) {
@@ -210,7 +213,7 @@ public class DynamicBackgroundImpl {
         Thread thread = new Thread(() -> {
             if (!responseBodiesSecondAPI.containsKey(city)) {
                 try {
-                    responseBodyGetSunsetSunrise = ForecastAPI.httpResponseForecast(city);
+                    responseBodyGetSunsetSunrise = ForecastAPI.httpResponseDailyForecast(city);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

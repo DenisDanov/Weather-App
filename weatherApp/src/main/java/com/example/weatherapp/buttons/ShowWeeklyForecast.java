@@ -1,7 +1,7 @@
 package com.example.weatherapp.buttons;
 
-import com.example.weatherapp.labels.BubbleLabels;
 import com.example.weatherapp.Main;
+import com.example.weatherapp.labels.BubbleLabels;
 import com.example.weatherapp.weeklyForecastTable.WeeklyForecastTable;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
@@ -27,7 +27,7 @@ public class ShowWeeklyForecast extends Button {
 
     private VBox root;
     private final Label cityLabel;
-    private final ConcurrentHashMap<String, String> responseBodiesSecondAPI;
+    private static ConcurrentHashMap<String, String> responseBodiesWeeklySecondAPI;
     private String city;
     private final BubbleLabels humidityLabel;
     private final BubbleLabels windSpeedLabel;
@@ -58,7 +58,6 @@ public class ShowWeeklyForecast extends Button {
 
     public ShowWeeklyForecast(VBox root,
                               Label cityLabel,
-                              ConcurrentHashMap<String, String> responseBodiesSecondAPI,
                               String city, BubbleLabels humidityLabel,
                               BubbleLabels windSpeedLabel,
                               BubbleLabels uvLabel,
@@ -88,7 +87,7 @@ public class ShowWeeklyForecast extends Button {
 
         this.setRoot(root);
         this.cityLabel = cityLabel;
-        this.responseBodiesSecondAPI = responseBodiesSecondAPI;
+        responseBodiesWeeklySecondAPI = new ConcurrentHashMap<>();
         this.setCity(city);
         this.humidityLabel = humidityLabel;
         this.windSpeedLabel = windSpeedLabel;
@@ -224,7 +223,7 @@ public class ShowWeeklyForecast extends Button {
                 data.add(new WeeklyForecastTable());
             }
 
-            addDataToTable(data,daysOfTheWeek);
+            addDataToTable(data, daysOfTheWeek);
             table.setItems(data);
             fixTruncatedText(dataTypeColumn);
 
@@ -251,7 +250,7 @@ public class ShowWeeklyForecast extends Button {
         }
     }
 
-    private void fixTruncatedText(TableColumn<WeeklyForecastTable, String> column){
+    private void fixTruncatedText(TableColumn<WeeklyForecastTable, String> column) {
         column.setCellFactory(column1 -> new TableCell<>() {
             private final Text text;
 
@@ -275,7 +274,7 @@ public class ShowWeeklyForecast extends Button {
         });
     }
 
-    private void addDataToTable(ObservableList<WeeklyForecastTable> data, JSONObject[] daysOfTheWeek){
+    private void addDataToTable(ObservableList<WeeklyForecastTable> data, JSONObject[] daysOfTheWeek) {
         JSONObject day1 = daysOfTheWeek[0];
         JSONObject day2 = daysOfTheWeek[1];
         JSONObject day3 = daysOfTheWeek[2];
@@ -437,15 +436,15 @@ public class ShowWeeklyForecast extends Button {
 
     private JSONArray getWeeklyForecast() {
         String responseBody;
-        if (!responseBodiesSecondAPI.containsKey(city)) {
+        if (!responseBodiesWeeklySecondAPI.containsKey(city)) {
             try {
-                responseBody = ForecastAPI.httpResponseForecast(city);
+                responseBody = ForecastAPI.httpResponseWeeklyForecast(city);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            responseBodiesSecondAPI.put(city, responseBody);
+            responseBodiesWeeklySecondAPI.put(city, responseBody);
         } else {
-            responseBody = responseBodiesSecondAPI.get(city);
+            responseBody = responseBodiesWeeklySecondAPI.get(city);
         }
         JSONObject response = new JSONObject(responseBody);
         return response.getJSONObject("forecast").getJSONArray("forecastday");
