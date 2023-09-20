@@ -6,6 +6,7 @@ module weatherAppModule {
     requires org.apache.httpcomponents.httpclient;
     requires com.google.gson;
     requires org.json;
+    requires com.fasterxml.jackson.core;
     opens parsingWeatherData;
     opens weatherApi;
     exports com.example.weatherapp;

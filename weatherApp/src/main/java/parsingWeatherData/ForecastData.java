@@ -8,8 +8,8 @@ public class ForecastData {
     private double uvIndex;
     private double maxWind;
     private double avgHumidity;
-    private int percentChanceOfRain;
-    private int percentChanceOfSnow;
+    private double percentChanceOfRain;
+    private double   percentChanceOfSnow;
     private String weatherDescription;
     private String sunRise;
     private String sunSet;
@@ -20,8 +20,8 @@ public class ForecastData {
             double uvIndex,
             double maxWind,
             double avgHumidity,
-            int percentChanceOfRain,
-            int percentChanceOfSnow,
+            double percentChanceOfRain,
+           double percentChanceOfSnow,
             String weatherDescription,
             String sunRise,
             String sunSet) {
@@ -63,11 +63,11 @@ public class ForecastData {
         return avgHumidity;
     }
 
-    public int getPercentChanceOfRain() {
+    public double getPercentChanceOfRain() {
         return percentChanceOfRain;
     }
 
-    public int getPercentChanceOfSnow() {
+    public double getPercentChanceOfSnow() {
         return percentChanceOfSnow;
     }
 
