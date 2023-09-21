@@ -31,7 +31,6 @@ import org.json.JSONObject;
 import parsingWeatherData.ForecastData;
 import parsingWeatherData.MainParsedData;
 import parsingWeatherData.WeatherData;
-import parsingWeatherData.WeatherInfo;
 import weatherApi.ForecastAPI;
 import weatherApi.WeatherAppAPI;
 
@@ -49,7 +48,6 @@ import java.util.regex.Pattern;
 
 public class Main extends Application {
 
-    private final WeatherAppAPI weatherAppAPI;
     private WeatherData weatherData;
     private static String city;
     private final TextField inputTextField = new TextField(); // Create a TextField for input
@@ -103,9 +101,9 @@ public class Main extends Application {
     private DynamicBackgroundImpl dynamicBackground;
     private Image image;
     private final Map<String, Image> imageCache = new HashMap<>();
+    public static ForecastData forecastData;
 
     public Main() {
-        this.weatherAppAPI = new WeatherAppAPI();
         this.responseBodiesFirstAPI = new ConcurrentHashMap<>();
         responseBodiesDailySecondAPI = new ConcurrentHashMap<>();
         this.responseBodyCheckForValidInput = "";
@@ -390,20 +388,33 @@ public class Main extends Application {
         });
     }
 
-    private void fetchAndDisplayWeatherData(String cityTextField) {
+    private WeatherDataAndForecast checkData(String responseBody, ForecastData forecastData,
+                                             String weatherConditionAndIcon,
+                                             WeatherData weatherData,
+                                             String localTime) {
+        if (!responseBody.equals("{\"cod\":\"400\",\"message\":\"Nothing to geocode\"}")
+                && !responseBody.equals("{\"cod\":\"404\",\"message\":\"city not found\"}")
+                && weatherData != null
+                && forecastData != null) {
+            return new WeatherDataAndForecast(responseBody, weatherData, forecastData, weatherConditionAndIcon, localTime);
+        } else {
+            return null;
+        }
+    }
 
+    private void fetchAndDisplayWeatherData(String cityTextField) {
         city = cityTextField;
+
         if (stage.getScene() == firstPageScene && !"Passed!".equals(passedFirstPage)) {
             checkForValidInput();
         } else {
-            CompletableFuture.supplyAsync(() -> {
+            CompletableFuture<WeatherDataAndForecast> future = CompletableFuture.supplyAsync(() -> {
                 String responseBody;
-                ForecastData forecastData;
                 String weatherConditionAndIcon = getWeatherCondition();
 
                 if (!responseBodiesFirstAPI.containsKey(city)) {
                     try {
-                        responseBody = weatherAppAPI.httpResponse(city);
+                        responseBody = WeatherAppAPI.httpResponse(city);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -418,27 +429,32 @@ public class Main extends Application {
 
                 Gson gson = new Gson();
                 weatherData = gson.fromJson(responseBody, WeatherData.class);
+                String localTime = formatDateToDayAndHour(getLocalTime());
 
-                return new WeatherDataAndForecast(responseBody, weatherData, forecastData, weatherConditionAndIcon);
-            }).thenAcceptAsync(data -> {
-                String responseBody = data.getResponseBody();
-                WeatherData weatherData = data.getWeatherData();
-                ForecastData forecastData = data.getForecastData();
-                String weatherConditionAndIcon = data.getWeatherConditionAndIcon();
+                return checkData(responseBody, forecastData, weatherConditionAndIcon,
+                        weatherData, localTime);
+            });
+            future.thenAcceptAsync(validInput -> Platform.runLater(() -> {
+                if (validInput != null) {
+                    String responseBody = validInput.getResponseBody();
+                    WeatherData weatherData = validInput.getWeatherData();
+                    ForecastData forecastData = validInput.getForecastData();
+                    String weatherConditionAndIcon = validInput.getWeatherConditionAndIcon();
+                    String localTime = validInput.getLocalTime();
 
-                if (!responseBody.equals("{\"cod\":\"400\",\"message\":\"Nothing to geocode\"}") &&
-                        !responseBody.equals("{\"cod\":\"404\",\"message\":\"city not found\"}") &&
-                        weatherData != null &&
-                        forecastData != null) {
                     updateButtonsData();
-                }
-                CompletableFuture.supplyAsync(() -> {
-                    if (!responseBody.equals("{\"cod\":\"400\",\"message\":\"Nothing to geocode\"}") &&
-                            !responseBody.equals("{\"cod\":\"404\",\"message\":\"city not found\"}") &&
-                            !city.equals(lastEnteredCity) &&
-                            weatherData != null &&
-                            forecastData != null) {
-                        Platform.runLater(() -> {
+                    // Update UI with valid data
+                    try {
+                        MainParsedData mainInfo;
+                        Matcher matcher = pattern.matcher(city);
+                        if (matcher.find()) {
+                            mainInfo = Objects.requireNonNull(weatherData).getMain();
+                        } else {
+                            mainInfo = null;
+                        }
+
+                        if (!city.equals(lastEnteredCity)) {
+
                             dynamicBackground.switchVideoBackground(weatherConditionAndIcon.split("&")[1]);
 
                             String iconUrl = weatherConditionAndIcon.split("&")[0];
@@ -457,143 +473,92 @@ public class Main extends Application {
                             } else {
                                 gridPane.add(iconView, 1, 0);
                             }
-                        });
-                    }
-                    return null;
-                }).thenAcceptAsync(videoLoaded -> {
-                    // Handle any post-processing or UI updates here
-                    // Other UI updates...
-                    GridPane checkButtonsPane = (GridPane) root.getChildren().get(2);
+                        }
+                        GridPane checkButtonsPane = (GridPane) root.getChildren().get(2);
 
-                    if (!checkButtonsPane.getChildren().contains(fetchButton)) {
-                        buttonsPane.add(fetchButton, 0, 0);
-                    }
-
-                    if (localTimeLabel.getTextFill().equals(Color.RED)) {
-                        localTimeLabel.setTextFill(Color.WHITE);
-                    }
-
-                    try {
-                        MainParsedData mainInfo;
-                        WeatherInfo[] weatherInfo;
-                        Matcher matcher = pattern.matcher(city);
-                        if (matcher.find()) {
-                            mainInfo = Objects.requireNonNull(weatherData).getMain();
-                            weatherInfo = weatherData.getWeather();
-                        } else {
-                            mainInfo = null;
-                            weatherInfo = null;
+                        if (!checkButtonsPane.getChildren().contains(fetchButton)) {
+                            buttonsPane.add(fetchButton, 0, 0);
                         }
 
-                        if (mainInfo != null && weatherInfo != null && weatherInfo.length > 0 && forecastData != null) {
-                            if (inputTextField.getStyle().equals("-fx-text-fill: red;")) {
-                                inputTextField.setStyle(temperatureLabel.getStyle());
+                        if (localTimeLabel.getTextFill().equals(Color.RED)) {
+                            localTimeLabel.setTextFill(Color.WHITE);
+                        }
+
+                        if (inputTextField.getStyle().equals("-fx-text-fill: red;")) {
+                            inputTextField.setStyle(temperatureLabel.getStyle());
+                        }
+                        if (!lastEnteredCity.equals(city)) {
+                            if (!responseBodiesFirstAPI.containsKey(city)) {
+                                responseBodiesFirstAPI.put(city, responseBody);
                             }
-                            if (!lastEnteredCity.equals(city)) {
-                                if (!responseBodiesFirstAPI.containsKey(city)) {
-                                    responseBodiesFirstAPI.put(city, responseBody);
-                                }
-                                double temp = mainInfo.getTemp();
-                                double tempFeelsLike = mainInfo.getFeels_like();
-                                int humidity = mainInfo.getHumidity();
+                            double temp = Objects.requireNonNull(mainInfo).getTemp();
+                            double tempFeelsLike = mainInfo.getFeels_like();
 
-                                buttonsPane.setVisible(true);
-                                convertTemperature.setVisible(true);
-                                showMoreWeatherInfo.setVisible(true);
-                                temperatureLabel.setVisible(true);
-                                descriptionLabel.setVisible(true);
-                                temperatureFeelsLikeLabel.setVisible(true);
+                            buttonsPane.setVisible(true);
+                            convertTemperature.setVisible(true);
+                            showMoreWeatherInfo.setVisible(true);
+                            temperatureLabel.setVisible(true);
+                            descriptionLabel.setVisible(true);
+                            temperatureFeelsLikeLabel.setVisible(true);
 
-                                double temperatureCelsius = (temp - 273.15);
-                                double temperatureFeelsLikeCelsius = tempFeelsLike - 273.15;
-                                localTimeLabel.setText(String.format("Local time: %s",
-                                        formatDateToDayAndHour(getLocalTime())));
-                                temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21",
-                                        temperatureCelsius));
-                                temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21",
-                                        temperatureFeelsLikeCelsius));
+                            double temperatureCelsius = (temp - 273.15);
+                            double temperatureFeelsLikeCelsius = tempFeelsLike - 273.15;
+                            localTimeLabel.setText(String.format("Local time: %s", localTime));
+                            temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21",
+                                    temperatureCelsius));
+                            temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21",
+                                    temperatureFeelsLikeCelsius));
 
-                                weatherDescriptionLabel.setWrapText(true);
-                                weatherDescriptionLabel.setText("Weather Description: " +
-                                        weatherConditionAndIcon.split("&")[1]);
+                            weatherDescriptionLabel.setWrapText(true);
+                            weatherDescriptionLabel.setText("Weather Description: " +
+                                    weatherConditionAndIcon.split("&")[1]);
 
-                                if (!humidityLabel.getText().equals("") && humidityLabel.isVisible()) {
-                                    humidityLabel.setText(String.format("Humidity: %d %%", humidity));
-                                    uvLabel.setText("UV Index: " + getUvOutputFormat(getUV(city)));
-                                    windSpeedLabel.setText(String.format("Wind speed: %.0f km/h",
-                                            (weatherData.getWind().getSpeed() * 3.6)));
-
-                                    if (!dateForecast.getText().equals("") && dateForecast.isVisible()) {
-                                        dateForecast.setText(String.format("Date: %s", forecastData.getDate()));
-                                        weatherDescriptionForecast.setText("Weather description for the day: " +
-                                                forecastData.getWeatherDescription());
-                                        maxTempForecast.setText(String.format("Max temperature for the day: %.0f°C",
-                                                forecastData.getMaxTemp()));
-                                        minTempForecast.setText(String.format("Min temperature for the day: %.0f°C",
-                                                forecastData.getMinTemp()));
-                                        avgTempForecast.setText(String.format("UV Index for the day: %s",
-                                                getUvOutputFormat(forecastData.getUvIndex())));
-                                        maxWindForecast.setText(String.format("Max wind speed for the day: %.0f km/h",
-                                                forecastData.getMaxWind()));
-                                        avgHumidityForecast.setText(String.format("Average humidity for the day: %.0f %%",
-                                                forecastData.getAvgHumidity()));
-                                        chanceOfRainingForecast.setText(String.format("Chance of raining: %.0f %%",
-                                                forecastData.getPercentChanceOfRain()));
-                                        chanceOfSnowForecast.setText(String.format("Chance of snowing: %.0f %%",
-                                                forecastData.getPercentChanceOfSnow()));
-                                        sunrise.setText("Sunrise: " + forecastData.getSunRise());
-                                        sunset.setText("Sunset: " + forecastData.getSunSet());
-                                    } else {
-                                        dateForecast.setText("");
-                                        dateForecast.setVisible(false);
-                                        weatherDescriptionForecast.setVisible(false);
-                                        maxTempForecast.setVisible(false);
-                                        minTempForecast.setVisible(false);
-                                        avgTempForecast.setVisible(false);
-                                        maxWindForecast.setVisible(false);
-                                        avgHumidityForecast.setVisible(false);
-                                        chanceOfRainingForecast.setVisible(false);
-                                        chanceOfSnowForecast.setVisible(false);
-                                        sunrise.setVisible(false);
-                                        sunset.setVisible(false);
-                                    }
+                            if (!humidityLabel.getText().equals("") && humidityLabel.isVisible()) {
+                                showMoreWeatherInfo.showLabels(mainInfo);
+                                if (!dateForecast.getText().equals("") && dateForecast.isVisible()) {
+                                    getDailyForecast.updateLabels(forecastData);
+                                } else {
+                                    getDailyForecast.hideLabels();
                                 }
                             }
-                            if (!lastEnteredCity.equals(city)) {
-                                lastEnteredCity = city;
-                            }
-                        } else {
-                            localTimeLabel.setText("Invalid place.");
-                            hideAllNodes();
+                        }
+                        if (!lastEnteredCity.equals(city)) {
+                            lastEnteredCity = city;
                         }
                     } catch (Exception e) {
                         e.printStackTrace(System.out);
                         localTimeLabel.setText("An error occurred.");
                         hideAllNodes();
                     }
-                    if (inputTextField.getText().equals("") && stage.getScene() == firstPageScene) {
-                        inputTextField.setText(cityStartUpTextField.getText());
-                        inputTextField.deselect();
-                        Platform.runLater(() -> inputTextField.positionCaret(cityStartUpTextField.getText().length()));
-                    }
-                    if (stage.getScene() != mainScene) {
-                        stage.setScene(mainScene);
-                    }
-                }, Platform::runLater);
-            });
+                } else {
+                    // case of invalid input or error
+                    localTimeLabel.setText("Invalid place.");
+                    hideAllNodes();
+                }
+
+                // Rest of your UI updates...
+                if (inputTextField.getText().equals("") && stage.getScene() == firstPageScene) {
+                    inputTextField.setText(cityStartUpTextField.getText());
+                    inputTextField.deselect();
+                    Platform.runLater(() -> inputTextField.positionCaret(cityStartUpTextField.getText().length()));
+                }
+                if (stage.getScene() != mainScene) {
+                    stage.setScene(mainScene);
+                }
+            }));
         }
     }
 
     private void checkForValidInput() {
-        ExecutorService executor = Executors.newCachedThreadPool();
         city = cityStartUpTextField.getText();
-        executor.submit(() -> {
+
+        CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
             Matcher matcher = pattern.matcher(city);
             boolean validInput;
             if (matcher.find()) {
                 if (!responseBodiesFirstAPI.containsKey(city)) {
                     try {
-                        responseBodyCheckForValidInput = weatherAppAPI.httpResponse(city);
+                        responseBodyCheckForValidInput = WeatherAppAPI.httpResponse(city);
                         responseBodiesFirstAPI.put(city, responseBodyCheckForValidInput);
                     } catch (IOException e) {
                         // Handle the exception properly, e.g., log it
@@ -608,10 +573,13 @@ public class Main extends Application {
                 validInput = false;
             }
 
+            return validInput;
+        });
+
+        future.thenAccept(validInput -> {
             // Update the UI with the validInput result
             Platform.runLater(() -> updateUI(validInput));
         });
-        executor.shutdown();
     }
 
     private boolean isValidInput(Matcher matcher, String responseBody, String localTime) {
@@ -635,7 +603,7 @@ public class Main extends Application {
     private void createImage(String completeIconUrl) {
 
         if (!imageCache.containsKey(completeIconUrl)) {
-            image = new Image(completeIconUrl);
+            image = loadImage(completeIconUrl);
             iconView = new ImageView(image);
             iconView.setFitWidth(32);
             iconView.setFitHeight(32);
@@ -646,6 +614,27 @@ public class Main extends Application {
             iconView.setFitWidth(32);
             iconView.setFitHeight(32);
         }
+    }
+
+    private Image loadImage(String resourcePath) {
+        ExecutorService executorService = Executors.newCachedThreadPool();
+
+        CompletableFuture<Image> futureMediaPlayer =
+                CompletableFuture.supplyAsync(() -> createAndLoadMediaPlayer
+                        (resourcePath), executorService);
+
+        try {
+            executorService.shutdown();
+            return futureMediaPlayer.get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace(System.out); // Handle exceptions as needed
+            executorService.shutdown();
+            return null;
+        }
+    }
+
+    private Image createAndLoadMediaPlayer(String resourcePath) {
+        return new Image(resourcePath);
     }
 
     private void hideAllNodes() {
@@ -705,7 +694,7 @@ public class Main extends Application {
     private void updateAPIData() throws ParseException, IOException {
         responseBodiesFirstAPI.entrySet().forEach(entry -> {
             try {
-                entry.setValue(weatherAppAPI.httpResponse(entry.getKey()));
+                entry.setValue(WeatherAppAPI.httpResponse(entry.getKey()));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -824,15 +813,15 @@ public class Main extends Application {
         return null;
     }
 
-    public static double getUV(String city) {
+    public static double getUV(String city) throws IOException {
         String responseBody;
         if (!responseBodiesDailySecondAPI.containsKey(city)) {
             try {
                 responseBody = ForecastAPI.httpResponseDailyForecast(city);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException();
             }
-            responseBodiesDailySecondAPI.put(city, responseBody);
+            responseBodiesDailySecondAPI.put(city, Objects.requireNonNull(responseBody));
         } else {
             responseBody = responseBodiesDailySecondAPI.get(city);
         }
@@ -874,8 +863,8 @@ public class Main extends Application {
 
                 parser.close(); // Close the parser
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (IOException exception) {
+            throw new RuntimeException();
         }
 
         return weatherConditionAndIcon;
