@@ -55,8 +55,8 @@ public class DynamicBackgroundImpl {
         this.videoPaths = new HashMap<>();
         this.fadeOut = new FadeTransition(Duration.millis(100), mediaView);
         this.fadeIn = new FadeTransition(Duration.millis(100), mediaView);
-        fadeIn.setFromValue(0.9);
-        fadeOut.setFromValue(0.9);
+        fadeIn.setFromValue(1);
+        fadeOut.setFromValue(1);
         fadeIn.setToValue(1);
         fadeOut.setToValue(1);
 

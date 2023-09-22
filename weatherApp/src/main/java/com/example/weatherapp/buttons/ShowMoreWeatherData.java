@@ -124,7 +124,7 @@ public class ShowMoreWeatherData extends Button {
         convertWindSpeed.setVisible(false);
         getDailyForecast.setVisible(false);
         showWeeklyForecastButton.setVisible(false);
-        if (!dateForecast.isVisible()) {
+        if (dateForecast.isVisible()) {
             dateForecast.setText("");
             dateForecast.setVisible(false);
             weatherDescriptionForecast.setVisible(false);
