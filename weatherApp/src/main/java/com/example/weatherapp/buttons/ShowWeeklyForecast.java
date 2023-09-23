@@ -156,7 +156,6 @@ public class ShowWeeklyForecast extends Button {
                 daysOfTheWeek[i] = weeklyForecast.getJSONObject(i);
             }
 
-            // Create a "Data Type" column
             TableColumn<WeeklyForecastTable, String> dataTypeColumn = new TableColumn<>("Day");
             dataTypeColumn.setCellValueFactory(data -> {
 
@@ -191,7 +190,7 @@ public class ShowWeeklyForecast extends Button {
             dataTypeColumn.setCellFactory(TextFieldTableCell.forTableColumn());
             dataTypeColumn.setEditable(true);
 
-            // Create columns for each day of the week (including current day)
+            // columns for each day of the week (including current day)
             LocalDate currentDate = LocalDate.now();
             DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEEE");
             TableView<WeeklyForecastTable> table = new TableView<>();
@@ -214,10 +213,9 @@ public class ShowWeeklyForecast extends Button {
                 currentDate = currentDate.plusDays(1);
             }
 
-            // Add columns to the table
             table.getColumns().add(0, dataTypeColumn);
 
-            // Create and add sample data
+            // adding sample data
             ObservableList<WeeklyForecastTable> data = FXCollections.observableArrayList();
             for (int i = 0; i < 11; i++) {
                 data.add(new WeeklyForecastTable());

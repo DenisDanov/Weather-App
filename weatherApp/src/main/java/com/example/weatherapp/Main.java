@@ -50,7 +50,7 @@ public class Main extends Application {
 
     private WeatherData weatherData;
     private static String city;
-    private final TextField inputTextField = new TextField(); // Create a TextField for input
+    private final TextField inputTextField = new TextField(); // Main scene TextField for input
     private final BubbleLabels localTimeLabel = new BubbleLabels();
     private final BubbleLabels temperatureLabel = new BubbleLabels();
     private final BubbleLabels descriptionLabel = new BubbleLabels();
@@ -163,7 +163,7 @@ public class Main extends Application {
 
     public void startScheduledTask() {
         Runnable task = () -> {
-            // Executes the code every 1 minute
+
             try {
                 updateAPIData();
             } catch (ParseException | IOException e) {
@@ -181,12 +181,12 @@ public class Main extends Application {
         setRightMargin(inputTextField);
 
         iconView = new ImageView();
-        gridPane = new GridPane(); // 10 is the spacing between label text and icon
+        gridPane = new GridPane();
         gridPane.add(weatherDescriptionLabel, 0, 0);
         gridPane.add(iconView, 1, 0);
 
         descriptionLabel.setGraphic(gridPane);
-        descriptionLabel.setContentDisplay(ContentDisplay.GRAPHIC_ONLY); // Display only the graphic
+        descriptionLabel.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
 
         buttonsPane = new GridPane();
         buttonsPane.add(fetchButton, 0, 0);
@@ -349,7 +349,7 @@ public class Main extends Application {
 
     private void addStyleSheet(Scene scene) {
         scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/mainPage.css")).toExternalForm());
-        temperatureLabel.getStyleClass().add("emoji-label"); // Apply the CSS class
+        temperatureLabel.getStyleClass().add("emoji-label");
         temperatureFeelsLikeLabel.getStyleClass().add("emoji-label");
         Text labelText = new Text("Enter City or Country:");
         Font boldFont = Font.font("Arial", FontWeight.BOLD, 14);
@@ -361,10 +361,9 @@ public class Main extends Application {
 
     private void configurePrimaryStage(Stage primaryStage) {
         firstPageVbox = new VBox(5);
-        firstPageVbox.setAlignment(Pos.CENTER);// Center the VBox within the scene
+        firstPageVbox.setAlignment(Pos.CENTER);
         firstPageVbox.setPadding(new Insets(250));
 
-        // Add the label and text field to the VBox
         firstPageVbox.getChildren().addAll(
                 cityStartUpLabel,
                 cityStartUpTextField,
@@ -536,7 +535,6 @@ public class Main extends Application {
                     hideAllNodes();
                 }
 
-                // Rest of your UI updates...
                 if (inputTextField.getText().equals("") && stage.getScene() == firstPageScene) {
                     inputTextField.setText(cityStartUpTextField.getText());
                     inputTextField.deselect();
@@ -561,7 +559,7 @@ public class Main extends Application {
                         responseBodyCheckForValidInput = WeatherAppAPI.httpResponse(city);
                         responseBodiesFirstAPI.put(city, responseBodyCheckForValidInput);
                     } catch (IOException e) {
-                        // Handle the exception properly, e.g., log it
+                        System.out.println(e.getMessage());
                     }
                 } else {
                     responseBodyCheckForValidInput = responseBodiesFirstAPI.get(city);
@@ -627,7 +625,7 @@ public class Main extends Application {
             executorService.shutdown();
             return futureMediaPlayer.get();
         } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace(System.out); // Handle exceptions as needed
+            e.printStackTrace(System.out);
             executorService.shutdown();
             return null;
         }
@@ -731,10 +729,9 @@ public class Main extends Application {
                 while (jsonParser.nextToken() != null) {
                     if (jsonParser.getCurrentToken() == JsonToken.FIELD_NAME) {
                         String fieldName = jsonParser.getCurrentName();
-                        jsonParser.nextToken(); // Move to the value token
+                        jsonParser.nextToken();
 
                         if ("forecastday".equals(fieldName)) {
-                            // Start processing the forecastday object
                             String date;
                             double maxTempC = 0;
                             double minTempC = 0;
@@ -749,7 +746,7 @@ public class Main extends Application {
                             while (jsonParser.nextToken() != JsonToken.END_OBJECT) {
                                 if (jsonParser.getCurrentToken() == JsonToken.FIELD_NAME) {
                                     String forecastField = jsonParser.getCurrentName();
-                                    jsonParser.nextToken(); // Move to the value token
+                                    jsonParser.nextToken();
 
                                     if ("date".equals(forecastField)) {
                                         date = jsonParser.getText();
@@ -850,18 +847,18 @@ public class Main extends Application {
 
                 while (parser.nextToken() != JsonToken.END_OBJECT) {
                     String field = parser.getCurrentName();
-                    parser.nextToken(); // Move to the value
+                    parser.nextToken();
                     if ("text".equals(field)) {
                         String text = parser.getText();
                         parser.nextToken();
                         parser.nextToken();
                         String icon = parser.getText();
                         weatherConditionAndIcon = icon + "&" + text;
-                        break; // Found what we need, exit the loop
+                        break;
                     }
                 }
 
-                parser.close(); // Close the parser
+                parser.close();
             }
         } catch (IOException exception) {
             throw new RuntimeException();
@@ -886,7 +883,7 @@ public class Main extends Application {
 
                 while (parser.nextToken() != JsonToken.END_OBJECT) {
                     String field = parser.getCurrentName();
-                    parser.nextToken(); // Move to the value
+                    parser.nextToken();
                     if ("location".equals(field)) {
                         while (parser.nextToken() != JsonToken.END_OBJECT) {
                             parser.nextToken();
@@ -897,7 +894,7 @@ public class Main extends Application {
                         }
                     }
                 }
-                parser.close(); // Close the parser
+                parser.close();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

@@ -61,7 +61,7 @@ public class ShowDailyForecast extends Button {
     }
 
     public void showDailyForecastAction() {
-        // Get daily forecast logic
+        // daily forecast logic
         if (dateForecast.getText().equals("") && !dateForecast.isVisible()) {
             updateLabels(Main.forecastData);
         } else {

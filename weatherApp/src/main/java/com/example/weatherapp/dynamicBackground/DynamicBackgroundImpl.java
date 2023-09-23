@@ -111,7 +111,7 @@ public class DynamicBackgroundImpl {
             executorService.shutdown();
             return futureMediaPlayer.get();
         } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace(System.out); // Handle exceptions as needed
+            e.printStackTrace(System.out);
             executorService.shutdown();
             return null;
         }
@@ -161,7 +161,7 @@ public class DynamicBackgroundImpl {
 
     public static void disposeMediaPlayerAsync(MediaView mediaView) {
         if (mediaView == null || mediaView.getMediaPlayer() == null) {
-            return; // No MediaPlayer to dispose of
+            return;
         }
 
         MediaPlayer mediaPlayer = mediaView.getMediaPlayer();
@@ -248,7 +248,7 @@ public class DynamicBackgroundImpl {
         LocalTime sunriseTime = LocalTime.parse(sunriseTimeTrimmed, formatter);
         LocalTime sunsetTime = LocalTime.parse(sunsetTimeTrimmed, formatter);
 
-        // Check if the current time is between sunrise and sunset
+
         if (currentTime.isAfter(sunriseTime) && currentTime.isBefore(sunsetTime)) {
             return true; // It's daytime
         } else {
