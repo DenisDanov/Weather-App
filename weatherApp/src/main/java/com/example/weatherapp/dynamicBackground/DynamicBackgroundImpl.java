@@ -120,9 +120,6 @@ public class DynamicBackgroundImpl {
     private MediaPlayer createAndLoadMediaPlayer(String resourcePath) {
         MediaPlayer mediaPlayer = new MediaPlayer(new Media(Objects.requireNonNull
                 (getClass().getResource("/" + resourcePath)).toString()));
-        mediaPlayer.setAutoPlay(false); // Prevent immediate playback
-        mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-        mediaPlayer.setMute(true);
         return mediaPlayer;
     }
 
@@ -131,6 +128,9 @@ public class DynamicBackgroundImpl {
         if (mediaView.getMediaPlayer() != null) {
             // Create a new MediaPlayer for the second video
             MediaPlayer newMediaPlayer = loadMediaPlayerInBackground(resourcePath);
+            newMediaPlayer.setAutoPlay(false); // Prevent immediate playback
+            newMediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+            newMediaPlayer.setMute(true);
 
             // Set an event handler for when the fade out animation is finished
             fadeOut.setOnFinished(event -> {
@@ -150,6 +150,9 @@ public class DynamicBackgroundImpl {
             fadeOut.play();
         } else {
             MediaPlayer mediaPlayer = loadMediaPlayerInBackground(resourcePath);
+            mediaPlayer.setAutoPlay(false); // Prevent immediate playback
+            mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+            mediaPlayer.setMute(true);
 
             mediaView.setMediaPlayer(mediaPlayer);
             mediaView.setSmooth(true);

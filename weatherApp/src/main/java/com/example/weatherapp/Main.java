@@ -102,6 +102,7 @@ public class Main extends Application {
     private Image image;
     private final Map<String, Image> imageCache = new HashMap<>();
     public static ForecastData forecastData;
+    private boolean buttonEnabled = true;
 
     public Main() {
         this.responseBodiesFirstAPI = new ConcurrentHashMap<>();
@@ -378,6 +379,21 @@ public class Main extends Application {
 
     private void configureFetchButton() {
         fetchButton.setOnAction(event -> {
+            if (buttonEnabled) {
+                buttonEnabled = false; // Disable the button
+
+                // Add a delay before enabling the button again
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(700); // Delay
+                    } catch (InterruptedException e) {
+                        e.printStackTrace(System.out);
+                    }
+
+                    // Re-enable the button on the JavaFX application thread
+                    Platform.runLater(() -> buttonEnabled = true);
+                }).start();
+            }
             // Fetch and display weather data
             if (stage.getScene() == firstPageScene) {
                 checkForValidInput();
@@ -810,7 +826,7 @@ public class Main extends Application {
         return null;
     }
 
-    public static double getUV(String city) throws IOException {
+    public static double getUV(String city) {
         String responseBody;
         if (!responseBodiesDailySecondAPI.containsKey(city)) {
             try {
