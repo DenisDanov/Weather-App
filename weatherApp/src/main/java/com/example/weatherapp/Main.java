@@ -7,6 +7,8 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.google.gson.Gson;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -27,6 +29,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import org.json.JSONObject;
 import parsingWeatherData.ForecastData;
 import parsingWeatherData.MainParsedData;
@@ -102,7 +105,7 @@ public class Main extends Application {
     private Image image;
     private final Map<String, Image> imageCache = new HashMap<>();
     public static ForecastData forecastData;
-    private boolean buttonEnabled = true;
+    private Timeline timeline;
 
     public Main() {
         this.responseBodiesFirstAPI = new ConcurrentHashMap<>();
@@ -130,6 +133,13 @@ public class Main extends Application {
         configureFetchButton();
 
         startScheduledTask();
+        timeline = new Timeline(new KeyFrame(Duration.seconds(0.4), event -> {
+            if (stage.getScene() == firstPageScene) {
+                checkForValidInput();
+            } else {
+                fetchAndDisplayWeatherData(inputTextField.getText());
+            }
+        }));
     }
 
     private void updateReturnButtonNodes() {
@@ -379,27 +389,7 @@ public class Main extends Application {
 
     private void configureFetchButton() {
         fetchButton.setOnAction(event -> {
-            if (buttonEnabled) {
-                buttonEnabled = false; // Disable the button
-
-                // Add a delay before enabling the button again
-                new Thread(() -> {
-                    try {
-                        Thread.sleep(700); // Delay
-                    } catch (InterruptedException e) {
-                        e.printStackTrace(System.out);
-                    }
-
-                    // Re-enable the button on the JavaFX application thread
-                    Platform.runLater(() -> buttonEnabled = true);
-                }).start();
-            }
-            // Fetch and display weather data
-            if (stage.getScene() == firstPageScene) {
-                checkForValidInput();
-            } else {
-                fetchAndDisplayWeatherData(inputTextField.getText());
-            }
+            timeline.play();
         });
     }
 
