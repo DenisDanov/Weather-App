@@ -4,10 +4,14 @@ import com.example.weatherapp.Main;
 import com.example.weatherapp.labels.BubbleLabels;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import org.json.JSONObject;
 import parsingWeatherData.MainParsedData;
 import parsingWeatherData.WeatherData;
+import weatherApi.ForecastAPI;
 
 import java.io.IOException;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class ShowMoreWeatherData extends Button {
@@ -31,6 +35,8 @@ public class ShowMoreWeatherData extends Button {
     private WeatherData weatherData;
     private final ConvertWindSpeed convertWindSpeed;
     private String city;
+    private ConcurrentHashMap<String, String> responseBodiesDailySecondAPI;
+    private ForecastAPI forecastAPI;
 
     public ShowMoreWeatherData(BubbleLabels humidityLabel,
                                BubbleLabels windSpeedLabel,
@@ -50,7 +56,9 @@ public class ShowMoreWeatherData extends Button {
                                Button showWeeklyForecastButton,
                                WeatherData weatherData,
                                ConvertWindSpeed convertWindSpeed,
-                               String city) {
+                               String city,
+                               ConcurrentHashMap<String, String> responseBodiesDailySecondAPI,
+                               ForecastAPI forecastAPI) {
 
         this.humidityLabel = humidityLabel;
         this.windSpeedLabel = windSpeedLabel;
@@ -71,6 +79,8 @@ public class ShowMoreWeatherData extends Button {
         this.setWeatherData(weatherData);
         this.convertWindSpeed = convertWindSpeed;
         this.setCity(city);
+        this.responseBodiesDailySecondAPI = responseBodiesDailySecondAPI;
+        this.forecastAPI = forecastAPI;
 
         configureButton();
     }
@@ -105,15 +115,34 @@ public class ShowMoreWeatherData extends Button {
 
     }
 
-    public void showLabels(MainParsedData mainInfo) throws IOException {
+    public void showLabels(MainParsedData mainInfo) {
         humidityLabel.setText(String.format("Humidity: %d %%", mainInfo.getHumidity()));
-        uvLabel.setText("UV Index: " + Main.getUvOutputFormat(Main.getUV(city)));
+        uvLabel.setText("UV Index: " + Main.getUvOutputFormat(getUV(city)));
         windSpeedLabel.setText(String.format("Wind speed: %.0f km/h", (weatherData.getWind().getSpeed() * 3.6)));
         convertWindSpeed.setVisible(true);
         getDailyForecast.setVisible(true);
         humidityLabel.setVisible(true);
         windSpeedLabel.setVisible(true);
         uvLabel.setVisible(true);
+    }
+
+    public double getUV(String city) {
+        String responseBody;
+        if (!responseBodiesDailySecondAPI.containsKey(city)) {
+            try {
+                responseBody = forecastAPI.httpResponseDailyForecast(city);
+            } catch (IOException e) {
+                throw new RuntimeException();
+            }
+            responseBodiesDailySecondAPI.put(city, Objects.requireNonNull(responseBody));
+        } else {
+            responseBody = responseBodiesDailySecondAPI.get(city);
+        }
+
+        JSONObject jsonObject = new JSONObject(responseBody);
+        JSONObject currentObject = jsonObject.getJSONObject("current");
+
+        return currentObject.getDouble("uv");
     }
 
     public void hideLabels() {

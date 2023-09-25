@@ -7,8 +7,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.google.gson.Gson;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -29,8 +27,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import javafx.util.Duration;
-import org.json.JSONObject;
 import parsingWeatherData.ForecastData;
 import parsingWeatherData.MainParsedData;
 import parsingWeatherData.WeatherData;
@@ -105,7 +101,8 @@ public class Main extends Application {
     private Image image;
     private final Map<String, Image> imageCache = new HashMap<>();
     public static ForecastData forecastData;
-    private Timeline timeline;
+    private Gson gson;
+    private static ForecastAPI forecastAPI;
 
     public Main() {
         this.responseBodiesFirstAPI = new ConcurrentHashMap<>();
@@ -114,6 +111,8 @@ public class Main extends Application {
         this.responseBodySecondAPI = "";
         passedFirstPage = "not passed!";
         this.lastEnteredCity = "";
+
+        startScheduledTask();
     }
 
     public static void main(String[] args) {
@@ -128,18 +127,9 @@ public class Main extends Application {
         addStyleSheet(mainScene);
         configurePrimaryStage(primaryStage);
         primaryStage.show();
+        configureFetchButton();
         setUpDynamicBackground();
         updateReturnButtonNodes();
-        configureFetchButton();
-
-        startScheduledTask();
-        timeline = new Timeline(new KeyFrame(Duration.seconds(0.4), event -> {
-            if (stage.getScene() == firstPageScene) {
-                checkForValidInput();
-            } else {
-                fetchAndDisplayWeatherData(inputTextField.getText());
-            }
-        }));
     }
 
     private void updateReturnButtonNodes() {
@@ -167,22 +157,39 @@ public class Main extends Application {
                 city,
                 responseBodiesDailySecondAPI,
                 stage,
-                mainScene
+                mainScene,
+                forecastAPI
         );
         dynamicBackground.addVideosPaths();
     }
 
-    public void startScheduledTask() {
-        Runnable task = () -> {
+    private void configurePrimaryStage(Stage primaryStage) {
+        firstPageVbox = new VBox(5);
+        firstPageVbox.setAlignment(Pos.CENTER);
+        firstPageVbox.setPadding(new Insets(250));
 
-            try {
-                updateAPIData();
-            } catch (ParseException | IOException e) {
-                throw new RuntimeException(e);
-            }
-        };
-        // Schedule the task to run every 5 minutes
-        executorService.scheduleAtFixedRate(task, 5, 5, TimeUnit.MINUTES);
+        firstPageVbox.getChildren().addAll(
+                cityStartUpLabel,
+                cityStartUpTextField,
+                fetchButton,
+                invalidInput
+        );
+        firstPageScene = new Scene(firstPageVbox, 868, 700);
+        firstPageScene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/firstPage.css")).toExternalForm());
+        primaryStage.setTitle("Weather App");
+        primaryStage.setScene(firstPageScene);
+    }
+
+    private void addStyleSheet(Scene scene) {
+        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/mainPage.css")).toExternalForm());
+        temperatureLabel.getStyleClass().add("emoji-label");
+        temperatureFeelsLikeLabel.getStyleClass().add("emoji-label");
+        Text labelText = new Text("Enter City or Country:");
+        Font boldFont = Font.font("Arial", FontWeight.BOLD, 14);
+        descriptionLabel.setMinHeight(30);
+        labelText.setFont(boldFont);
+        labelText.setFill(Color.WHITE);
+        cityLabel.setGraphic(labelText);
     }
 
     private StackPane createRootLayout() {
@@ -300,7 +307,9 @@ public class Main extends Application {
                 showWeeklyForecastButton,
                 weatherData,
                 convertWindSpeed,
-                city
+                city,
+                responseBodiesDailySecondAPI,
+                forecastAPI
         );
         showMoreWeatherInfo.setText("Show more weather info");
 
@@ -353,44 +362,33 @@ public class Main extends Application {
         return rootLayout;
     }
 
-    private void setRightMargin(Region node) {
-        Insets insets = new Insets(0, 590, 0, 0); // top, right, bottom, left
-        VBox.setMargin(node, insets);
-    }
+    public void startScheduledTask() {
+        Runnable task = () -> {
 
-    private void addStyleSheet(Scene scene) {
-        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/mainPage.css")).toExternalForm());
-        temperatureLabel.getStyleClass().add("emoji-label");
-        temperatureFeelsLikeLabel.getStyleClass().add("emoji-label");
-        Text labelText = new Text("Enter City or Country:");
-        Font boldFont = Font.font("Arial", FontWeight.BOLD, 14);
-        descriptionLabel.setMinHeight(30);
-        labelText.setFont(boldFont);
-        labelText.setFill(Color.WHITE);
-        cityLabel.setGraphic(labelText);
-    }
-
-    private void configurePrimaryStage(Stage primaryStage) {
-        firstPageVbox = new VBox(5);
-        firstPageVbox.setAlignment(Pos.CENTER);
-        firstPageVbox.setPadding(new Insets(250));
-
-        firstPageVbox.getChildren().addAll(
-                cityStartUpLabel,
-                cityStartUpTextField,
-                fetchButton,
-                invalidInput
-        );
-        firstPageScene = new Scene(firstPageVbox, 868, 700);
-        firstPageScene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/firstPage.css")).toExternalForm());
-        primaryStage.setTitle("Weather App");
-        primaryStage.setScene(firstPageScene);
+            try {
+                updateAPIData();
+            } catch (ParseException | IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
+        // Schedule the task to run every 5 minutes
+        executorService.scheduleAtFixedRate(task, 5, 5, TimeUnit.MINUTES);
     }
 
     private void configureFetchButton() {
         fetchButton.setOnAction(event -> {
-            timeline.play();
+            // Fetch and display weather data
+            if (stage.getScene() == firstPageScene) {
+                checkForValidInput();
+            } else {
+                fetchAndDisplayWeatherData(inputTextField.getText());
+            }
         });
+    }
+
+    private void setRightMargin(Region node) {
+        Insets insets = new Insets(0, 590, 0, 0); // top, right, bottom, left
+        VBox.setMargin(node, insets);
     }
 
     private WeatherDataAndForecast checkData(String responseBody, ForecastData forecastData,
@@ -410,55 +408,58 @@ public class Main extends Application {
     private void fetchAndDisplayWeatherData(String cityTextField) {
         city = cityTextField;
 
-        if (stage.getScene() == firstPageScene && !"Passed!".equals(passedFirstPage)) {
-            checkForValidInput();
-        } else {
-            CompletableFuture<WeatherDataAndForecast> future = CompletableFuture.supplyAsync(() -> {
-                String responseBody;
-                String weatherConditionAndIcon = getWeatherCondition();
+        if (!lastEnteredCity.equals(cityTextField)) {
+            System.out.println("yep!");
+            if (stage.getScene() == firstPageScene && !"Passed!".equals(passedFirstPage)) {
+                checkForValidInput();
+            } else {
+                CompletableFuture<WeatherDataAndForecast> future = CompletableFuture.supplyAsync(() -> {
+                    String responseBody;
+                    String weatherConditionAndIcon = getWeatherCondition();
 
-                if (!responseBodiesFirstAPI.containsKey(city)) {
+                    if (!responseBodiesFirstAPI.containsKey(city)) {
+                        try {
+                            responseBody = WeatherAppAPI.httpResponse(city);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } else {
+                        responseBody = responseBodiesFirstAPI.get(city);
+                    }
                     try {
-                        responseBody = WeatherAppAPI.httpResponse(city);
+                        forecastData = getDailyForecast();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                } else {
-                    responseBody = responseBodiesFirstAPI.get(city);
-                }
-                try {
-                    forecastData = getDailyForecast();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
 
-                Gson gson = new Gson();
-                weatherData = gson.fromJson(responseBody, WeatherData.class);
-                String localTime = formatDateToDayAndHour(getLocalTime());
+                    if (gson == null) {
+                        gson = new Gson();
+                    }
 
-                return checkData(responseBody, forecastData, weatherConditionAndIcon,
-                        weatherData, localTime);
-            });
-            future.thenAcceptAsync(validInput -> Platform.runLater(() -> {
-                if (validInput != null) {
-                    String responseBody = validInput.getResponseBody();
-                    WeatherData weatherData = validInput.getWeatherData();
-                    ForecastData forecastData = validInput.getForecastData();
-                    String weatherConditionAndIcon = validInput.getWeatherConditionAndIcon();
-                    String localTime = validInput.getLocalTime();
+                    weatherData = gson.fromJson(responseBody, WeatherData.class);
+                    String localTime = formatDateToDayAndHour(getLocalTime());
 
-                    updateButtonsData();
-                    // Update UI with valid data
-                    try {
-                        MainParsedData mainInfo;
-                        Matcher matcher = pattern.matcher(city);
-                        if (matcher.find()) {
-                            mainInfo = Objects.requireNonNull(weatherData).getMain();
-                        } else {
-                            mainInfo = null;
-                        }
+                    return checkData(Objects.requireNonNull(responseBody), forecastData, weatherConditionAndIcon,
+                            weatherData, localTime);
+                });
+                future.thenAcceptAsync(validInput -> Platform.runLater(() -> {
+                    if (validInput != null) {
+                        String responseBody = validInput.getResponseBody();
+                        WeatherData weatherData = validInput.getWeatherData();
+                        ForecastData forecastData = validInput.getForecastData();
+                        String weatherConditionAndIcon = validInput.getWeatherConditionAndIcon();
+                        String localTime = validInput.getLocalTime();
 
-                        if (!city.equals(lastEnteredCity)) {
+                        updateButtonsData();
+                        // Update UI with valid data
+                        try {
+                            MainParsedData mainInfo;
+                            Matcher matcher = pattern.matcher(city);
+                            if (matcher.find()) {
+                                mainInfo = Objects.requireNonNull(weatherData).getMain();
+                            } else {
+                                mainInfo = null;
+                            }
 
                             dynamicBackground.switchVideoBackground(weatherConditionAndIcon.split("&")[1]);
 
@@ -478,21 +479,21 @@ public class Main extends Application {
                             } else {
                                 gridPane.add(iconView, 1, 0);
                             }
-                        }
-                        GridPane checkButtonsPane = (GridPane) root.getChildren().get(2);
 
-                        if (!checkButtonsPane.getChildren().contains(fetchButton)) {
-                            buttonsPane.add(fetchButton, 0, 0);
-                        }
+                            GridPane checkButtonsPane = (GridPane) root.getChildren().get(2);
 
-                        if (localTimeLabel.getTextFill().equals(Color.RED)) {
-                            localTimeLabel.setTextFill(Color.WHITE);
-                        }
+                            if (!checkButtonsPane.getChildren().contains(fetchButton)) {
+                                buttonsPane.add(fetchButton, 0, 0);
+                            }
 
-                        if (inputTextField.getStyle().equals("-fx-text-fill: red;")) {
-                            inputTextField.setStyle(temperatureLabel.getStyle());
-                        }
-                        if (!lastEnteredCity.equals(city)) {
+                            if (localTimeLabel.getTextFill().equals(Color.RED)) {
+                                localTimeLabel.setTextFill(Color.WHITE);
+                            }
+
+                            if (inputTextField.getStyle().equals("-fx-text-fill: red;")) {
+                                inputTextField.setStyle(temperatureLabel.getStyle());
+                            }
+
                             if (!responseBodiesFirstAPI.containsKey(city)) {
                                 responseBodiesFirstAPI.put(city, responseBody);
                             }
@@ -526,30 +527,31 @@ public class Main extends Application {
                                     getDailyForecast.hideLabels();
                                 }
                             }
+                            if (!lastEnteredCity.equals(city)) {
+                                lastEnteredCity = city;
+                            }
+                        } catch (Exception e) {
+                            // case of invalid input or error
+                            e.printStackTrace(System.out);
+                            localTimeLabel.setText("An error occurred.");
+                            hideAllNodes();
                         }
-                        if (!lastEnteredCity.equals(city)) {
-                            lastEnteredCity = city;
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace(System.out);
-                        localTimeLabel.setText("An error occurred.");
+                    } else {
+                        // case of invalid input or error
+                        localTimeLabel.setText("Invalid place.");
                         hideAllNodes();
                     }
-                } else {
-                    // case of invalid input or error
-                    localTimeLabel.setText("Invalid place.");
-                    hideAllNodes();
-                }
 
-                if (inputTextField.getText().equals("") && stage.getScene() == firstPageScene) {
-                    inputTextField.setText(cityStartUpTextField.getText());
-                    inputTextField.deselect();
-                    Platform.runLater(() -> inputTextField.positionCaret(cityStartUpTextField.getText().length()));
-                }
-                if (stage.getScene() != mainScene) {
-                    stage.setScene(mainScene);
-                }
-            }));
+                    if (inputTextField.getText().equals("") && stage.getScene() == firstPageScene) {
+                        inputTextField.setText(cityStartUpTextField.getText());
+                        inputTextField.deselect();
+                        Platform.runLater(() -> inputTextField.positionCaret(cityStartUpTextField.getText().length()));
+                    }
+                    if (stage.getScene() != mainScene) {
+                        stage.setScene(mainScene);
+                    }
+                }));
+            }
         }
     }
 
@@ -563,7 +565,7 @@ public class Main extends Application {
                 if (!responseBodiesFirstAPI.containsKey(city)) {
                     try {
                         responseBodyCheckForValidInput = WeatherAppAPI.httpResponse(city);
-                        responseBodiesFirstAPI.put(city, responseBodyCheckForValidInput);
+                        responseBodiesFirstAPI.put(city, Objects.requireNonNull(responseBodyCheckForValidInput));
                     } catch (IOException e) {
                         System.out.println(e.getMessage());
                     }
@@ -708,7 +710,7 @@ public class Main extends Application {
         System.out.printf("Updated %d APIs at %s!\n", responseBodiesDailySecondAPI.size(), timeFormat);
         responseBodiesDailySecondAPI.entrySet().forEach(entry -> {
             try {
-                entry.setValue(ForecastAPI.httpResponseDailyForecast(entry.getKey()));
+                entry.setValue(forecastAPI.httpResponseDailyForecast(entry.getKey()));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -719,7 +721,7 @@ public class Main extends Application {
     public static ForecastData getDailyForecast() throws IOException {
         String responseBodyDailyForecast;
         if (!responseBodiesDailySecondAPI.containsKey(city)) {
-            responseBodyDailyForecast = ForecastAPI.httpResponseDailyForecast(city);
+            responseBodyDailyForecast = forecastAPI.httpResponseDailyForecast(city);
         } else {
             responseBodyDailyForecast = responseBodiesDailySecondAPI.get(city);
         }
@@ -816,25 +818,6 @@ public class Main extends Application {
         return null;
     }
 
-    public static double getUV(String city) {
-        String responseBody;
-        if (!responseBodiesDailySecondAPI.containsKey(city)) {
-            try {
-                responseBody = ForecastAPI.httpResponseDailyForecast(city);
-            } catch (IOException e) {
-                throw new RuntimeException();
-            }
-            responseBodiesDailySecondAPI.put(city, Objects.requireNonNull(responseBody));
-        } else {
-            responseBody = responseBodiesDailySecondAPI.get(city);
-        }
-
-        JSONObject jsonObject = new JSONObject(responseBody);
-        JSONObject currentObject = jsonObject.getJSONObject("current");
-
-        return currentObject.getDouble("uv");
-    }
-
     private String getWeatherCondition() {
         String weatherConditionAndIcon = "";
         String responseBodyDailyForecast;
@@ -843,7 +826,7 @@ public class Main extends Application {
             if (responseBodiesDailySecondAPI.containsKey(city)) {
                 responseBodyDailyForecast = responseBodiesDailySecondAPI.get(city);
             } else {
-                responseBodyDailyForecast = ForecastAPI.httpResponseDailyForecast(city);
+                responseBodyDailyForecast = forecastAPI.httpResponseDailyForecast(city);
             }
             if (isValidResponse(responseBodyDailyForecast)) {
                 responseBodiesDailySecondAPI.put(city, responseBodyDailyForecast);
@@ -874,12 +857,15 @@ public class Main extends Application {
     }
 
     public static String getLocalTime() {
+        if (forecastAPI == null) {
+            forecastAPI = new ForecastAPI();
+        }
         String responseBodyDailyForecast;
         try {
             if (responseBodiesDailySecondAPI.containsKey(city)) {
                 responseBodyDailyForecast = responseBodiesDailySecondAPI.get(city);
             } else {
-                responseBodyDailyForecast = ForecastAPI.httpResponseDailyForecast(city);
+                responseBodyDailyForecast = forecastAPI.httpResponseDailyForecast(city);
                 responseBodiesDailySecondAPI.put(city, Objects.requireNonNull(responseBodyDailyForecast));
             }
 

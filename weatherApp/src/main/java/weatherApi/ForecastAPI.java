@@ -12,16 +12,20 @@ import java.net.URLEncoder;
 
 public class ForecastAPI {
 
-    private static final String API_KEY = "d9b2b634fbcf4c9190680834231109";
+    private static final String API_KEY = "7b8c42516bda423096a152141232509";
 
     private static final String API_ENDPOINT = "https://api.weatherapi.com/v1";
 
-    private static final CloseableHttpClient HTTP_CLIENT = HttpClients.custom()
-            .setMaxConnTotal(100) // Maximum total connections
-            .setMaxConnPerRoute(20) // Maximum connections per route
-            .build();
+    private static CloseableHttpClient HTTP_CLIENT;
 
-    public static String httpResponseDailyForecast(String city) throws IOException {
+    public ForecastAPI(){
+        HTTP_CLIENT =  HttpClients.custom()
+                .setMaxConnTotal(100) // Maximum total connections
+                .setMaxConnPerRoute(20) // Maximum connections per route
+                .build();
+    }
+
+    public String httpResponseDailyForecast(String city) throws IOException {
         String encodedCity = URLEncoder.encode(city, "UTF-8");
         HttpGet httpGet = new HttpGet(API_ENDPOINT + "/forecast.json?key=" + API_KEY + "&q=" +
                 encodedCity + "&days=1" + "&aqi=no&alerts=no");

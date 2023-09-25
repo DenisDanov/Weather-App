@@ -38,13 +38,15 @@ public class DynamicBackgroundImpl {
     private final Map<String, String> videoPaths;
     private final FadeTransition fadeOut;
     private final FadeTransition fadeIn;
+    private final ForecastAPI forecastAPI;
 
     public DynamicBackgroundImpl(StackPane rootLayout,
                                  VBox root,
                                  String city,
                                  ConcurrentHashMap<String, String> responseBodiesSecondAPI,
                                  Stage stage,
-                                 Scene mainScene) {
+                                 Scene mainScene,
+                                 ForecastAPI forecastAPI) {
         this.lastWeatherDescription = "";
         this.lastTimeCheck = "";
         this.setCity(city);
@@ -55,6 +57,7 @@ public class DynamicBackgroundImpl {
         this.videoPaths = new HashMap<>();
         this.fadeOut = new FadeTransition(Duration.millis(100), mediaView);
         this.fadeIn = new FadeTransition(Duration.millis(100), mediaView);
+        this.forecastAPI = forecastAPI;
         fadeIn.setFromValue(1);
         fadeOut.setFromValue(1);
         fadeIn.setToValue(1);
@@ -118,9 +121,8 @@ public class DynamicBackgroundImpl {
     }
 
     private MediaPlayer createAndLoadMediaPlayer(String resourcePath) {
-        MediaPlayer mediaPlayer = new MediaPlayer(new Media(Objects.requireNonNull
+        return new MediaPlayer(new Media(Objects.requireNonNull
                 (getClass().getResource("/" + resourcePath)).toString()));
-        return mediaPlayer;
     }
 
     private void createMediaPlayerAndPlayIt(String resourcePath) {
@@ -128,7 +130,7 @@ public class DynamicBackgroundImpl {
         if (mediaView.getMediaPlayer() != null) {
             // Create a new MediaPlayer for the second video
             MediaPlayer newMediaPlayer = loadMediaPlayerInBackground(resourcePath);
-            newMediaPlayer.setAutoPlay(false); // Prevent immediate playback
+            Objects.requireNonNull(newMediaPlayer).setAutoPlay(false); // Prevent immediate playback
             newMediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
             newMediaPlayer.setMute(true);
 
@@ -150,7 +152,7 @@ public class DynamicBackgroundImpl {
             fadeOut.play();
         } else {
             MediaPlayer mediaPlayer = loadMediaPlayerInBackground(resourcePath);
-            mediaPlayer.setAutoPlay(false); // Prevent immediate playback
+            Objects.requireNonNull(mediaPlayer).setAutoPlay(false); // Prevent immediate playback
             mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
             mediaPlayer.setMute(true);
 
@@ -264,7 +266,7 @@ public class DynamicBackgroundImpl {
         Thread thread = new Thread(() -> {
             if (!responseBodiesSecondAPI.containsKey(city)) {
                 try {
-                    responseBodyGetSunsetSunrise = ForecastAPI.httpResponseDailyForecast(city);
+                    responseBodyGetSunsetSunrise = forecastAPI.httpResponseDailyForecast(city);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
