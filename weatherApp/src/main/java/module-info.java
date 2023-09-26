@@ -4,6 +4,7 @@ module weatherAppModule {
     requires javafx.media;
     requires org.apache.httpcomponents.httpcore;
     requires org.apache.httpcomponents.httpclient;
+    requires okhttp3;
     requires com.google.gson;
     requires org.json;
     requires com.fasterxml.jackson.core;

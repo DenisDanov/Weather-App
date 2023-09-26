@@ -52,6 +52,7 @@ public class WeatherAppAPI {
             // Close the connection
             connection.disconnect();
 
+            System.out.println(32);
             return response.toString();
         } else {
             // Handle non-OK response codes here, e.g., log an error message
