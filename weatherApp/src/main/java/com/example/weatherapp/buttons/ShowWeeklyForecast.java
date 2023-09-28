@@ -55,6 +55,7 @@ public class ShowWeeklyForecast extends Button {
     private final Button fetchButton;
     private Scene mainScene;
     private Stage stage;
+    private ForecastAPI forecastAPI;
 
     public ShowWeeklyForecast(VBox root,
                               Label cityLabel,
@@ -83,7 +84,8 @@ public class ShowWeeklyForecast extends Button {
                               ConvertTemperature convertTemperature,
                               Button fetchButton,
                               Scene mainScene,
-                              Stage stage) {
+                              Stage stage,
+                              ForecastAPI forecastAPI) {
 
         this.setRoot(root);
         this.cityLabel = cityLabel;
@@ -115,6 +117,7 @@ public class ShowWeeklyForecast extends Button {
         this.fetchButton = fetchButton;
         this.setMainScene(mainScene);
         this.setStage(stage);
+        this.setForecastAPI(forecastAPI);
 
         configureButton();
     }
@@ -432,11 +435,15 @@ public class ShowWeeklyForecast extends Button {
         });
     }
 
+    public void setForecastAPI(ForecastAPI forecastAPI) {
+        this.forecastAPI = forecastAPI;
+    }
+
     private JSONArray getWeeklyForecast() {
         String responseBody;
         if (!responseBodiesWeeklySecondAPI.containsKey(city)) {
             try {
-                responseBody = ForecastAPI.httpResponseWeeklyForecast(city);
+                responseBody = forecastAPI.httpResponseWeeklyForecast(city);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

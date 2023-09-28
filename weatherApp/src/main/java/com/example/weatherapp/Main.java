@@ -103,6 +103,7 @@ public class Main extends Application {
     public static ForecastData forecastData;
     private Gson gson;
     private static ForecastAPI forecastAPI;
+    private WeatherAppAPI weatherAppAPI;
 
     public Main() {
         this.responseBodiesFirstAPI = new ConcurrentHashMap<>();
@@ -268,7 +269,8 @@ public class Main extends Application {
                 convertTemperature,
                 fetchButton,
                 mainScene,
-                stage
+                stage,
+                forecastAPI
         );
         showWeeklyForecastButton.setText("Show weekly forecast");
 
@@ -395,10 +397,7 @@ public class Main extends Application {
                                              String weatherConditionAndIcon,
                                              WeatherData weatherData,
                                              String localTime) {
-        if (!responseBody.equals("{\"cod\":\"400\",\"message\":\"Nothing to geocode\"}")
-                && !responseBody.equals("{\"cod\":\"404\",\"message\":\"city not found\"}")
-                && weatherData != null
-                && forecastData != null) {
+        if (responseBody != null && weatherData != null && forecastData != null) {
             return new WeatherDataAndForecast(responseBody, weatherData, forecastData, weatherConditionAndIcon, localTime);
         } else {
             return null;
@@ -409,7 +408,6 @@ public class Main extends Application {
         city = cityTextField;
 
         if (!lastEnteredCity.equals(cityTextField)) {
-            System.out.println("yep!");
             if (stage.getScene() == firstPageScene && !"Passed!".equals(passedFirstPage)) {
                 checkForValidInput();
             } else {
@@ -419,7 +417,7 @@ public class Main extends Application {
 
                     if (!responseBodiesFirstAPI.containsKey(city)) {
                         try {
-                            responseBody = WeatherAppAPI.httpResponse(city);
+                            responseBody = weatherAppAPI.httpResponse(city);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -436,14 +434,18 @@ public class Main extends Application {
                         gson = new Gson();
                     }
 
-                    weatherData = gson.fromJson(responseBody, WeatherData.class);
-                    String localTime = formatDateToDayAndHour(getLocalTime());
+                    if (responseBody != null) {
+                        weatherData = gson.fromJson(responseBody, WeatherData.class);
+                        String localTime = formatDateToDayAndHour(getLocalTime());
+                        return checkData(responseBody, forecastData, weatherConditionAndIcon,
+                                weatherData, localTime);
+                    } else {
+                        return null;
+                    }
 
-                    return checkData(Objects.requireNonNull(responseBody), forecastData, weatherConditionAndIcon,
-                            weatherData, localTime);
                 });
                 future.thenAcceptAsync(validInput -> Platform.runLater(() -> {
-                    if (validInput != null) {
+                    if (validInput != null && validInput.getResponseBody() != null) {
                         String responseBody = validInput.getResponseBody();
                         WeatherData weatherData = validInput.getWeatherData();
                         ForecastData forecastData = validInput.getForecastData();
@@ -564,10 +566,15 @@ public class Main extends Application {
             if (matcher.find()) {
                 if (!responseBodiesFirstAPI.containsKey(city)) {
                     try {
-                        responseBodyCheckForValidInput = WeatherAppAPI.httpResponse(city);
-                        responseBodiesFirstAPI.put(city, Objects.requireNonNull(responseBodyCheckForValidInput));
-                    } catch (IOException e) {
-                        System.out.println(e.getMessage());
+                        weatherAppAPI = new WeatherAppAPI();
+                        responseBodyCheckForValidInput = weatherAppAPI.httpResponse(city);
+                        if (responseBodyCheckForValidInput != null) {
+                            responseBodiesFirstAPI.put(city, Objects.requireNonNull(responseBodyCheckForValidInput));
+                        } else {
+                            throw new RuntimeException();
+                        }
+                    } catch (IOException | RuntimeException e) {
+                        e.printStackTrace(System.out);
                     }
                 } else {
                     responseBodyCheckForValidInput = responseBodiesFirstAPI.get(city);
@@ -578,7 +585,6 @@ public class Main extends Application {
             } else {
                 validInput = false;
             }
-
             return validInput;
         });
 
@@ -589,10 +595,7 @@ public class Main extends Application {
     }
 
     private boolean isValidInput(Matcher matcher, String responseBody, String localTime) {
-        return !responseBody.equals("{\"cod\":\"400\",\"message\":\"Nothing to geocode\"}") &&
-                !responseBody.equals("{\"cod\":\"404\",\"message\":\"city not found\"}") &&
-                matcher.find() &&
-                localTime != null;
+        return responseBody != null && matcher.find() && localTime != null;
     }
 
     private void updateUI(boolean validInput) {
@@ -679,6 +682,7 @@ public class Main extends Application {
         showMoreWeatherInfo.setWeatherData(weatherData);
         showMoreWeatherInfo.setCity(city);
         showWeeklyForecastButton.setCity(city);
+        showWeeklyForecastButton.setForecastAPI(forecastAPI);
         dynamicBackground.setCity(city);
         dynamicBackground.setResponseBodiesSecondAPI(responseBodiesDailySecondAPI);
     }
@@ -700,7 +704,7 @@ public class Main extends Application {
     private void updateAPIData() throws ParseException, IOException {
         responseBodiesFirstAPI.entrySet().forEach(entry -> {
             try {
-                entry.setValue(WeatherAppAPI.httpResponse(entry.getKey()));
+                entry.setValue(weatherAppAPI.httpResponse(entry.getKey()));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -896,8 +900,8 @@ public class Main extends Application {
 
     private static boolean isValidResponse(String responseBody) {
         return responseBody != null &&
-                !responseBody.contains("No matching location found.") &&
-                !responseBody.contains("Parameter q is missing.");
+                !responseBody.contains("HTTP request failed with status code: 404");
+
     }
 
     public static String formatDateToDayAndHour(String inputDateTime) {

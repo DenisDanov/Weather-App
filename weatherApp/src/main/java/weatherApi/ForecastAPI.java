@@ -15,12 +15,12 @@ public class ForecastAPI {
 
     private static final String API_ENDPOINT = "https://api.weatherapi.com/v1";
 
-    private static CloseableHttpClient HTTP_CLIENT;
+    private final CloseableHttpClient HTTP_CLIENT;
 
-    public ForecastAPI(){
-        HTTP_CLIENT =  HttpClients.custom()
-                .setMaxConnTotal(100) // Maximum total connections
-                .setMaxConnPerRoute(20) // Maximum connections per route
+    public ForecastAPI() {
+        HTTP_CLIENT = HttpClients.custom()
+                .setMaxConnTotal(2) // Maximum total connections
+                .setMaxConnPerRoute(2) // Maximum connections per route
                 .build();
     }
 
@@ -30,12 +30,13 @@ public class ForecastAPI {
                 encodedCity + "&days=1" + "&aqi=no&alerts=no");
 
         try (CloseableHttpResponse response = HTTP_CLIENT.execute(httpGet)) {
+
             HttpEntity entity = response.getEntity();
-            return EntityUtils.toString(entity);
+            return  EntityUtils.toString(entity);
         }
     }
 
-    public static String httpResponseWeeklyForecast(String city) throws IOException {
+    public String httpResponseWeeklyForecast(String city) throws IOException {
         String encodedCity = URLEncoder.encode(city, "UTF-8");
         HttpGet httpGet = new HttpGet(API_ENDPOINT + "/forecast.json?key=" + API_KEY + "&q=" +
                 encodedCity + "&days=7" + "&aqi=no&alerts=no");
