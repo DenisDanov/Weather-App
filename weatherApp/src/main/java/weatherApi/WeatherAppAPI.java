@@ -24,8 +24,8 @@ public class WeatherAppAPI {
 
     public WeatherAppAPI() {
         HTTP_CLIENT = HttpClients.custom()
-                .setMaxConnTotal(1) // Maximum total connections
-                .setMaxConnPerRoute(1) // Maximum connections per route
+                .setMaxConnTotal(1)
+                .setMaxConnPerRoute(1)
                 .build();
     }
 
@@ -33,7 +33,7 @@ public class WeatherAppAPI {
         String encodedCity = URLEncoder.encode(city, "UTF-8");
         String urlString = API_ENDPOINT + "?q=" + encodedCity + "&appid=" + API_KEY;
         HttpGet httpGet = new HttpGet(urlString);
-        // Create a URL object
+
         try (CloseableHttpResponse response = HTTP_CLIENT.execute(httpGet)) {
 
             HttpEntity entity = response.getEntity();

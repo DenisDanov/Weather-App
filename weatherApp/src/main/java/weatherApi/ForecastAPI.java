@@ -19,8 +19,8 @@ public class ForecastAPI {
 
     public ForecastAPI() {
         HTTP_CLIENT = HttpClients.custom()
-                .setMaxConnTotal(2) // Maximum total connections
-                .setMaxConnPerRoute(2) // Maximum connections per route
+                .setMaxConnTotal(2)
+                .setMaxConnPerRoute(2)
                 .build();
     }
 
