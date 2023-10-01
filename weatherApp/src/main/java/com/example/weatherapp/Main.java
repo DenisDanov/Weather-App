@@ -49,7 +49,7 @@ public class Main extends Application {
 
     private WeatherData weatherData;
     private static String city;
-    private final TextField inputTextField = new TextField(); // Main scene TextField for input
+    private TextField inputTextField; // Main scene TextField for input
     private final BubbleLabels localTimeLabel = new BubbleLabels();
     private final BubbleLabels temperatureLabel = new BubbleLabels();
     private final BubbleLabels descriptionLabel = new BubbleLabels();
@@ -92,7 +92,7 @@ public class Main extends Application {
     private static ConcurrentHashMap<String, String> responseBodiesDailySecondAPI;
     private String lastEnteredCity;
     private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-    private GridPane gridPane = new GridPane();
+    private GridPane gridPane;
     private ImageView iconView = new ImageView();
     private String responseBodySecondAPI;
     private String responseBodyCheckForValidInput;
@@ -103,7 +103,7 @@ public class Main extends Application {
     public static ForecastData forecastData;
     private Gson gson;
     private static ForecastAPI forecastAPI;
-    private WeatherAppAPI weatherAppAPI;
+    private static WeatherAppAPI weatherAppAPI;
 
     public Main() {
         this.responseBodiesFirstAPI = new ConcurrentHashMap<>();
@@ -112,6 +112,7 @@ public class Main extends Application {
         this.responseBodySecondAPI = "";
         passedFirstPage = "not passed!";
         this.lastEnteredCity = "";
+        forecastAPI = new ForecastAPI();
 
         startScheduledTask();
     }
@@ -147,6 +148,7 @@ public class Main extends Application {
         showWeeklyForecastButton.setStage(stage);
         showWeeklyForecastButton.setShowMoreWeatherInfo(showMoreWeatherInfo);
         showWeeklyForecastButton.setGetDailyForecast(getDailyForecast);
+        showWeeklyForecastButton.setForecastAPI(forecastAPI);
         dynamicBackground.setMainScene(mainScene);
         dynamicBackground.setStage(stage);
     }
@@ -159,7 +161,8 @@ public class Main extends Application {
                 responseBodiesDailySecondAPI,
                 stage,
                 mainScene,
-                forecastAPI
+                forecastAPI,
+                weatherAppAPI
         );
         dynamicBackground.addVideosPaths();
     }
@@ -194,6 +197,7 @@ public class Main extends Application {
     }
 
     private StackPane createRootLayout() {
+        this.inputTextField = new TextField();
         rootLayout = new StackPane();
         root = new VBox();
         root.setSpacing(1.5);
@@ -270,7 +274,8 @@ public class Main extends Application {
                 fetchButton,
                 mainScene,
                 stage,
-                forecastAPI
+                forecastAPI,
+                weatherAppAPI
         );
         showWeeklyForecastButton.setText("Show weekly forecast");
 
@@ -566,7 +571,9 @@ public class Main extends Application {
             if (matcher.find()) {
                 if (!responseBodiesFirstAPI.containsKey(city)) {
                     try {
-                        weatherAppAPI = new WeatherAppAPI();
+                        if (weatherAppAPI == null) {
+                            weatherAppAPI = new WeatherAppAPI();
+                        }
                         responseBodyCheckForValidInput = weatherAppAPI.httpResponse(city);
                         if (responseBodyCheckForValidInput != null) {
                             responseBodiesFirstAPI.put(city, Objects.requireNonNull(responseBodyCheckForValidInput));
@@ -682,7 +689,7 @@ public class Main extends Application {
         showMoreWeatherInfo.setWeatherData(weatherData);
         showMoreWeatherInfo.setCity(city);
         showWeeklyForecastButton.setCity(city);
-        showWeeklyForecastButton.setForecastAPI(forecastAPI);
+        showWeeklyForecastButton.setWeatherAppAPI(weatherAppAPI);
         dynamicBackground.setCity(city);
         dynamicBackground.setResponseBodiesSecondAPI(responseBodiesDailySecondAPI);
     }
@@ -861,9 +868,6 @@ public class Main extends Application {
     }
 
     public static String getLocalTime() {
-        if (forecastAPI == null) {
-            forecastAPI = new ForecastAPI();
-        }
         String responseBodyDailyForecast;
         try {
             if (responseBodiesDailySecondAPI.containsKey(city)) {
