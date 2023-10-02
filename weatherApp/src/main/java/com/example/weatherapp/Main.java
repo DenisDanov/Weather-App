@@ -86,7 +86,6 @@ public class Main extends Application {
     private Scene firstPageScene;
     private GridPane buttonsPane;
     private final Pattern pattern = Pattern.compile("[a-zA-Z]");
-    private final ConcurrentHashMap<String, String> responseBodiesFirstAPI;
     private static ConcurrentHashMap<String, String> responseBodiesDailySecondAPI;
     private String lastEnteredCity;
     private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
@@ -102,12 +101,10 @@ public class Main extends Application {
     private static ForecastAPI forecastAPI;
 
     public Main() {
-        this.responseBodiesFirstAPI = new ConcurrentHashMap<>();
         responseBodiesDailySecondAPI = new ConcurrentHashMap<>();
         this.responseBodyCheckForValidInput = "";
         passedFirstPage = "not passed!";
         this.lastEnteredCity = "";
-        forecastAPI = new ForecastAPI();
 
         startScheduledTask();
     }
@@ -413,14 +410,14 @@ public class Main extends Application {
                     String responseBody;
                     String weatherConditionAndIcon = getWeatherCondition();
 
-                    if (!responseBodiesFirstAPI.containsKey(city)) {
+                    if (!responseBodiesDailySecondAPI.containsKey(city)) {
                         try {
                             responseBody = forecastAPI.httpResponseDailyForecast(city);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
                     } else {
-                        responseBody = responseBodiesFirstAPI.get(city);
+                        responseBody = responseBodiesDailySecondAPI.get(city);
                     }
                     try {
                         forecastData = getDailyForecast();
@@ -431,7 +428,7 @@ public class Main extends Application {
                     if (gson == null) {
                         gson = new Gson();
                     }
-                    System.out.println(responseBody);
+
                     if (responseBody != null) {
                         weatherData = gson.fromJson(responseBody, WeatherData.class);
                         String localTime = formatDateToDayAndHour(getLocalTime());
@@ -494,8 +491,8 @@ public class Main extends Application {
                                 inputTextField.setStyle(temperatureLabel.getStyle());
                             }
 
-                            if (!responseBodiesFirstAPI.containsKey(city)) {
-                                responseBodiesFirstAPI.put(city, responseBody);
+                            if (!responseBodiesDailySecondAPI.containsKey(city)) {
+                                responseBodiesDailySecondAPI.put(city, responseBody);
                             }
                             double temp = Objects.requireNonNull(mainInfo).getTemp();
                             double tempFeelsLike = mainInfo.getFeels_like();
@@ -560,11 +557,14 @@ public class Main extends Application {
             Matcher matcher = pattern.matcher(city);
             boolean validInput;
             if (matcher.find()) {
-                if (!responseBodiesFirstAPI.containsKey(city)) {
+                if (!responseBodiesDailySecondAPI.containsKey(city)) {
                     try {
+                        if (forecastAPI == null){
+                            forecastAPI = new ForecastAPI();
+                        }
                         responseBodyCheckForValidInput = forecastAPI.httpResponseDailyForecast(city);
                         if (responseBodyCheckForValidInput != null) {
-                            responseBodiesFirstAPI.put(city, Objects.requireNonNull(responseBodyCheckForValidInput));
+                            responseBodiesDailySecondAPI.put(city, Objects.requireNonNull(responseBodyCheckForValidInput));
                         } else {
                             throw new RuntimeException();
                         }
@@ -572,7 +572,7 @@ public class Main extends Application {
                         e.printStackTrace(System.out);
                     }
                 } else {
-                    responseBodyCheckForValidInput = responseBodiesFirstAPI.get(city);
+                    responseBodyCheckForValidInput = responseBodiesDailySecondAPI.get(city);
                 }
                 validInput = isValidInput(matcher, responseBodyCheckForValidInput);
             } else {
@@ -704,7 +704,7 @@ public class Main extends Application {
                 throw new RuntimeException(e);
             }
         });
-        System.out.printf("Updated %d APIs at %s!\n", responseBodiesFirstAPI.size(), timeFormat);
+        System.out.printf("Updated %d APIs at %s!\n", responseBodiesDailySecondAPI.size(), timeFormat);
     }
 
     public static ForecastData getDailyForecast() throws IOException {

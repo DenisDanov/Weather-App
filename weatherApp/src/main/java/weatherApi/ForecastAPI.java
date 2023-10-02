@@ -23,6 +23,7 @@ public class ForecastAPI {
                 .setMaxConnPerRoute(3)
                 .build();
     }
+
     public String httpResponseDailyForecast(String city) throws IOException {
         String encodedCity = URLEncoder.encode(city, "UTF-8");
         HttpGet httpGet = new HttpGet(API_ENDPOINT + "/forecast.json?key=" + API_KEY + "&q=" +
@@ -31,7 +32,7 @@ public class ForecastAPI {
         try (CloseableHttpResponse response = HTTP_CLIENT.execute(httpGet)) {
 
             HttpEntity entity = response.getEntity();
-            return   EntityUtils.toString(entity);
+            return EntityUtils.toString(entity);
         }
     }
 

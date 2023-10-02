@@ -31,7 +31,6 @@ public class ConvertTemperature extends Button {
     private void convertTemperature() {
         Current mainInfo = weatherData.getMain();
         if (temperatureLabel.getText().contains("°C") && temperatureFeelsLikeLabel.getText().contains("°C")) {
-            System.out.println("yes");
             temperatureLabel.setText(String.format("Temperature: %.0f°F \uD83C\uDF21",
                     getTempInFahrenheit(mainInfo.getTemp())));
             temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°F \uD83C\uDF21",
