@@ -7,24 +7,32 @@
 }
 
 .bubble-label {
-    -fx-background-color: #333333;
+    -fx-background-color: linear-gradient(to bottom, #86A8CF, #0056b7);
+    -fx-text-fill: #F5F5F5;
+    -fx-font-family: "Segoe UI Semilight";
+    -fx-font-weight: bold;
     -fx-font-size: 15px; /* Larger font size */ /* Charcoal color code */
-    -fx-text-fill: white; /* Text color */
     -fx-padding: 2px 2px; /* Padding around the text */
     -fx-background-radius: 5px; /* Rounded corners to create a bubble effect */
 }
 
 /* Style the button */
+.button:pressed {
+    -fx-background-color: #124e9a;
+}
 .button {
-    -fx-background-color: #0A2354;
+    -fx-background-color: linear-gradient(to bottom, #0A2354, #032254);
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.5), 5, 0, 0, 0);
     -fx-text-fill: #fff;
+    -fx-font-family: "Segoe UI Semilight";
+    -fx-font-weight: bold;
     -fx-font-size: 12px; /* Smaller font size */
     -fx-padding: 5px 10px; /* Reduce the padding */
     -fx-border-radius: 5px;
 }
 
 .button:hover {
-    -fx-background-color: #305aa9; /* Hover background color */
+    -fx-background-color: #194283; /* Hover background color */
 }
 
 /* Style the emoji label */

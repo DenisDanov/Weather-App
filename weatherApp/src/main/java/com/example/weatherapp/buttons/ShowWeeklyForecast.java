@@ -16,7 +16,6 @@ import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import weatherApi.ForecastAPI;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;

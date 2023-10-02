@@ -5,7 +5,7 @@ import com.example.weatherapp.labels.BubbleLabels;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import org.json.JSONObject;
-import parsingWeatherData.MainParsedData;
+import parsingWeatherData.Current;
 import parsingWeatherData.WeatherData;
 import weatherApi.ForecastAPI;
 
@@ -35,8 +35,8 @@ public class ShowMoreWeatherData extends Button {
     private WeatherData weatherData;
     private final ConvertWindSpeed convertWindSpeed;
     private String city;
-    private ConcurrentHashMap<String, String> responseBodiesDailySecondAPI;
-    private ForecastAPI forecastAPI;
+    private final ConcurrentHashMap<String, String> responseBodiesDailySecondAPI;
+    private final ForecastAPI forecastAPI;
 
     public ShowMoreWeatherData(BubbleLabels humidityLabel,
                                BubbleLabels windSpeedLabel,
@@ -105,7 +105,7 @@ public class ShowMoreWeatherData extends Button {
 
     private void showMoreButtonAction() throws IOException {
 
-        MainParsedData mainInfo = weatherData.getMain();
+        Current mainInfo = weatherData.getMain();
 
         if (humidityLabel.getText().equals("") && !humidityLabel.isVisible()) {
             showLabels(mainInfo);
@@ -115,10 +115,10 @@ public class ShowMoreWeatherData extends Button {
 
     }
 
-    public void showLabels(MainParsedData mainInfo) {
+    public void showLabels(Current mainInfo) {
         humidityLabel.setText(String.format("Humidity: %d %%", mainInfo.getHumidity()));
         uvLabel.setText("UV Index: " + Main.getUvOutputFormat(getUV(city)));
-        windSpeedLabel.setText(String.format("Wind speed: %.0f km/h", (weatherData.getWind().getSpeed() * 3.6)));
+        windSpeedLabel.setText(String.format("Wind speed: %.0f km/h", (weatherData.getMain().getSpeed() * 3.6)));
         convertWindSpeed.setVisible(true);
         getDailyForecast.setVisible(true);
         humidityLabel.setVisible(true);

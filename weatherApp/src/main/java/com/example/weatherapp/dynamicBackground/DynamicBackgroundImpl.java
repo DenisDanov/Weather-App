@@ -58,6 +58,7 @@ public class DynamicBackgroundImpl {
         this.fadeOut = new FadeTransition(Duration.millis(100), mediaView);
         this.fadeIn = new FadeTransition(Duration.millis(100), mediaView);
         this.forecastAPI = forecastAPI;
+
         fadeIn.setFromValue(1);
         fadeOut.setFromValue(1);
         fadeIn.setToValue(1);
@@ -184,7 +185,7 @@ public class DynamicBackgroundImpl {
         try {
             disposeThread.join();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            e.printStackTrace(System.out);
         }
 
     }
@@ -228,6 +229,17 @@ public class DynamicBackgroundImpl {
         } else {
             booleanConvert = "Day";
         }
+
+        if (booleanConvert.equals("Day")) {
+            if (mainScene.getStylesheets().size() == 2) {
+                mainScene.getStylesheets().remove(1);
+            }
+        } else {
+            if (mainScene.getStylesheets().size() != 2) {
+                mainScene.getStylesheets().add("mainPageNight.css");
+            }
+        }
+
         String finalBooleanConvert = booleanConvert;
         String videoPath = (videoPaths.entrySet().
                 stream()

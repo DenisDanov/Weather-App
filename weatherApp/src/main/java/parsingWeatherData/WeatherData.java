@@ -2,20 +2,10 @@ package parsingWeatherData;
 
 public class WeatherData {
 
-    private MainParsedData main;
-    private WeatherInfo[] weather;
-    private WindInfo wind;
+    private Current current;
 
-    public MainParsedData getMain() {
-        return main;
-    }
-
-    public WeatherInfo[] getWeather() {
-        return weather;
-    }
-
-    public WindInfo getWind() {
-        return wind;
+    public Current getMain() {
+        return current;
     }
 }
 

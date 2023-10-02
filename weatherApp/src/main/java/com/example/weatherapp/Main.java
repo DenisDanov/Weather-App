@@ -28,11 +28,9 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import parsingWeatherData.ForecastData;
-import parsingWeatherData.MainParsedData;
+import parsingWeatherData.Current;
 import parsingWeatherData.WeatherData;
 import weatherApi.ForecastAPI;
-import weatherApi.WeatherAppAPI;
-
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -94,7 +92,6 @@ public class Main extends Application {
     private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     private GridPane gridPane;
     private ImageView iconView = new ImageView();
-    private String responseBodySecondAPI;
     private String responseBodyCheckForValidInput;
     public static String passedFirstPage;
     private DynamicBackgroundImpl dynamicBackground;
@@ -103,13 +100,11 @@ public class Main extends Application {
     public static ForecastData forecastData;
     private Gson gson;
     private static ForecastAPI forecastAPI;
-    private static WeatherAppAPI weatherAppAPI;
 
     public Main() {
         this.responseBodiesFirstAPI = new ConcurrentHashMap<>();
         responseBodiesDailySecondAPI = new ConcurrentHashMap<>();
         this.responseBodyCheckForValidInput = "";
-        this.responseBodySecondAPI = "";
         passedFirstPage = "not passed!";
         this.lastEnteredCity = "";
         forecastAPI = new ForecastAPI();
@@ -161,8 +156,7 @@ public class Main extends Application {
                 responseBodiesDailySecondAPI,
                 stage,
                 mainScene,
-                forecastAPI,
-                weatherAppAPI
+                forecastAPI
         );
         dynamicBackground.addVideosPaths();
     }
@@ -274,8 +268,7 @@ public class Main extends Application {
                 fetchButton,
                 mainScene,
                 stage,
-                forecastAPI,
-                weatherAppAPI
+                forecastAPI
         );
         showWeeklyForecastButton.setText("Show weekly forecast");
 
@@ -422,7 +415,7 @@ public class Main extends Application {
 
                     if (!responseBodiesFirstAPI.containsKey(city)) {
                         try {
-                            responseBody = weatherAppAPI.httpResponse(city);
+                            responseBody = forecastAPI.httpResponseDailyForecast(city);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -438,7 +431,7 @@ public class Main extends Application {
                     if (gson == null) {
                         gson = new Gson();
                     }
-
+                    System.out.println(responseBody);
                     if (responseBody != null) {
                         weatherData = gson.fromJson(responseBody, WeatherData.class);
                         String localTime = formatDateToDayAndHour(getLocalTime());
@@ -460,7 +453,7 @@ public class Main extends Application {
                         updateButtonsData();
                         // Update UI with valid data
                         try {
-                            MainParsedData mainInfo;
+                            Current mainInfo;
                             Matcher matcher = pattern.matcher(city);
                             if (matcher.find()) {
                                 mainInfo = Objects.requireNonNull(weatherData).getMain();
@@ -514,13 +507,11 @@ public class Main extends Application {
                             descriptionLabel.setVisible(true);
                             temperatureFeelsLikeLabel.setVisible(true);
 
-                            double temperatureCelsius = (temp - 273.15);
-                            double temperatureFeelsLikeCelsius = tempFeelsLike - 273.15;
                             localTimeLabel.setText(String.format("Local time: %s", localTime));
                             temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21",
-                                    temperatureCelsius));
+                                    temp));
                             temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21",
-                                    temperatureFeelsLikeCelsius));
+                                    tempFeelsLike));
 
                             weatherDescriptionLabel.setWrapText(true);
                             weatherDescriptionLabel.setText("Weather Description: " +
@@ -571,10 +562,7 @@ public class Main extends Application {
             if (matcher.find()) {
                 if (!responseBodiesFirstAPI.containsKey(city)) {
                     try {
-                        if (weatherAppAPI == null) {
-                            weatherAppAPI = new WeatherAppAPI();
-                        }
-                        responseBodyCheckForValidInput = weatherAppAPI.httpResponse(city);
+                        responseBodyCheckForValidInput = forecastAPI.httpResponseDailyForecast(city);
                         if (responseBodyCheckForValidInput != null) {
                             responseBodiesFirstAPI.put(city, Objects.requireNonNull(responseBodyCheckForValidInput));
                         } else {
@@ -586,9 +574,7 @@ public class Main extends Application {
                 } else {
                     responseBodyCheckForValidInput = responseBodiesFirstAPI.get(city);
                 }
-                responseBodySecondAPI = getLocalTime();
-
-                validInput = isValidInput(matcher, responseBodyCheckForValidInput, responseBodySecondAPI);
+                validInput = isValidInput(matcher, responseBodyCheckForValidInput);
             } else {
                 validInput = false;
             }
@@ -601,8 +587,8 @@ public class Main extends Application {
         });
     }
 
-    private boolean isValidInput(Matcher matcher, String responseBody, String localTime) {
-        return responseBody != null && matcher.find() && localTime != null;
+    private boolean isValidInput(Matcher matcher, String responseBody) {
+        return responseBody != null && matcher.find();
     }
 
     private void updateUI(boolean validInput) {
@@ -689,7 +675,6 @@ public class Main extends Application {
         showMoreWeatherInfo.setWeatherData(weatherData);
         showMoreWeatherInfo.setCity(city);
         showWeeklyForecastButton.setCity(city);
-        showWeeklyForecastButton.setWeatherAppAPI(weatherAppAPI);
         dynamicBackground.setCity(city);
         dynamicBackground.setResponseBodiesSecondAPI(responseBodiesDailySecondAPI);
     }
@@ -709,13 +694,6 @@ public class Main extends Application {
     }
 
     private void updateAPIData() throws ParseException, IOException {
-        responseBodiesFirstAPI.entrySet().forEach(entry -> {
-            try {
-                entry.setValue(weatherAppAPI.httpResponse(entry.getKey()));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
         LocalTime time = LocalTime.now();
         String timeFormat = (time.toString().split("\\.")[0].substring(0, 5));
         System.out.printf("Updated %d APIs at %s!\n", responseBodiesDailySecondAPI.size(), timeFormat);
