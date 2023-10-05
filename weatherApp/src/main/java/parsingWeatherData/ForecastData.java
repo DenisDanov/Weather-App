@@ -9,7 +9,7 @@ public class ForecastData {
     private double maxWind;
     private double avgHumidity;
     private double percentChanceOfRain;
-    private double   percentChanceOfSnow;
+    private double percentChanceOfSnow;
     private String weatherDescription;
     private String sunRise;
     private String sunSet;

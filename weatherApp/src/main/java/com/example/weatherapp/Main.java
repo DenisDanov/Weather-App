@@ -27,10 +27,11 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import parsingWeatherData.ForecastData;
 import parsingWeatherData.Current;
+import parsingWeatherData.ForecastData;
 import parsingWeatherData.WeatherData;
 import weatherApi.ForecastAPI;
+
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -85,7 +86,7 @@ public class Main extends Application {
     private final TextField cityStartUpTextField = new TextField();
     private Scene firstPageScene;
     private GridPane buttonsPane;
-    private final Pattern pattern = Pattern.compile("[a-zA-Z]");
+    private final Pattern patternNums = Pattern.compile("[0-9]+");
     private static ConcurrentHashMap<String, String> responseBodiesDailySecondAPI;
     private String lastEnteredCity;
     private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
@@ -140,7 +141,6 @@ public class Main extends Application {
         showWeeklyForecastButton.setStage(stage);
         showWeeklyForecastButton.setShowMoreWeatherInfo(showMoreWeatherInfo);
         showWeeklyForecastButton.setGetDailyForecast(getDailyForecast);
-        showWeeklyForecastButton.setForecastAPI(forecastAPI);
         dynamicBackground.setMainScene(mainScene);
         dynamicBackground.setStage(stage);
     }
@@ -169,7 +169,7 @@ public class Main extends Application {
                 fetchButton,
                 invalidInput
         );
-        firstPageScene = new Scene(firstPageVbox, 868, 700);
+        firstPageScene = new Scene(firstPageVbox, 866, 700);
         firstPageScene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/firstPage.css")).toExternalForm());
         primaryStage.setTitle("Weather App");
         primaryStage.setScene(firstPageScene);
@@ -429,7 +429,11 @@ public class Main extends Application {
                         gson = new Gson();
                     }
 
-                    if (responseBody != null) {
+                    Matcher matcher = patternNums.matcher(city);
+
+                    if (responseBody != null && !responseBody.contains("No matching location found.") &&
+                            !matcher.find()) {
+
                         weatherData = gson.fromJson(responseBody, WeatherData.class);
                         String localTime = formatDateToDayAndHour(getLocalTime());
                         return checkData(responseBody, forecastData, weatherConditionAndIcon,
@@ -450,13 +454,7 @@ public class Main extends Application {
                         updateButtonsData();
                         // Update UI with valid data
                         try {
-                            Current mainInfo;
-                            Matcher matcher = pattern.matcher(city);
-                            if (matcher.find()) {
-                                mainInfo = Objects.requireNonNull(weatherData).getMain();
-                            } else {
-                                mainInfo = null;
-                            }
+                            Current mainInfo = Objects.requireNonNull(weatherData.getMain());
 
                             dynamicBackground.switchVideoBackground(weatherConditionAndIcon.split("&")[1]);
 
@@ -554,12 +552,12 @@ public class Main extends Application {
         city = cityStartUpTextField.getText();
 
         CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
-            Matcher matcher = pattern.matcher(city);
+            Matcher matcher = patternNums.matcher(city);
             boolean validInput;
-            if (matcher.find()) {
+            if (!matcher.find()) {
                 if (!responseBodiesDailySecondAPI.containsKey(city)) {
                     try {
-                        if (forecastAPI == null){
+                        if (forecastAPI == null) {
                             forecastAPI = new ForecastAPI();
                         }
                         responseBodyCheckForValidInput = forecastAPI.httpResponseDailyForecast(city);
@@ -574,7 +572,7 @@ public class Main extends Application {
                 } else {
                     responseBodyCheckForValidInput = responseBodiesDailySecondAPI.get(city);
                 }
-                validInput = isValidInput(matcher, responseBodyCheckForValidInput);
+                validInput = isValidInput(responseBodyCheckForValidInput);
             } else {
                 validInput = false;
             }
@@ -587,8 +585,8 @@ public class Main extends Application {
         });
     }
 
-    private boolean isValidInput(Matcher matcher, String responseBody) {
-        return responseBody != null && matcher.find();
+    private boolean isValidInput(String responseBody) {
+        return responseBody != null;
     }
 
     private void updateUI(boolean validInput) {
@@ -675,6 +673,7 @@ public class Main extends Application {
         showMoreWeatherInfo.setWeatherData(weatherData);
         showMoreWeatherInfo.setCity(city);
         showWeeklyForecastButton.setCity(city);
+        showWeeklyForecastButton.setForecastAPI(forecastAPI);
         dynamicBackground.setCity(city);
         dynamicBackground.setResponseBodiesSecondAPI(responseBodiesDailySecondAPI);
     }
@@ -704,7 +703,6 @@ public class Main extends Application {
                 throw new RuntimeException(e);
             }
         });
-        System.out.printf("Updated %d APIs at %s!\n", responseBodiesDailySecondAPI.size(), timeFormat);
     }
 
     public static ForecastData getDailyForecast() throws IOException {

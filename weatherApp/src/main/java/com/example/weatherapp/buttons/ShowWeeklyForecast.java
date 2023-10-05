@@ -229,13 +229,9 @@ public class ShowWeeklyForecast extends Button {
 
             table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-            double tableViewWidth = 0;
-            for (TableColumn<?, ?> column : table.getColumns()) {
-                tableViewWidth += column.getWidth();
-            }
-            table.setPrefHeight(430);
+            table.setPrefHeight(378);
             VBox root = new VBox(table);
-            Scene scene = new Scene(root, tableViewWidth, 650);
+            Scene scene = new Scene(root, 866, 700);
 
             Button getToMainPage = new Button("Return to the main page");
             root.getChildren().add(getToMainPage);
