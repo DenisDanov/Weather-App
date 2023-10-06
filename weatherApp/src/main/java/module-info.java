@@ -4,10 +4,13 @@ module weatherAppModule {
     requires javafx.media;
     requires org.apache.httpcomponents.httpcore;
     requires org.apache.httpcomponents.httpclient;
-    requires mysql.connector.j;
     requires com.google.gson;
-    requires org.json;
+    requires vertx.json;
+    requires vertx.json.value.mapper;
+    requires com.fasterxml.jackson.annotation;
     requires com.fasterxml.jackson.core;
+    requires com.fasterxml.jackson.databind;
+    requires org.json;
     requires java.sql;
     opens parsingWeatherData;
     opens weatherApi;

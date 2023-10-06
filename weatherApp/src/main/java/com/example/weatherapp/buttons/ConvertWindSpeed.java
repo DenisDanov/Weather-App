@@ -9,7 +9,7 @@ public class ConvertWindSpeed extends Button {
     private final BubbleLabels windSpeedLabel;
     private WeatherData weatherData;
 
-    public ConvertWindSpeed(BubbleLabels windSpeedLabel) {
+    public ConvertWindSpeed(BubbleLabels windSpeedLabel, WeatherData weatherData) {
         this.windSpeedLabel = windSpeedLabel;
         this.setWeatherData(weatherData);
 
@@ -28,15 +28,11 @@ public class ConvertWindSpeed extends Button {
         // Convert wind speed logic
         if (windSpeedLabel.getText().contains("km/h")) {
             windSpeedLabel.setText(String.format("Wind speed: %.0f mph",
-                getWindSpeedInMiles(weatherData.getMain().getSpeed())));
+                getWindSpeedInMiles(weatherData.getCurrent().getWindKph())));
         } else if (windSpeedLabel.getText().contains("mph")) {
             windSpeedLabel.setText(String.format("Wind speed: %.0f km/h",
-                getWindSpeedInKms(weatherData.getMain().getSpeed())));
+                weatherData.getCurrent().getWindKph()));
         }
-    }
-
-    private double getWindSpeedInKms(double windSpeed) {
-        return windSpeed * 3.6;
     }
 
     private double getWindSpeedInMiles(double windSpeed) {

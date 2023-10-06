@@ -3,12 +3,9 @@ package com.example.weatherapp.buttons;
 import com.example.weatherapp.Main;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import parsingWeatherData.ForecastData;
+import parsingWeatherData.WeatherData;
 
-import java.io.IOException;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static com.example.weatherapp.Main.getUvOutputFormat;
 
@@ -63,7 +60,7 @@ public class ShowDailyForecast extends Button {
     public void showDailyForecastAction() {
         // daily forecast logic
         if (dateForecast.getText().equals("") && !dateForecast.isVisible()) {
-            updateLabels(Main.forecastData);
+            updateLabels(Main.weatherData);
         } else {
             hideLabels();
         }
@@ -87,19 +84,19 @@ public class ShowDailyForecast extends Button {
         sunset.setVisible(false);
     }
 
-    public void updateLabels(ForecastData finalForecastData) {
+    public void updateLabels(WeatherData finalWeatherData) {
 
-        dateForecast.setText(String.format("Date: %s", Objects.requireNonNull(finalForecastData).getDate()));
-        weatherDescriptionForecast.setText("Weather description for the day: " + finalForecastData.getWeatherDescription());
-        maxTempForecast.setText(String.format("Max temperature for the day: %.0f°C", finalForecastData.getMaxTemp()));
-        minTempForecast.setText(String.format("Min temperature for the day: %.0f°C", finalForecastData.getMinTemp()));
-        avgTempForecast.setText(String.format("UV Index for the day: %s", getUvOutputFormat(finalForecastData.getUvIndex())));
-        maxWindForecast.setText(String.format("Max wind speed for the day: %.0f km/h", finalForecastData.getMaxWind()));
-        avgHumidityForecast.setText(String.format("Average humidity for the day: %.0f %%", finalForecastData.getAvgHumidity()));
-        chanceOfRainingForecast.setText(String.format("Chance of raining: %.0f %%", finalForecastData.getPercentChanceOfRain()));
-        chanceOfSnowForecast.setText(String.format("Chance of snowing: %.0f %%", finalForecastData.getPercentChanceOfSnow()));
-        sunrise.setText("Sunrise: " + finalForecastData.getSunRise());
-        sunset.setText("Sunset: " + finalForecastData.getSunSet());
+        dateForecast.setText(String.format("Date: %s", Objects.requireNonNull(finalWeatherData).getForecast().getForecastday().getDate()));
+        weatherDescriptionForecast.setText("Weather description for the day: " + finalWeatherData.getForecast().getForecastday().getDay().getCondition().getText());
+        maxTempForecast.setText(String.format("Max temperature for the day: %.0f°C", finalWeatherData.getForecast().getForecastday().getDay().getMaxTempC()));
+        minTempForecast.setText(String.format("Min temperature for the day: %.0f°C", finalWeatherData.getForecast().getForecastday().getDay().getMinTempC()));
+        avgTempForecast.setText(String.format("UV Index for the day: %s", getUvOutputFormat(finalWeatherData.getForecast().getForecastday().getDay().getUv())));
+        maxWindForecast.setText(String.format("Max wind speed for the day: %.0f km/h", finalWeatherData.getForecast().getForecastday().getDay().getMaxWindKph()));
+        avgHumidityForecast.setText(String.format("Average humidity for the day: %.0f %%", finalWeatherData.getForecast().getForecastday().getDay().getAvgHumidity()));
+        chanceOfRainingForecast.setText(String.format("Chance of raining: %.0f %%", finalWeatherData.getForecast().getForecastday().getDay().getDailyChanceOfRain()));
+        chanceOfSnowForecast.setText(String.format("Chance of snowing: %.0f %%", finalWeatherData.getForecast().getForecastday().getDay().getDailyChanceOfSnow()));
+        sunrise.setText("Sunrise: " + finalWeatherData.getForecast().getForecastday().getAstro().getSunrise());
+        sunset.setText("Sunset: " + finalWeatherData.getForecast().getForecastday().getAstro().getSunset());
         if (!dateForecast.isVisible()) {
             dateForecast.setVisible(true);
             weatherDescriptionForecast.setVisible(true);

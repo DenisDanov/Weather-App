@@ -6,7 +6,7 @@ import com.example.weatherapp.labels.BubbleLabels;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -27,8 +27,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import parsingWeatherData.Current;
-import parsingWeatherData.ForecastData;
 import parsingWeatherData.WeatherData;
 import weatherApi.ForecastAPI;
 
@@ -46,30 +44,29 @@ import java.util.regex.Pattern;
 
 public class Main extends Application {
 
-    private WeatherData weatherData;
     private static String city;
     private TextField inputTextField; // Main scene TextField for input
-    private final BubbleLabels localTimeLabel = new BubbleLabels();
-    private final BubbleLabels temperatureLabel = new BubbleLabels();
-    private final BubbleLabels descriptionLabel = new BubbleLabels();
-    private final BubbleLabels temperatureFeelsLikeLabel = new BubbleLabels();
-    private final BubbleLabels weatherDescriptionLabel = new BubbleLabels();
-    private final BubbleLabels humidityLabel = new BubbleLabels();
-    private final BubbleLabels windSpeedLabel = new BubbleLabels();
-    private final BubbleLabels uvLabel = new BubbleLabels();
+    private BubbleLabels localTimeLabel;
+    private BubbleLabels temperatureLabel;
+    private BubbleLabels descriptionLabel;
+    private BubbleLabels temperatureFeelsLikeLabel;
+    private BubbleLabels weatherDescriptionLabel;
+    private BubbleLabels humidityLabel;
+    private BubbleLabels windSpeedLabel;
+    private BubbleLabels uvLabel;
     private ShowDailyForecast getDailyForecast;
-    private final Label dateForecast = new BubbleLabels();
-    private final Label maxTempForecast = new BubbleLabels();
-    private final Label minTempForecast = new BubbleLabels();
-    private final Label avgTempForecast = new BubbleLabels();
-    private final Label maxWindForecast = new BubbleLabels();
-    private final Label avgHumidityForecast = new BubbleLabels();
-    private final Label chanceOfRainingForecast = new BubbleLabels();
-    private final Label chanceOfSnowForecast = new BubbleLabels();
-    private final Label weatherDescriptionForecast = new BubbleLabels();
-    private final Label sunrise = new BubbleLabels();
-    private final Label sunset = new BubbleLabels();
-    private final Label cityLabel = new Label();
+    private Label dateForecast;
+    private Label maxTempForecast;
+    private Label minTempForecast;
+    private Label avgTempForecast;
+    private Label maxWindForecast;
+    private Label avgHumidityForecast;
+    private Label chanceOfRainingForecast;
+    private Label chanceOfSnowForecast;
+    private Label weatherDescriptionForecast;
+    private Label sunrise;
+    private Label sunset;
+    private Label cityLabel;
     private ShowWeeklyForecast showWeeklyForecastButton;
     private ShowMoreWeatherData showMoreWeatherInfo;
     private ConvertTemperature convertTemperature;
@@ -97,9 +94,9 @@ public class Main extends Application {
     private DynamicBackgroundImpl dynamicBackground;
     private Image image;
     private final Map<String, Image> imageCache = new HashMap<>();
-    public static ForecastData forecastData;
-    private Gson gson;
+    public static WeatherData weatherData;
     private static ForecastAPI forecastAPI;
+    private final JsonFactory factory = new JsonFactory();
 
     public Main() {
         responseBodiesDailySecondAPI = new ConcurrentHashMap<>();
@@ -153,7 +150,8 @@ public class Main extends Application {
                 responseBodiesDailySecondAPI,
                 stage,
                 mainScene,
-                forecastAPI
+                forecastAPI,
+                weatherData
         );
         dynamicBackground.addVideosPaths();
     }
@@ -188,9 +186,30 @@ public class Main extends Application {
     }
 
     private StackPane createRootLayout() {
+        localTimeLabel = new BubbleLabels();
+        temperatureLabel = new BubbleLabels();
+        descriptionLabel = new BubbleLabels();
+        temperatureFeelsLikeLabel = new BubbleLabels();
+        weatherDescriptionLabel = new BubbleLabels();
+        humidityLabel = new BubbleLabels();
+        windSpeedLabel = new BubbleLabels();
+        uvLabel = new BubbleLabels();
+        dateForecast = new BubbleLabels();
+        maxTempForecast = new BubbleLabels();
+        minTempForecast = new BubbleLabels();
+        avgTempForecast = new BubbleLabels();
+        maxWindForecast = new BubbleLabels();
+        avgHumidityForecast = new BubbleLabels();
+        chanceOfRainingForecast = new BubbleLabels();
+        chanceOfSnowForecast = new BubbleLabels();
+        weatherDescriptionForecast = new BubbleLabels();
+        sunrise = new BubbleLabels();
+        sunset = new BubbleLabels();
+        cityLabel = new Label();
         this.inputTextField = new TextField();
         rootLayout = new StackPane();
         root = new VBox();
+
         root.setSpacing(1.5);
         setRightMargin(inputTextField);
 
@@ -228,11 +247,11 @@ public class Main extends Application {
                 descriptionLabel
         );
 
-        convertTemperature = new ConvertTemperature(temperatureLabel, temperatureFeelsLikeLabel);
+        convertTemperature = new ConvertTemperature(temperatureLabel, temperatureFeelsLikeLabel, weatherData);
         convertTemperature.setText("Convert temperature");
         root.getChildren().add(6, convertTemperature);
 
-        convertWindSpeed = new ConvertWindSpeed(windSpeedLabel);
+        convertWindSpeed = new ConvertWindSpeed(windSpeedLabel, weatherData);
         convertWindSpeed.setText("Convert wind speed");
 
         showWeeklyForecastButton = new ShowWeeklyForecast(
@@ -302,12 +321,13 @@ public class Main extends Application {
                 sunrise,
                 sunset,
                 showWeeklyForecastButton,
-                weatherData,
                 convertWindSpeed,
                 city,
                 responseBodiesDailySecondAPI,
-                forecastAPI
+                forecastAPI,
+                weatherData
         );
+
         showMoreWeatherInfo.setText("Show more weather info");
 
         root.getChildren().addAll(
@@ -388,12 +408,11 @@ public class Main extends Application {
         VBox.setMargin(node, insets);
     }
 
-    private WeatherDataAndForecast checkData(String responseBody, ForecastData forecastData,
+    private WeatherDataAndForecast checkData(WeatherData weatherData,
                                              String weatherConditionAndIcon,
-                                             WeatherData weatherData,
                                              String localTime) {
-        if (responseBody != null && weatherData != null && forecastData != null) {
-            return new WeatherDataAndForecast(responseBody, weatherData, forecastData, weatherConditionAndIcon, localTime);
+        if (weatherData != null) {
+            return new WeatherDataAndForecast(weatherData, weatherConditionAndIcon, localTime);
         } else {
             return null;
         }
@@ -407,54 +426,38 @@ public class Main extends Application {
                 checkForValidInput();
             } else {
                 CompletableFuture<WeatherDataAndForecast> future = CompletableFuture.supplyAsync(() -> {
-                    String responseBody;
                     String weatherConditionAndIcon = getWeatherCondition();
 
-                    if (!responseBodiesDailySecondAPI.containsKey(city)) {
-                        try {
-                            responseBody = forecastAPI.httpResponseDailyForecast(city);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    } else {
-                        responseBody = responseBodiesDailySecondAPI.get(city);
-                    }
                     try {
-                        forecastData = getDailyForecast();
+                        weatherData = getDailyForecast();
+                        System.out.println(11);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-
-                    if (gson == null) {
-                        gson = new Gson();
+                    if (weatherData == null ){
+                        System.out.println(1231);
                     }
 
                     Matcher matcher = patternNums.matcher(city);
 
-                    if (responseBody != null && !responseBody.contains("No matching location found.") &&
-                            !matcher.find()) {
+                    if (!matcher.find() && weatherData != null) {
 
-                        weatherData = gson.fromJson(responseBody, WeatherData.class);
-                        String localTime = formatDateToDayAndHour(getLocalTime());
-                        return checkData(responseBody, forecastData, weatherConditionAndIcon,
-                                weatherData, localTime);
+                        String localTime = formatDateToDayAndHour((weatherData.getLocation().getLocaltime()));
+                        return checkData(weatherData, weatherConditionAndIcon, localTime);
                     } else {
                         return null;
                     }
 
                 });
                 future.thenAcceptAsync(validInput -> Platform.runLater(() -> {
-                    if (validInput != null && validInput.getResponseBody() != null) {
-                        String responseBody = validInput.getResponseBody();
-                        WeatherData weatherData = validInput.getWeatherData();
-                        ForecastData forecastData = validInput.getForecastData();
+                    if (validInput != null) {
+                        WeatherData weatherData = validInput.getForecastData();
                         String weatherConditionAndIcon = validInput.getWeatherConditionAndIcon();
                         String localTime = validInput.getLocalTime();
 
                         updateButtonsData();
                         // Update UI with valid data
                         try {
-                            Current mainInfo = Objects.requireNonNull(weatherData.getMain());
 
                             dynamicBackground.switchVideoBackground(weatherConditionAndIcon.split("&")[1]);
 
@@ -489,11 +492,8 @@ public class Main extends Application {
                                 inputTextField.setStyle(temperatureLabel.getStyle());
                             }
 
-                            if (!responseBodiesDailySecondAPI.containsKey(city)) {
-                                responseBodiesDailySecondAPI.put(city, responseBody);
-                            }
-                            double temp = Objects.requireNonNull(mainInfo).getTemp();
-                            double tempFeelsLike = mainInfo.getFeels_like();
+                            double temp = weatherData.getCurrent().getTemp_c();
+                            double tempFeelsLike = weatherData.getCurrent().getFeelsLikeC();
 
                             buttonsPane.setVisible(true);
                             convertTemperature.setVisible(true);
@@ -513,9 +513,9 @@ public class Main extends Application {
                                     weatherConditionAndIcon.split("&")[1]);
 
                             if (!humidityLabel.getText().equals("") && humidityLabel.isVisible()) {
-                                showMoreWeatherInfo.showLabels(mainInfo);
+                                showMoreWeatherInfo.showLabels();
                                 if (!dateForecast.getText().equals("") && dateForecast.isVisible()) {
-                                    getDailyForecast.updateLabels(forecastData);
+                                    getDailyForecast.updateLabels(weatherData);
                                 } else {
                                     getDailyForecast.hideLabels();
                                 }
@@ -537,13 +537,25 @@ public class Main extends Application {
 
                     if (inputTextField.getText().equals("") && stage.getScene() == firstPageScene) {
                         inputTextField.setText(cityStartUpTextField.getText());
-                        inputTextField.deselect();
-                        Platform.runLater(() -> inputTextField.positionCaret(cityStartUpTextField.getText().length()));
                     }
+
                     if (stage.getScene() != mainScene) {
                         stage.setScene(mainScene);
                     }
+
+                    inputTextField.deselect();
+                    Platform.runLater(() -> inputTextField.positionCaret(inputTextField.getText().length()));
                 }));
+            }
+        } else {
+            if (stage.getScene() == firstPageScene) {
+                inputTextField.setText(cityStartUpTextField.getText());
+                inputTextField.deselect();
+                Platform.runLater(() -> inputTextField.positionCaret(inputTextField.getText().length()));
+                if (!buttonsPane.getChildren().contains(fetchButton)) {
+                    buttonsPane.add(fetchButton, 0, 0);
+                }
+                stage.setScene(mainScene);
             }
         }
     }
@@ -597,6 +609,8 @@ public class Main extends Application {
             invalidInput.setText("Enter valid city or country");
             invalidInput.setStyle("-fx-text-fill: red;");
             cityStartUpTextField.setStyle("-fx-text-fill: red;");
+            cityStartUpTextField.deselect();
+            Platform.runLater(() -> cityStartUpTextField.positionCaret(cityStartUpTextField.getText().length()));
         }
     }
 
@@ -668,14 +682,15 @@ public class Main extends Application {
     }
 
     private void updateButtonsData() {
-        convertTemperature.setWeatherData(weatherData);
+        convertTemperature.setForecastData(weatherData);
         convertWindSpeed.setWeatherData(weatherData);
-        showMoreWeatherInfo.setWeatherData(weatherData);
         showMoreWeatherInfo.setCity(city);
+        showMoreWeatherInfo.setForecastData(weatherData);
         showWeeklyForecastButton.setCity(city);
         showWeeklyForecastButton.setForecastAPI(forecastAPI);
         dynamicBackground.setCity(city);
         dynamicBackground.setResponseBodiesSecondAPI(responseBodiesDailySecondAPI);
+        dynamicBackground.setForecastData(weatherData);
     }
 
     public static String getUvOutputFormat(double uvIndex) {
@@ -705,7 +720,7 @@ public class Main extends Application {
         });
     }
 
-    public static ForecastData getDailyForecast() throws IOException {
+    public static WeatherData getDailyForecast() throws IOException {
         String responseBodyDailyForecast;
         if (!responseBodiesDailySecondAPI.containsKey(city)) {
             responseBodyDailyForecast = forecastAPI.httpResponseDailyForecast(city);
@@ -719,88 +734,8 @@ public class Main extends Application {
             if (!responseBodiesDailySecondAPI.containsKey(city)) {
                 responseBodiesDailySecondAPI.put(city, responseBodyDailyForecast);
             }
-            JsonFactory jsonFactory = new JsonFactory();
-            try (JsonParser jsonParser = jsonFactory.createParser(responseBodyDailyForecast)) {
-                while (jsonParser.nextToken() != null) {
-                    if (jsonParser.getCurrentToken() == JsonToken.FIELD_NAME) {
-                        String fieldName = jsonParser.getCurrentName();
-                        jsonParser.nextToken();
-
-                        if ("forecastday".equals(fieldName)) {
-                            String date;
-                            double maxTempC = 0;
-                            double minTempC = 0;
-                            double maxwindKph = 0;
-                            double uvIndex = 0;
-                            double chanceOfRain = 0;
-                            double chanceOfSnow = 0;
-                            String weatherCondition = "";
-                            double avgHumidity = 0;
-                            String sunRise = "";
-                            String sunSet = "";
-                            while (jsonParser.nextToken() != JsonToken.END_OBJECT) {
-                                if (jsonParser.getCurrentToken() == JsonToken.FIELD_NAME) {
-                                    String forecastField = jsonParser.getCurrentName();
-                                    jsonParser.nextToken();
-
-                                    if ("date".equals(forecastField)) {
-                                        date = jsonParser.getText();
-                                        while (sunSet.equals("")) {
-                                            switch (jsonParser.getText()) {
-                                                case "maxtemp_c":
-                                                    jsonParser.nextToken();
-                                                    maxTempC = Double.parseDouble(jsonParser.getText());
-                                                    break;
-                                                case "mintemp_c":
-                                                    jsonParser.nextToken();
-                                                    minTempC = Double.parseDouble(jsonParser.getText());
-                                                    break;
-                                                case "maxwind_kph":
-                                                    jsonParser.nextToken();
-                                                    maxwindKph = Double.parseDouble(jsonParser.getText());
-                                                    break;
-                                                case "avghumidity":
-                                                    jsonParser.nextToken();
-                                                    avgHumidity = Double.parseDouble(jsonParser.getText());
-                                                    break;
-                                                case "daily_chance_of_rain":
-                                                    jsonParser.nextToken();
-                                                    chanceOfRain = Double.parseDouble(jsonParser.getText());
-                                                    break;
-                                                case "daily_chance_of_snow":
-                                                    jsonParser.nextToken();
-                                                    chanceOfSnow = Double.parseDouble(jsonParser.getText());
-                                                    break;
-                                                case "text":
-                                                    jsonParser.nextToken();
-                                                    weatherCondition = (jsonParser.getText());
-                                                    break;
-                                                case "uv":
-                                                    jsonParser.nextToken();
-                                                    uvIndex = Double.parseDouble(jsonParser.getText());
-                                                    break;
-                                                case "sunrise":
-                                                    jsonParser.nextToken();
-                                                    sunRise = jsonParser.getText();
-                                                    break;
-                                                case "sunset":
-                                                    jsonParser.nextToken();
-                                                    sunSet = jsonParser.getText();
-                                                    break;
-                                            }
-                                            jsonParser.nextToken();
-                                        }
-                                        return new ForecastData(date, maxTempC, minTempC, uvIndex, maxwindKph,
-                                                avgHumidity, chanceOfRain, chanceOfSnow, weatherCondition, sunRise, sunSet);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            ObjectMapper objectMapper = new ObjectMapper();
+            weatherData = objectMapper.readValue(responseBodyDailyForecast, WeatherData.class);
         }
         return null;
     }
@@ -818,23 +753,8 @@ public class Main extends Application {
             if (isValidResponse(responseBodyDailyForecast)) {
                 responseBodiesDailySecondAPI.put(city, responseBodyDailyForecast);
 
-                JsonFactory factory = new JsonFactory();
-                JsonParser parser = factory.createParser(responseBodyDailyForecast);
-
-                while (parser.nextToken() != JsonToken.END_OBJECT) {
-                    String field = parser.getCurrentName();
-                    parser.nextToken();
-                    if ("text".equals(field)) {
-                        String text = parser.getText();
-                        parser.nextToken();
-                        parser.nextToken();
-                        String icon = parser.getText();
-                        weatherConditionAndIcon = icon + "&" + text;
-                        break;
-                    }
-                }
-
-                parser.close();
+                ObjectMapper objectMapper = new ObjectMapper();
+                weatherData = objectMapper.readValue(responseBodyDailyForecast, WeatherData.class);
             }
         } catch (IOException exception) {
             throw new RuntimeException();
@@ -843,44 +763,8 @@ public class Main extends Application {
         return weatherConditionAndIcon;
     }
 
-    public static String getLocalTime() {
-        String responseBodyDailyForecast;
-        try {
-            if (responseBodiesDailySecondAPI.containsKey(city)) {
-                responseBodyDailyForecast = responseBodiesDailySecondAPI.get(city);
-            } else {
-                responseBodyDailyForecast = forecastAPI.httpResponseDailyForecast(city);
-                responseBodiesDailySecondAPI.put(city, Objects.requireNonNull(responseBodyDailyForecast));
-            }
-
-            if (isValidResponse(responseBodyDailyForecast)) {
-                JsonFactory factory = new JsonFactory();
-                JsonParser parser = factory.createParser(responseBodyDailyForecast);
-
-                while (parser.nextToken() != JsonToken.END_OBJECT) {
-                    String field = parser.getCurrentName();
-                    parser.nextToken();
-                    if ("location".equals(field)) {
-                        while (parser.nextToken() != JsonToken.END_OBJECT) {
-                            parser.nextToken();
-                            if ("localtime".equals(parser.getText())) {
-                                parser.nextToken();
-                                return parser.getText();
-                            }
-                        }
-                    }
-                }
-                parser.close();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return null;
-    }
-
     private static boolean isValidResponse(String responseBody) {
-        return responseBody != null &&
-                !responseBody.contains("HTTP request failed with status code: 404");
+        return responseBody != null;
 
     }
 

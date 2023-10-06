@@ -1,7 +1,7 @@
 package com.example.weatherapp.buttons;
 
-import com.example.weatherapp.labels.BubbleLabels;
 import com.example.weatherapp.Main;
+import com.example.weatherapp.labels.BubbleLabels;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -22,13 +22,13 @@ public class ReturnToFirstPage extends Button {
     private BubbleLabels temperatureLabel;
 
     public ReturnToFirstPage(Stage stage,
-            Scene firstPageScene,
-            Label invalidInput,
-            VBox firstPageVbox,
-            Button fetchButton,
-            TextField cityStartUpTextField,
-            TextField inputTextField,
-            BubbleLabels temperatureLabel) {
+                             Scene firstPageScene,
+                             Label invalidInput,
+                             VBox firstPageVbox,
+                             Button fetchButton,
+                             TextField cityStartUpTextField,
+                             TextField inputTextField,
+                             BubbleLabels temperatureLabel) {
 
         this.setStage(stage);
         this.setFirstPageScene(firstPageScene);
@@ -52,6 +52,7 @@ public class ReturnToFirstPage extends Button {
             cityStartUpTextField.setText(inputTextField.getText());
             cityStartUpTextField.setStyle(temperatureLabel.getStyle());
             inputTextField.setText("");
+            cityStartUpTextField.deselect();
             Platform.runLater(() -> cityStartUpTextField.positionCaret(cityStartUpTextField.getText().length()));
         }
     }

@@ -11,6 +11,7 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import parsingWeatherData.WeatherData;
 import weatherApi.ForecastAPI;
 
 import java.io.IOException;
@@ -23,7 +24,6 @@ import java.util.Objects;
 import java.util.concurrent.*;
 
 import static com.example.weatherapp.Main.formatDateToDayAndHour;
-import static com.example.weatherapp.Main.getLocalTime;
 
 public class DynamicBackgroundImpl {
 
@@ -39,6 +39,7 @@ public class DynamicBackgroundImpl {
     private final FadeTransition fadeOut;
     private final FadeTransition fadeIn;
     private final ForecastAPI forecastAPI;
+    private WeatherData weatherData;
 
     public DynamicBackgroundImpl(StackPane rootLayout,
                                  VBox root,
@@ -46,7 +47,8 @@ public class DynamicBackgroundImpl {
                                  ConcurrentHashMap<String, String> responseBodiesSecondAPI,
                                  Stage stage,
                                  Scene mainScene,
-                                 ForecastAPI forecastAPI) {
+                                 ForecastAPI forecastAPI,
+                                 WeatherData weatherData) {
         this.lastWeatherDescription = "";
         this.lastTimeCheck = "";
         this.setCity(city);
@@ -58,6 +60,7 @@ public class DynamicBackgroundImpl {
         this.fadeOut = new FadeTransition(Duration.millis(100), mediaView);
         this.fadeIn = new FadeTransition(Duration.millis(100), mediaView);
         this.forecastAPI = forecastAPI;
+        this.setForecastData(weatherData);
 
         fadeIn.setFromValue(1);
         fadeOut.setFromValue(1);
@@ -65,6 +68,10 @@ public class DynamicBackgroundImpl {
         fadeOut.setToValue(1);
 
         Objects.requireNonNull(rootLayout).getChildren().addAll(mediaView, root);
+    }
+
+    public void setForecastData(WeatherData weatherData) {
+        this.weatherData = weatherData;
     }
 
     public void setStage(Stage stage) {
@@ -136,9 +143,11 @@ public class DynamicBackgroundImpl {
             newMediaPlayer.setMute(true);
 
             // Set an event handler for when the fade out animation is finished
+
             fadeOut.setOnFinished(event -> {
                 // Crossfade to the second video
-                disposeMediaPlayerAsync(mediaView);
+                mediaView.getMediaPlayer().stop();
+                mediaView.getMediaPlayer().dispose();
                 fadeInToNewVideo(newMediaPlayer, fadeIn);
             });
 
@@ -163,31 +172,6 @@ public class DynamicBackgroundImpl {
 
             Objects.requireNonNull(mediaPlayer).play();
         }
-    }
-
-    public static void disposeMediaPlayerAsync(MediaView mediaView) {
-        if (mediaView == null || mediaView.getMediaPlayer() == null) {
-            return;
-        }
-
-        MediaPlayer mediaPlayer = mediaView.getMediaPlayer();
-
-        // Create a background thread for disposing the MediaPlayer
-        Thread disposeThread = new Thread(() -> {
-            mediaPlayer.stop();
-            mediaPlayer.dispose();
-        });
-
-        // Start and run the thread
-        disposeThread.start();
-
-        // stop the thread
-        try {
-            disposeThread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace(System.out);
-        }
-
     }
 
     private void fadeInToNewVideo(MediaPlayer newMediaPlayer, FadeTransition fadeIn) {
@@ -251,7 +235,7 @@ public class DynamicBackgroundImpl {
     }
 
     private boolean currentTimeIsLaterThanSunset() {
-        String currentTimeTrimmed = formatDateToDayAndHour(getLocalTime()).split(", ")[1];
+        String currentTimeTrimmed = formatDateToDayAndHour(weatherData.getLocation().getLocaltime()).split(", ")[1];
 
         List<String> sunsetAndSunrise = getSunsetAndSunrise();
         String sunsetTimeTrimmed = Objects.requireNonNull(sunsetAndSunrise).get(0);

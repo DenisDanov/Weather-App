@@ -238,8 +238,6 @@ public class ShowWeeklyForecast extends Button {
             scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/weeklyForecastPage.css")).toExternalForm());
             stage.setScene(scene);
 
-            stage.show();
-
             getToMainPage.setOnAction(actionEvent -> returnToMainPage());
         } else {
             returnToMainPage();
@@ -371,7 +369,6 @@ public class ShowWeeklyForecast extends Button {
     private void returnToMainPage() {
         Platform.runLater(() -> {
             stage.setScene(mainScene);
-            stage.show();
             temperatureLabel.setVisible(true);
             descriptionLabel.setVisible(true);
             temperatureFeelsLikeLabel.setVisible(true);

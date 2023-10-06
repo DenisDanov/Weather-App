@@ -6,6 +6,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+
 import java.io.IOException;
 import java.net.URLEncoder;
 
@@ -17,11 +18,8 @@ public class ForecastAPI {
 
     private final CloseableHttpClient HTTP_CLIENT;
 
-    public ForecastAPI(){
-        HTTP_CLIENT = HttpClients.custom()
-                .setMaxConnTotal(3)
-                .setMaxConnPerRoute(3)
-                .build();
+    public ForecastAPI() {
+        HTTP_CLIENT = HttpClients.createDefault();
     }
 
     public String httpResponseDailyForecast(String city) throws IOException {
@@ -32,7 +30,12 @@ public class ForecastAPI {
         try (CloseableHttpResponse response = HTTP_CLIENT.execute(httpGet)) {
 
             HttpEntity entity = response.getEntity();
-            return EntityUtils.toString(entity);
+            String responseString = EntityUtils.toString(entity);
+            if (!responseString.contains("error")) {
+                return responseString;
+            } else {
+                return null;
+            }
         }
     }
 
@@ -43,8 +46,12 @@ public class ForecastAPI {
 
         try (CloseableHttpResponse response = HTTP_CLIENT.execute(httpGet)) {
             HttpEntity entity = response.getEntity();
-            return EntityUtils.toString(entity);
+            String responseString = EntityUtils.toString(entity);
+            if (!responseString.contains("error")) {
+                return responseString;
+            } else {
+                return null;
+            }
         }
     }
-
 }
