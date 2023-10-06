@@ -1,5 +1,7 @@
 package parsingWeatherData;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class WeatherData {
     private Location location;
     private Current current;

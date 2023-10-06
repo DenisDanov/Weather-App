@@ -4,8 +4,6 @@ import com.example.weatherapp.buttons.*;
 import com.example.weatherapp.dynamicBackground.DynamicBackgroundImpl;
 import com.example.weatherapp.labels.BubbleLabels;
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -96,7 +94,7 @@ public class Main extends Application {
     private final Map<String, Image> imageCache = new HashMap<>();
     public static WeatherData weatherData;
     private static ForecastAPI forecastAPI;
-    private final JsonFactory factory = new JsonFactory();
+    ObjectMapper objectMapper = new ObjectMapper();
 
     public Main() {
         responseBodiesDailySecondAPI = new ConcurrentHashMap<>();
@@ -425,18 +423,10 @@ public class Main extends Application {
             if (stage.getScene() == firstPageScene && !"Passed!".equals(passedFirstPage)) {
                 checkForValidInput();
             } else {
-                CompletableFuture<WeatherDataAndForecast> future = CompletableFuture.supplyAsync(() -> {
-                    String weatherConditionAndIcon = getWeatherCondition();
 
-                    try {
-                        weatherData = getDailyForecast();
-                        System.out.println(11);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    if (weatherData == null ){
-                        System.out.println(1231);
-                    }
+                CompletableFuture<WeatherDataAndForecast> future = CompletableFuture.supplyAsync(() -> {
+
+                    String weatherConditionAndIcon = getWeatherCondition();
 
                     Matcher matcher = patternNums.matcher(city);
 
@@ -450,7 +440,8 @@ public class Main extends Application {
 
                 });
                 future.thenAcceptAsync(validInput -> Platform.runLater(() -> {
-                    if (validInput != null) {
+                    if (validInput != null && validInput.getForecastData() != null
+                    && !validInput.getWeatherConditionAndIcon().equals("")) {
                         WeatherData weatherData = validInput.getForecastData();
                         String weatherConditionAndIcon = validInput.getWeatherConditionAndIcon();
                         String localTime = validInput.getLocalTime();
@@ -720,26 +711,6 @@ public class Main extends Application {
         });
     }
 
-    public static WeatherData getDailyForecast() throws IOException {
-        String responseBodyDailyForecast;
-        if (!responseBodiesDailySecondAPI.containsKey(city)) {
-            responseBodyDailyForecast = forecastAPI.httpResponseDailyForecast(city);
-        } else {
-            responseBodyDailyForecast = responseBodiesDailySecondAPI.get(city);
-        }
-        if (responseBodyDailyForecast != null &&
-                !responseBodyDailyForecast.contains("No matching location found.") &&
-                !responseBodyDailyForecast.contains("Parameter q is missing.")
-        ) {
-            if (!responseBodiesDailySecondAPI.containsKey(city)) {
-                responseBodiesDailySecondAPI.put(city, responseBodyDailyForecast);
-            }
-            ObjectMapper objectMapper = new ObjectMapper();
-            weatherData = objectMapper.readValue(responseBodyDailyForecast, WeatherData.class);
-        }
-        return null;
-    }
-
     private String getWeatherCondition() {
         String weatherConditionAndIcon = "";
         String responseBodyDailyForecast;
@@ -753,8 +724,9 @@ public class Main extends Application {
             if (isValidResponse(responseBodyDailyForecast)) {
                 responseBodiesDailySecondAPI.put(city, responseBodyDailyForecast);
 
-                ObjectMapper objectMapper = new ObjectMapper();
                 weatherData = objectMapper.readValue(responseBodyDailyForecast, WeatherData.class);
+                weatherConditionAndIcon = weatherData.getCurrent().getCondition().getIcon() + "&" +
+                weatherData.getCurrent().getCondition().getText();
             }
         } catch (IOException exception) {
             throw new RuntimeException();

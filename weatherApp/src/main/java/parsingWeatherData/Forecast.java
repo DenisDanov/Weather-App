@@ -1,10 +1,13 @@
 package parsingWeatherData;
 
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Forecast {
-    private ForecastDay forecastday;
-    public ForecastDay getForecastday() {
+    private List<ForecastDay> forecastday;
+
+    public List<ForecastDay> getForecastday() {
         return forecastday;
     }
     // Getter and setter methods for forecastday

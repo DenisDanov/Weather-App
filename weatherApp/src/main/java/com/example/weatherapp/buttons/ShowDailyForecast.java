@@ -86,17 +86,17 @@ public class ShowDailyForecast extends Button {
 
     public void updateLabels(WeatherData finalWeatherData) {
 
-        dateForecast.setText(String.format("Date: %s", Objects.requireNonNull(finalWeatherData).getForecast().getForecastday().getDate()));
-        weatherDescriptionForecast.setText("Weather description for the day: " + finalWeatherData.getForecast().getForecastday().getDay().getCondition().getText());
-        maxTempForecast.setText(String.format("Max temperature for the day: %.0f°C", finalWeatherData.getForecast().getForecastday().getDay().getMaxTempC()));
-        minTempForecast.setText(String.format("Min temperature for the day: %.0f°C", finalWeatherData.getForecast().getForecastday().getDay().getMinTempC()));
-        avgTempForecast.setText(String.format("UV Index for the day: %s", getUvOutputFormat(finalWeatherData.getForecast().getForecastday().getDay().getUv())));
-        maxWindForecast.setText(String.format("Max wind speed for the day: %.0f km/h", finalWeatherData.getForecast().getForecastday().getDay().getMaxWindKph()));
-        avgHumidityForecast.setText(String.format("Average humidity for the day: %.0f %%", finalWeatherData.getForecast().getForecastday().getDay().getAvgHumidity()));
-        chanceOfRainingForecast.setText(String.format("Chance of raining: %.0f %%", finalWeatherData.getForecast().getForecastday().getDay().getDailyChanceOfRain()));
-        chanceOfSnowForecast.setText(String.format("Chance of snowing: %.0f %%", finalWeatherData.getForecast().getForecastday().getDay().getDailyChanceOfSnow()));
-        sunrise.setText("Sunrise: " + finalWeatherData.getForecast().getForecastday().getAstro().getSunrise());
-        sunset.setText("Sunset: " + finalWeatherData.getForecast().getForecastday().getAstro().getSunset());
+        dateForecast.setText(String.format("Date: %s", Objects.requireNonNull(finalWeatherData).getForecast().getForecastday().get(0).getDate()));
+        weatherDescriptionForecast.setText("Weather description for the day: " + finalWeatherData.getForecast().getForecastday().get(0).getDay().getCondition().getText());
+        maxTempForecast.setText(String.format("Max temperature for the day: %.0f°C", finalWeatherData.getForecast().getForecastday().get(0).getDay().getMaxTempC()));
+        minTempForecast.setText(String.format("Min temperature for the day: %.0f°C", finalWeatherData.getForecast().getForecastday().get(0).getDay().getMinTempC()));
+        avgTempForecast.setText(String.format("UV Index for the day: %s", getUvOutputFormat(finalWeatherData.getForecast().getForecastday().get(0).getDay().getUv())));
+        maxWindForecast.setText(String.format("Max wind speed for the day: %.0f km/h", finalWeatherData.getForecast().getForecastday().get(0).getDay().getMaxWindKph()));
+        avgHumidityForecast.setText(String.format("Average humidity for the day: %.0f %%", finalWeatherData.getForecast().getForecastday().get(0).getDay().getAvgHumidity()));
+        chanceOfRainingForecast.setText(String.format("Chance of raining: %d %%", finalWeatherData.getForecast().getForecastday().get(0).getDay().getDailyChanceOfRain()));
+        chanceOfSnowForecast.setText(String.format("Chance of snowing: %d %%", finalWeatherData.getForecast().getForecastday().get(0).getDay().getDailyChanceOfSnow()));
+        sunrise.setText("Sunrise: " + finalWeatherData.getForecast().getForecastday().get(0).getAstro().getSunrise());
+        sunset.setText("Sunset: " + finalWeatherData.getForecast().getForecastday().get(0).getAstro().getSunset());
         if (!dateForecast.isVisible()) {
             dateForecast.setVisible(true);
             weatherDescriptionForecast.setVisible(true);

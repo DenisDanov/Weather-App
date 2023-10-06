@@ -1,12 +1,13 @@
 package parsingWeatherData;
 
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ForecastDay {
     private String date;
     private Day day;
     private Astro astro;
-    private List<Hour> hour;
 
     public String getDate() {
         return date;
@@ -20,8 +21,6 @@ public class ForecastDay {
         return astro;
     }
 
-    public List<Hour> getHour() {
-        return hour;
-    }
+
 // Getter and setter methods for date, day, astro, and hour
 }
