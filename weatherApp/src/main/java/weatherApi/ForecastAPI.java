@@ -24,7 +24,7 @@ public class ForecastAPI {
 
     public String httpResponseDailyForecast(String city) throws IOException {
         String encodedCity = URLEncoder.encode(city, "UTF-8");
-        HttpGet httpGet = new HttpGet(API_ENDPOINT + "/forecast.json?key=" + API_KEY + "&q=" +
+        HttpGet httpGet = new HttpGet("https://api.weatherapi.com/v1" + "/forecast.json?key=" + "7b8c42516bda423096a152141232509" + "&q=" +
                 encodedCity + "&days=1" + "&aqi=no&alerts=no");
 
         try (CloseableHttpResponse response = HTTP_CLIENT.execute(httpGet)) {

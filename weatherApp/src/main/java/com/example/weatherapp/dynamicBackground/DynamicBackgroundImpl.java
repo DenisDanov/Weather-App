@@ -1,6 +1,7 @@
 package com.example.weatherapp.dynamicBackground;
 
 import javafx.animation.FadeTransition;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -9,19 +10,17 @@ import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import parsingWeatherData.WeatherData;
-import weatherApi.ForecastAPI;
 
-import java.io.IOException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.example.weatherapp.Main.formatDateToDayAndHour;
 
@@ -29,37 +28,27 @@ public class DynamicBackgroundImpl {
 
     private String lastWeatherDescription;
     private String lastTimeCheck;
-    private String city;
-    private ConcurrentHashMap<String, String> responseBodiesSecondAPI;
-    private String responseBodyGetSunsetSunrise;
     private final MediaView mediaView = new MediaView();
     private Stage stage;
     private Scene mainScene;
     private final Map<String, String> videoPaths;
     private final FadeTransition fadeOut;
     private final FadeTransition fadeIn;
-    private final ForecastAPI forecastAPI;
     private WeatherData weatherData;
+    private final ExecutorService mediaPlayerLoader = Executors.newCachedThreadPool();
 
     public DynamicBackgroundImpl(StackPane rootLayout,
                                  VBox root,
-                                 String city,
-                                 ConcurrentHashMap<String, String> responseBodiesSecondAPI,
                                  Stage stage,
                                  Scene mainScene,
-                                 ForecastAPI forecastAPI,
                                  WeatherData weatherData) {
         this.lastWeatherDescription = "";
         this.lastTimeCheck = "";
-        this.setCity(city);
-        this.setResponseBodiesSecondAPI(responseBodiesSecondAPI);
-        this.responseBodyGetSunsetSunrise = "";
         this.setStage(stage);
         this.setMainScene(mainScene);
         this.videoPaths = new HashMap<>();
         this.fadeOut = new FadeTransition(Duration.millis(100), mediaView);
         this.fadeIn = new FadeTransition(Duration.millis(100), mediaView);
-        this.forecastAPI = forecastAPI;
         this.setForecastData(weatherData);
 
         fadeIn.setFromValue(1);
@@ -80,14 +69,6 @@ public class DynamicBackgroundImpl {
 
     public void setMainScene(Scene mainScene) {
         this.mainScene = mainScene;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public void setResponseBodiesSecondAPI(ConcurrentHashMap<String, String> responseBodiesSecondAPI) {
-        this.responseBodiesSecondAPI = responseBodiesSecondAPI;
     }
 
     public void addVideosPaths() {
@@ -112,18 +93,13 @@ public class DynamicBackgroundImpl {
     }
 
     private MediaPlayer loadMediaPlayerInBackground(String resourcePath) {
-        ExecutorService executorService = Executors.newCachedThreadPool();
-
-        CompletableFuture<MediaPlayer> futureMediaPlayer = CompletableFuture.supplyAsync(() -> {
-            return createAndLoadMediaPlayer(resourcePath);
-        }, executorService);
+        CompletableFuture<MediaPlayer> futureMediaPlayer = CompletableFuture.supplyAsync(() ->
+                createAndLoadMediaPlayer(resourcePath), mediaPlayerLoader);
 
         try {
-            executorService.shutdown();
             return futureMediaPlayer.get();
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace(System.out);
-            executorService.shutdown();
             return null;
         }
     }
@@ -143,7 +119,6 @@ public class DynamicBackgroundImpl {
             newMediaPlayer.setMute(true);
 
             // Set an event handler for when the fade out animation is finished
-
             fadeOut.setOnFinished(event -> {
                 // Crossfade to the second video
                 mediaView.getMediaPlayer().stop();
@@ -237,9 +212,8 @@ public class DynamicBackgroundImpl {
     private boolean currentTimeIsLaterThanSunset() {
         String currentTimeTrimmed = formatDateToDayAndHour(weatherData.getLocation().getLocaltime()).split(", ")[1];
 
-        List<String> sunsetAndSunrise = getSunsetAndSunrise();
-        String sunsetTimeTrimmed = Objects.requireNonNull(sunsetAndSunrise).get(0);
-        String sunriseTimeTrimmed = Objects.requireNonNull(sunsetAndSunrise).get(1);
+        String sunsetTimeTrimmed = weatherData.getForecast().getForecastday().get(0).getAstro().getSunset();
+        String sunriseTimeTrimmed = weatherData.getForecast().getForecastday().get(0).getAstro().getSunrise();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
 
@@ -249,48 +223,10 @@ public class DynamicBackgroundImpl {
         LocalTime sunriseTime = LocalTime.parse(sunriseTimeTrimmed, formatter);
         LocalTime sunsetTime = LocalTime.parse(sunsetTimeTrimmed, formatter);
 
-
         if (currentTime.isAfter(sunriseTime) && currentTime.isBefore(sunsetTime)) {
             return true; // It's daytime
         } else {
             return false; // It's nighttime
         }
-    }
-
-    private List<String> getSunsetAndSunrise() {
-        List<String> sunsetAndSunrise = new CopyOnWriteArrayList<>();
-        Thread thread = new Thread(() -> {
-            if (!responseBodiesSecondAPI.containsKey(city)) {
-                try {
-                    responseBodyGetSunsetSunrise = forecastAPI.httpResponseDailyForecast(city);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
-                responseBodyGetSunsetSunrise = responseBodiesSecondAPI.get(city);
-            }
-            if (responseBodyGetSunsetSunrise != null && !responseBodyGetSunsetSunrise.contains("No matching location found.")) {
-                if (!responseBodiesSecondAPI.containsKey(city)) {
-                    responseBodiesSecondAPI.put(city, responseBodyGetSunsetSunrise);
-                }
-                JSONObject response = new JSONObject(responseBodyGetSunsetSunrise);
-
-                JSONArray forecastDays = response.getJSONObject("forecast").getJSONArray("forecastday");
-
-                JSONObject forecast = forecastDays.getJSONObject(0);
-
-                JSONObject astroObject = forecast.getJSONObject("astro");
-
-                sunsetAndSunrise.add(astroObject.getString("sunset"));
-                sunsetAndSunrise.add(astroObject.getString("sunrise"));
-            }
-        });
-        thread.start();
-        try {
-            thread.join(); // Wait for the thread to finish
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        return sunsetAndSunrise;
     }
 }

@@ -3,7 +3,6 @@ package com.example.weatherapp;
 import com.example.weatherapp.buttons.*;
 import com.example.weatherapp.dynamicBackground.DynamicBackgroundImpl;
 import com.example.weatherapp.labels.BubbleLabels;
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -69,7 +68,7 @@ public class Main extends Application {
     private ShowMoreWeatherData showMoreWeatherInfo;
     private ConvertTemperature convertTemperature;
     private ConvertWindSpeed convertWindSpeed;
-    private final Button fetchButton = new Button("Show current weather");
+    private Button fetchButton;
     private ReturnToFirstPage returnBackToFirstPage;
     private Scene mainScene;
     private Stage stage;
@@ -86,7 +85,7 @@ public class Main extends Application {
     private String lastEnteredCity;
     private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     private GridPane gridPane;
-    private ImageView iconView = new ImageView();
+    private ImageView iconView;
     private String responseBodyCheckForValidInput;
     public static String passedFirstPage;
     private DynamicBackgroundImpl dynamicBackground;
@@ -94,7 +93,7 @@ public class Main extends Application {
     private final Map<String, Image> imageCache = new HashMap<>();
     public static WeatherData weatherData;
     private static ForecastAPI forecastAPI;
-    ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public Main() {
         responseBodiesDailySecondAPI = new ConcurrentHashMap<>();
@@ -144,11 +143,8 @@ public class Main extends Application {
         dynamicBackground = new DynamicBackgroundImpl(
                 rootLayout,
                 root,
-                city,
-                responseBodiesDailySecondAPI,
                 stage,
                 mainScene,
-                forecastAPI,
                 weatherData
         );
         dynamicBackground.addVideosPaths();
@@ -184,6 +180,7 @@ public class Main extends Application {
     }
 
     private StackPane createRootLayout() {
+        fetchButton = new Button("Show current weather");
         localTimeLabel = new BubbleLabels();
         temperatureLabel = new BubbleLabels();
         descriptionLabel = new BubbleLabels();
@@ -320,9 +317,6 @@ public class Main extends Application {
                 sunset,
                 showWeeklyForecastButton,
                 convertWindSpeed,
-                city,
-                responseBodiesDailySecondAPI,
-                forecastAPI,
                 weatherData
         );
 
@@ -441,7 +435,7 @@ public class Main extends Application {
                 });
                 future.thenAcceptAsync(validInput -> Platform.runLater(() -> {
                     if (validInput != null && validInput.getForecastData() != null
-                    && !validInput.getWeatherConditionAndIcon().equals("")) {
+                            && !validInput.getWeatherConditionAndIcon().equals("")) {
                         WeatherData weatherData = validInput.getForecastData();
                         String weatherConditionAndIcon = validInput.getWeatherConditionAndIcon();
                         String localTime = validInput.getLocalTime();
@@ -553,7 +547,6 @@ public class Main extends Application {
 
     private void checkForValidInput() {
         city = cityStartUpTextField.getText();
-
         CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
             Matcher matcher = patternNums.matcher(city);
             boolean validInput;
@@ -605,41 +598,39 @@ public class Main extends Application {
         }
     }
 
-    private void createImage(String completeIconUrl) {
-
-        if (!imageCache.containsKey(completeIconUrl)) {
-            image = loadImage(completeIconUrl);
-            iconView = new ImageView(image);
-            iconView.setFitWidth(32);
-            iconView.setFitHeight(32);
-            imageCache.put(completeIconUrl, image);
+    private void createImage(String imageUrl) {
+        if (!imageCache.containsKey(imageUrl)) {
+            CompletableFuture<Image> imageFuture = loadImageAsync(imageUrl);
+            imageFuture.thenAcceptAsync(image -> {
+                if (image != null) {
+                    // Image loaded successfully, update the UI with the image
+                    imageCache.put(image.getUrl(), image);
+                    Platform.runLater(() -> {
+                        iconView.setImage(image);
+                        iconView.setFitWidth(32);
+                        iconView.setFitHeight(32);
+                    });
+                } else {
+                    throw new RuntimeException("Image is null");
+                }
+            });
         } else {
-            image = imageCache.get(completeIconUrl);
-            iconView = new ImageView(image);
+            image = imageCache.get(imageUrl);
+            iconView.setImage(image);
             iconView.setFitWidth(32);
             iconView.setFitHeight(32);
         }
     }
 
-    private Image loadImage(String resourcePath) {
-        ExecutorService executorService = Executors.newCachedThreadPool();
-
-        CompletableFuture<Image> futureMediaPlayer =
-                CompletableFuture.supplyAsync(() -> createAndLoadMediaPlayer
-                        (resourcePath), executorService);
-
-        try {
-            executorService.shutdown();
-            return futureMediaPlayer.get();
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace(System.out);
-            executorService.shutdown();
-            return null;
-        }
-    }
-
-    private Image createAndLoadMediaPlayer(String resourcePath) {
-        return new Image(resourcePath);
+    private CompletableFuture<Image> loadImageAsync(String imageUrl) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return new Image(imageUrl);
+            } catch (Exception e) {
+                e.printStackTrace(System.out);
+                return null;
+            }
+        });
     }
 
     private void hideAllNodes() {
@@ -675,12 +666,9 @@ public class Main extends Application {
     private void updateButtonsData() {
         convertTemperature.setForecastData(weatherData);
         convertWindSpeed.setWeatherData(weatherData);
-        showMoreWeatherInfo.setCity(city);
         showMoreWeatherInfo.setForecastData(weatherData);
         showWeeklyForecastButton.setCity(city);
         showWeeklyForecastButton.setForecastAPI(forecastAPI);
-        dynamicBackground.setCity(city);
-        dynamicBackground.setResponseBodiesSecondAPI(responseBodiesDailySecondAPI);
         dynamicBackground.setForecastData(weatherData);
     }
 
@@ -712,6 +700,7 @@ public class Main extends Application {
     }
 
     private String getWeatherCondition() {
+
         String weatherConditionAndIcon = "";
         String responseBodyDailyForecast;
         try {
@@ -726,7 +715,7 @@ public class Main extends Application {
 
                 weatherData = objectMapper.readValue(responseBodyDailyForecast, WeatherData.class);
                 weatherConditionAndIcon = weatherData.getCurrent().getCondition().getIcon() + "&" +
-                weatherData.getCurrent().getCondition().getText();
+                        weatherData.getCurrent().getCondition().getText();
             }
         } catch (IOException exception) {
             throw new RuntimeException();

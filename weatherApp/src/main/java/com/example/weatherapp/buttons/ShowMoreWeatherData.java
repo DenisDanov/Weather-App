@@ -4,14 +4,8 @@ import com.example.weatherapp.Main;
 import com.example.weatherapp.labels.BubbleLabels;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import org.json.JSONObject;
 import parsingWeatherData.WeatherData;
-import weatherApi.ForecastAPI;
-
 import java.io.IOException;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-
 
 public class ShowMoreWeatherData extends Button {
 
@@ -32,9 +26,6 @@ public class ShowMoreWeatherData extends Button {
     private final Label sunset;
     private final Button showWeeklyForecastButton;
     private final ConvertWindSpeed convertWindSpeed;
-    private String city;
-    private final ConcurrentHashMap<String, String> responseBodiesDailySecondAPI;
-    private final ForecastAPI forecastAPI;
     private WeatherData weatherData;
 
     public ShowMoreWeatherData(BubbleLabels humidityLabel,
@@ -54,9 +45,6 @@ public class ShowMoreWeatherData extends Button {
                                Label sunset,
                                Button showWeeklyForecastButton,
                                ConvertWindSpeed convertWindSpeed,
-                               String city,
-                               ConcurrentHashMap<String, String> responseBodiesDailySecondAPI,
-                               ForecastAPI forecastAPI,
                                WeatherData weatherData) {
 
         this.humidityLabel = humidityLabel;
@@ -77,16 +65,9 @@ public class ShowMoreWeatherData extends Button {
         this.showWeeklyForecastButton = showWeeklyForecastButton;
         this.setForecastData(weatherData);
         this.convertWindSpeed = convertWindSpeed;
-        this.setCity(city);
-        this.responseBodiesDailySecondAPI = responseBodiesDailySecondAPI;
-        this.forecastAPI = forecastAPI;
         this.setForecastData(weatherData);
 
         configureButton();
-    }
-
-    public void setCity(String city) {
-        this.city = city;
     }
 
     public void setForecastData(WeatherData weatherData) {
@@ -115,32 +96,13 @@ public class ShowMoreWeatherData extends Button {
 
     public void showLabels() {
         humidityLabel.setText(String.format("Humidity: %d %%", weatherData.getCurrent().getHumidity()));
-        uvLabel.setText("UV Index: " + Main.getUvOutputFormat(getUV(city)));
+        uvLabel.setText("UV Index: " + Main.getUvOutputFormat(weatherData.getCurrent().getUv()));
         windSpeedLabel.setText(String.format("Wind speed: %.0f km/h", (weatherData.getCurrent().getWindKph())));
         convertWindSpeed.setVisible(true);
         getDailyForecast.setVisible(true);
         humidityLabel.setVisible(true);
         windSpeedLabel.setVisible(true);
         uvLabel.setVisible(true);
-    }
-
-    public double getUV(String city) {
-        String responseBody;
-        if (!responseBodiesDailySecondAPI.containsKey(city)) {
-            try {
-                responseBody = forecastAPI.httpResponseDailyForecast(city);
-            } catch (IOException e) {
-                throw new RuntimeException();
-            }
-            responseBodiesDailySecondAPI.put(city, Objects.requireNonNull(responseBody));
-        } else {
-            responseBody = responseBodiesDailySecondAPI.get(city);
-        }
-
-        JSONObject jsonObject = new JSONObject(responseBody);
-        JSONObject currentObject = jsonObject.getJSONObject("current");
-
-        return currentObject.getDouble("uv");
     }
 
     public void hideLabels() {
