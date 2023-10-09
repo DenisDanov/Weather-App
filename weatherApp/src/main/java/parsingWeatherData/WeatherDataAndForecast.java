@@ -1,4 +1,4 @@
-package com.example.weatherapp;
+package parsingWeatherData;
 
 import parsingWeatherData.WeatherData;
 
