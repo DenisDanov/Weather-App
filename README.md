@@ -3,7 +3,9 @@ JavaFX Weather App: Stay Informed About Weather Conditions Worldwide
 
 Preview of the app as of the current version: 
 
-https://github.com/DenisDanov/Weather-App/assets/122882697/018f024e-8ace-427d-b02e-b6444bb281a9
+
+https://github.com/DenisDanov/Weather-App/assets/122882697/a37ec8e8-3cda-4002-a797-163c964b9b8c
+
 
 ## Description
 
