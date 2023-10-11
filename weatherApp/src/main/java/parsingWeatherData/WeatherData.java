@@ -18,6 +18,5 @@ public class WeatherData {
     public Forecast getForecast() {
         return forecast;
     }
-// Getter and setter methods for location, current, and forecast
 }
 

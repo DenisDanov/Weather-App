@@ -22,5 +22,4 @@ public class ForecastDay {
     }
 
 
-// Getter and setter methods for date, day, astro, and hour
 }

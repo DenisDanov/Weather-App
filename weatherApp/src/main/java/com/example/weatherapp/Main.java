@@ -25,6 +25,7 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import parsingWeatherData.WeatherData;
+import parsingWeatherData.WeatherDataAndForecast;
 import weatherApi.ForecastAPI;
 
 import java.io.IOException;

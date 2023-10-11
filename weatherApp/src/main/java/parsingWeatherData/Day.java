@@ -65,5 +65,4 @@ public class Day {
     private Condition condition;
     private double uv;
 
-    // Getter and setter methods for day fields
 }

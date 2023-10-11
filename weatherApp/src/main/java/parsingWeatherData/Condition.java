@@ -13,5 +13,4 @@ public class Condition {
     public String getIcon() {
         return icon;
     }
-// Getter and setter methods for text and icon
 }

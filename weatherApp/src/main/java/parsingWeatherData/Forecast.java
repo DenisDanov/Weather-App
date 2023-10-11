@@ -10,5 +10,4 @@ public class Forecast {
     public List<ForecastDay> getForecastday() {
         return forecastday;
     }
-    // Getter and setter methods for forecastday
 }

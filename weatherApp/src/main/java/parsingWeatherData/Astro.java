@@ -15,5 +15,4 @@ public class Astro {
     public String getSunset() {
         return sunset;
     }
-// Getter and setter methods for sunrise and sunset
 }

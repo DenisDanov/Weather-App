@@ -41,18 +41,14 @@ public class ConvertTemperature extends Button {
                     getTempInKelvin(weatherData.getCurrent().getFeelsLikeC())));
         } else {
             temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21",
-                    getTempInCelsius(weatherData.getCurrent().getTemp_c())));
+                    (weatherData.getCurrent().getTemp_c())));
             temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21",
-                    getTempInCelsius(weatherData.getCurrent().getFeelsLikeC())));
+                    (weatherData.getCurrent().getFeelsLikeC())));
         }
     }
 
-    private double getTempInCelsius(double temp) {
-        return temp;
-    }
-
     private double getTempInFahrenheit(double temp) {
-        return (temp * (9 / 5) + 32);
+        return (temp * 9 / 5) + 32;
     }
     private double getTempInKelvin(double temp) {
         return (temp - 32) * 5/9 + 273.15;

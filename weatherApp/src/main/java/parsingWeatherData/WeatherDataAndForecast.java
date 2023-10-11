@@ -1,6 +1,6 @@
 package parsingWeatherData;
 
-import parsingWeatherData.WeatherData;
+
 
 public class WeatherDataAndForecast {
 

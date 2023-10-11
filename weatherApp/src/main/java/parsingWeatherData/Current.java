@@ -38,5 +38,4 @@ public class Current {
     public double getUv() {
         return uv;
     }
-    // Getter and setter methods for current fields
 }
