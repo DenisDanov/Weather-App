@@ -31,11 +31,11 @@ import weatherApi.ForecastAPI;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalTime;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -478,9 +478,6 @@ public class Main extends Application {
                                 inputTextField.setStyle(temperatureLabel.getStyle());
                             }
 
-                            double temp = weatherData.getCurrent().getTemp_c();
-                            double tempFeelsLike = weatherData.getCurrent().getFeelsLikeC();
-
                             buttonsPane.setVisible(true);
                             convertTemperature.setVisible(true);
                             showMoreWeatherInfo.setVisible(true);
@@ -490,9 +487,9 @@ public class Main extends Application {
 
                             localTimeLabel.setText(String.format("Local time: %s", localTime));
                             temperatureLabel.setText(String.format("Temperature: %.0f°C \uD83C\uDF21",
-                                    temp));
+                                    weatherData.getCurrent().getTemp_c()));
                             temperatureFeelsLikeLabel.setText(String.format("Feels like: %.0f°C \uD83C\uDF21",
-                                    tempFeelsLike));
+                                    weatherData.getCurrent().getFeelsLikeC()));
 
                             weatherDescriptionLabel.setWrapText(true);
                             weatherDescriptionLabel.setText("Weather Description: " +
@@ -748,4 +745,26 @@ public class Main extends Application {
         }
         return formattedDate;
     }
+
+    public static String formatHour(String inputTime) {
+        SimpleDateFormat inputFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
+        try {
+            Date date = inputFormat.parse(inputTime);
+
+            // Convert Date to LocalTime
+            Instant instant = date.toInstant();
+            ZoneId systemZone = ZoneId.systemDefault();
+            LocalTime localTime = instant.atZone(systemZone).toLocalTime();
+
+            // Format LocalTime to the operating system's time format
+            DateTimeFormatter systemTimeFormat = DateTimeFormatter.ofPattern("h:mm a");
+            String formattedTime = localTime.format(systemTimeFormat);
+
+            return formattedTime;
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return "Invalid Time Format";
+        }
+    }
+
 }

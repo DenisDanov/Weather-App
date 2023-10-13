@@ -1,7 +1,6 @@
 package com.example.weatherapp.dynamicBackground;
 
 import javafx.animation.FadeTransition;
-import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -12,17 +11,21 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import parsingWeatherData.WeatherData;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.time.format.DateTimeParseException;
+import java.time.format.FormatStyle;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static com.example.weatherapp.Main.formatDateToDayAndHour;
+import static com.example.weatherapp.Main.formatHour;
 
 public class DynamicBackgroundImpl {
 
@@ -211,22 +214,32 @@ public class DynamicBackgroundImpl {
 
     private boolean currentTimeIsLaterThanSunset() {
         String currentTimeTrimmed = formatDateToDayAndHour(weatherData.getLocation().getLocaltime()).split(", ")[1];
+        String sunsetTimeTrimmed = formatHour(weatherData.getForecast().getForecastday().get(0).getAstro().getSunset());
+        String sunriseTimeTrimmed = formatHour(weatherData.getForecast().getForecastday().get(0).getAstro().getSunrise());
 
-        String sunsetTimeTrimmed = weatherData.getForecast().getForecastday().get(0).getAstro().getSunset();
-        String sunriseTimeTrimmed = weatherData.getForecast().getForecastday().get(0).getAstro().getSunrise();
+        SimpleDateFormat inputFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
+        try {
+            currentTimeTrimmed = currentTimeTrimmed.replace("пр.об.", "AM").replace("сл.об.", "PM");
+            sunriseTimeTrimmed = sunriseTimeTrimmed.replace("пр.об.", "AM").replace("сл.об.", "PM");
+            sunsetTimeTrimmed = sunsetTimeTrimmed.replace("пр.об.", "AM").replace("сл.об.", "PM");
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
+            Date currentTimeDate = inputFormat.parse(currentTimeTrimmed);
+            Date sunriseTimeDate = inputFormat.parse(sunriseTimeTrimmed);
+            Date sunsetTimeDate = inputFormat.parse(sunsetTimeTrimmed);
 
-        // Parse the strings into LocalTime objects
-        // Compare the two LocalTime objects
-        LocalTime currentTime = LocalTime.parse(currentTimeTrimmed, formatter);
-        LocalTime sunriseTime = LocalTime.parse(sunriseTimeTrimmed, formatter);
-        LocalTime sunsetTime = LocalTime.parse(sunsetTimeTrimmed, formatter);
-
-        if (currentTime.isAfter(sunriseTime) && currentTime.isBefore(sunsetTime)) {
-            return true; // It's daytime
-        } else {
-            return false; // It's nighttime
+            // Convert the parsed times to LocalTime
+            LocalTime currentTime = currentTimeDate.toInstant().atZone(ZoneId.systemDefault()).toLocalTime();
+            LocalTime sunriseTime = sunriseTimeDate.toInstant().atZone(ZoneId.systemDefault()).toLocalTime();
+            LocalTime sunsetTime = sunsetTimeDate.toInstant().atZone(ZoneId.systemDefault()).toLocalTime();
+            if (currentTime.isAfter(sunriseTime) && currentTime.isBefore(sunsetTime)) {
+                return true; // It's daytime
+            } else {
+                return false; // It's nighttime
+            }
+        } catch (ParseException e) {
+            e.printStackTrace(System.out);
+            return false; // Handle as nighttime or an error state
         }
     }
+
 }
