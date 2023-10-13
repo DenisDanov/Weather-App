@@ -15,6 +15,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -31,10 +32,7 @@ import weatherApi.ForecastAPI;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.Matcher;
@@ -394,6 +392,20 @@ public class Main extends Application {
                 fetchAndDisplayWeatherData(inputTextField.getText());
             }
         });
+
+        cityStartUpTextField.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                // Call the same action as the button when Enter is pressed
+                fetchButton.fire();
+            }
+        });
+
+        inputTextField.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                // Call the same action as the button when Enter is pressed
+                fetchButton.fire();
+            }
+        });
     }
 
     private void setRightMargin(Region node) {
@@ -745,26 +757,4 @@ public class Main extends Application {
         }
         return formattedDate;
     }
-
-    public static String formatHour(String inputTime) {
-        SimpleDateFormat inputFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
-        try {
-            Date date = inputFormat.parse(inputTime);
-
-            // Convert Date to LocalTime
-            Instant instant = date.toInstant();
-            ZoneId systemZone = ZoneId.systemDefault();
-            LocalTime localTime = instant.atZone(systemZone).toLocalTime();
-
-            // Format LocalTime to the operating system's time format
-            DateTimeFormatter systemTimeFormat = DateTimeFormatter.ofPattern("h:mm a");
-            String formattedTime = localTime.format(systemTimeFormat);
-
-            return formattedTime;
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return "Invalid Time Format";
-        }
-    }
-
 }

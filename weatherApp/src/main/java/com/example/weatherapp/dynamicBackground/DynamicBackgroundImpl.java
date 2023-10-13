@@ -13,11 +13,10 @@ import parsingWeatherData.WeatherData;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.format.FormatStyle;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -25,7 +24,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static com.example.weatherapp.Main.formatDateToDayAndHour;
-import static com.example.weatherapp.Main.formatHour;
 
 public class DynamicBackgroundImpl {
 
@@ -50,8 +48,8 @@ public class DynamicBackgroundImpl {
         this.setStage(stage);
         this.setMainScene(mainScene);
         this.videoPaths = new HashMap<>();
-        this.fadeOut = new FadeTransition(Duration.millis(100), mediaView);
-        this.fadeIn = new FadeTransition(Duration.millis(100), mediaView);
+        this.fadeOut = new FadeTransition(Duration.millis(75), mediaView);
+        this.fadeIn = new FadeTransition(Duration.millis(75), mediaView);
         this.setForecastData(weatherData);
 
         fadeIn.setFromValue(1);
@@ -133,8 +131,8 @@ public class DynamicBackgroundImpl {
                 fadeOut.setDuration(Duration.millis(1));
                 fadeIn.setDuration(Duration.millis(1));
             } else if (fadeOut.getDuration() == Duration.millis(1)) {
-                fadeOut.setDuration(Duration.millis(100));
-                fadeIn.setDuration(Duration.millis(100));
+                fadeOut.setDuration(Duration.millis(75));
+                fadeIn.setDuration(Duration.millis(75));
             }
             // Start the fade-out animation
             fadeOut.play();
@@ -154,8 +152,6 @@ public class DynamicBackgroundImpl {
 
     private void fadeInToNewVideo(MediaPlayer newMediaPlayer, FadeTransition fadeIn) {
         mediaView.setMediaPlayer(newMediaPlayer);
-
-        fadeIn.setNode(mediaView);
 
         // Start the fade-in animation
         newMediaPlayer.play();
@@ -239,6 +235,25 @@ public class DynamicBackgroundImpl {
         } catch (ParseException e) {
             e.printStackTrace(System.out);
             return false; // Handle as nighttime or an error state
+        }
+    }
+    public String formatHour(String inputTime) {
+        SimpleDateFormat inputFormat = new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
+        try {
+            Date date = inputFormat.parse(inputTime);
+
+            // Convert Date to LocalTime
+            Instant instant = date.toInstant();
+            ZoneId systemZone = ZoneId.systemDefault();
+            LocalTime localTime = instant.atZone(systemZone).toLocalTime();
+
+            // Format LocalTime to the operating system's time format
+            DateTimeFormatter systemTimeFormat = DateTimeFormatter.ofPattern("h:mm a");
+
+            return localTime.format(systemTimeFormat);
+        } catch (ParseException e) {
+            e.printStackTrace(System.out);
+            return "Invalid Time Format";
         }
     }
 
