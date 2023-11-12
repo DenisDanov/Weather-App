@@ -12,7 +12,7 @@ import java.net.URLEncoder;
 
 public class ForecastAPI {
 
-    private static final String API_KEY = "c034556f85a9495294290244230910";
+    private static final String API_KEY = "adccb04745694803aed162619231211";
 
     private static final String API_ENDPOINT = "https://api.weatherapi.com/v1";
 
@@ -24,13 +24,14 @@ public class ForecastAPI {
 
     public String httpResponseDailyForecast(String city) throws IOException {
         String encodedCity = URLEncoder.encode(city, "UTF-8");
-        HttpGet httpGet = new HttpGet("https://api.weatherapi.com/v1" + "/forecast.json?key=" + "c034556f85a9495294290244230910" + "&q=" +
+        HttpGet httpGet = new HttpGet("https://api.weatherapi.com/v1" + "/forecast.json?key=" + API_KEY + "&q=" +
                 encodedCity + "&days=1" + "&aqi=no&alerts=no");
 
         try (CloseableHttpResponse response = HTTP_CLIENT.execute(httpGet)) {
 
             HttpEntity entity = response.getEntity();
             String responseString = EntityUtils.toString(entity);
+            System.out.println(responseString);
             if (!responseString.contains("error")) {
                 return responseString;
             } else {
