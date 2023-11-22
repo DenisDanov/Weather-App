@@ -1,8 +1,9 @@
 # Weather-App
 JavaFX Weather App: Stay Informed About Weather Conditions Worldwide
 
-Preview of the app as of the current version: 
+You can download and test the app through Weather-App.7z file. After downloading, simply open it with Weather-App.exe file.
 
+Preview of the app as of the current version: 
 
 https://github.com/DenisDanov/Weather-App/assets/122882697/a37ec8e8-3cda-4002-a797-163c964b9b8c
 
