@@ -12,7 +12,7 @@ import java.net.URLEncoder;
 
 public class ForecastAPI {
 
-    private static final String API_KEY = "adccb04745694803aed162619231211";
+    private static final String API_KEY = "a8edd576c0e845b0a3a121650240709";
 
     private static final String API_ENDPOINT = "https://api.weatherapi.com/v1";
 

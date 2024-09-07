@@ -8,6 +8,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
@@ -24,6 +25,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import parsingWeatherData.WeatherData;
 import parsingWeatherData.WeatherDataAndForecast;
@@ -33,7 +35,10 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -93,6 +98,7 @@ public class Main extends Application {
     public static WeatherData weatherData;
     private static ForecastAPI forecastAPI;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
 
     public Main() {
         responseBodiesDailySecondAPI = new ConcurrentHashMap<>();
@@ -110,10 +116,12 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
         rootLayout = createRootLayout();
-        mainScene = new Scene(rootLayout, 866, 700);
+        mainScene = new Scene(rootLayout, screenBounds.getWidth(), screenBounds.getHeight());
         stage = primaryStage;
         addStyleSheet(mainScene);
         configurePrimaryStage(primaryStage);
+        primaryStage.setMaximized(true);
+        primaryStage.setResizable(true);
         primaryStage.show();
         configureFetchButton();
         setUpDynamicBackground();
@@ -160,16 +168,18 @@ public class Main extends Application {
                 fetchButton,
                 invalidInput
         );
-        firstPageScene = new Scene(firstPageVbox, 866, 700);
+        firstPageScene = new Scene(firstPageVbox,  screenBounds.getWidth(), screenBounds.getHeight());
         firstPageScene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/firstPage.css")).toExternalForm());
         primaryStage.setTitle("Weather App");
         primaryStage.setScene(firstPageScene);
+        primaryStage.setMaximized(true);
     }
 
     private void addStyleSheet(Scene scene) {
         scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/mainPage.css")).toExternalForm());
         temperatureLabel.getStyleClass().add("emoji-label");
         temperatureFeelsLikeLabel.getStyleClass().add("emoji-label");
+        cityStartUpTextField.setMaxWidth(190);
         Text labelText = new Text("Enter City or Country:");
         Font boldFont = Font.font("Arial", FontWeight.BOLD, 14);
         descriptionLabel.setMinHeight(30);
@@ -201,6 +211,8 @@ public class Main extends Application {
         sunset = new BubbleLabels();
         cityLabel = new Label();
         this.inputTextField = new TextField();
+        this.inputTextField.getStyleClass().add("inputs");
+        this.cityStartUpTextField.getStyleClass().add("inputs");
         rootLayout = new StackPane();
         root = new VBox();
 
@@ -278,7 +290,8 @@ public class Main extends Application {
                 fetchButton,
                 mainScene,
                 stage,
-                forecastAPI
+                forecastAPI,
+                screenBounds
         );
         showWeeklyForecastButton.setText("Show weekly forecast");
 

@@ -7,6 +7,7 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.TextFieldTableCell;
@@ -55,6 +56,7 @@ public class ShowWeeklyForecast extends Button {
     private Scene mainScene;
     private Stage stage;
     private ForecastAPI forecastAPI;
+    private Rectangle2D screenBounds;
 
     public ShowWeeklyForecast(VBox root,
                               Label cityLabel,
@@ -84,7 +86,8 @@ public class ShowWeeklyForecast extends Button {
                               Button fetchButton,
                               Scene mainScene,
                               Stage stage,
-                              ForecastAPI forecastAPI) {
+                              ForecastAPI forecastAPI,
+                              Rectangle2D screenBounds) {
 
         this.setRoot(root);
         this.cityLabel = cityLabel;
@@ -117,6 +120,7 @@ public class ShowWeeklyForecast extends Button {
         this.setMainScene(mainScene);
         this.setStage(stage);
         this.setForecastAPI(forecastAPI);
+        this.screenBounds = screenBounds;
 
         configureButton();
     }
@@ -229,9 +233,9 @@ public class ShowWeeklyForecast extends Button {
 
             table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-            table.setPrefHeight(378);
+            table.setPrefHeight(360);
             VBox root = new VBox(table);
-            Scene scene = new Scene(root, 866, 700);
+            Scene scene = new Scene(root,  screenBounds.getWidth(), screenBounds.getHeight());
 
             Button getToMainPage = new Button("Return to the main page");
             root.getChildren().add(getToMainPage);

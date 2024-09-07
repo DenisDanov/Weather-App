@@ -38,11 +38,7 @@ public class DynamicBackgroundImpl {
     private WeatherData weatherData;
     private final ExecutorService mediaPlayerLoader = Executors.newCachedThreadPool();
 
-    public DynamicBackgroundImpl(StackPane rootLayout,
-                                 VBox root,
-                                 Stage stage,
-                                 Scene mainScene,
-                                 WeatherData weatherData) {
+    public DynamicBackgroundImpl(StackPane rootLayout, VBox root, Stage stage, Scene mainScene, WeatherData weatherData) {
         this.lastWeatherDescription = "";
         this.lastTimeCheck = "";
         this.setStage(stage);
@@ -57,7 +53,23 @@ public class DynamicBackgroundImpl {
         fadeIn.setToValue(1);
         fadeOut.setToValue(1);
 
-        Objects.requireNonNull(rootLayout).getChildren().addAll(mediaView, root);
+        // Add the MediaView to the StackPane first
+        rootLayout.getChildren().add(mediaView);
+
+        // Add the VBox (which contains your labels and other components) on top
+        rootLayout.getChildren().add(root);
+
+        // Set up listeners to resize the MediaView
+        rootLayout.widthProperty().addListener((observable, oldValue, newValue) -> resizeMediaView());
+        rootLayout.heightProperty().addListener((observable, oldValue, newValue) -> resizeMediaView());
+
+        resizeMediaView(); // Initial resize
+    }
+
+    private void resizeMediaView() {
+        mediaView.setFitWidth(stage.getWidth());
+        mediaView.setFitHeight(stage.getHeight());
+        mediaView.setPreserveRatio(false); // Set to true if you want to preserve aspect ratio
     }
 
     public void setForecastData(WeatherData weatherData) {

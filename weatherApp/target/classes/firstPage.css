@@ -15,7 +15,6 @@
 
 /* Style for the text field */
 .text-field {
-    -fx-pref-width: 300px; /* Preferred width of the text field */
     -fx-font-size: 14px; /* Font size */
 }
 

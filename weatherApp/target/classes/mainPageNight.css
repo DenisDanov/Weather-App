@@ -6,7 +6,15 @@
     -fx-font-size: 15px; /* Larger font size */ /* Charcoal color code */
     -fx-padding: 2px 2px; /* Padding around the text */
     -fx-background-radius: 5px; /* Rounded corners to create a bubble effect */
+    -fx-max-height: 100px; /* Set a maximum height (adjust as needed) */
+    -fx-pref-height: null; /* Ensure preferred height is not set to force-fit content */
+    -fx-translate-y: 0; /* Ensures the vertical position stays constant */
 }
+
+.inputs {
+    -fx-max-width: 140px !important;
+}
+
 .emoji-label {
     -fx-font-family: "Segoe UI Emoji";
     -fx-font-size: 16px; /* Larger font size */

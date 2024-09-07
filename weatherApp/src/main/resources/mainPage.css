@@ -11,15 +11,24 @@
     -fx-text-fill: #F5F5F5;
     -fx-font-family: "Segoe UI Semilight";
     -fx-font-weight: bold;
-    -fx-font-size: 15px; /* Larger font size */ /* Charcoal color code */
+    -fx-font-size: 15px; /* Larger font size */
     -fx-padding: 2px 2px; /* Padding around the text */
     -fx-background-radius: 5px; /* Rounded corners to create a bubble effect */
+    -fx-max-height: 100px; /* Set a maximum height (adjust as needed) */
+    -fx-pref-height: null; /* Ensure preferred height is not set to force-fit content */
+    -fx-min-height: 35px;
+    -fx-translate-y: 0; /* Ensures the vertical position stays constant */
+}
+
+.inputs {
+    -fx-max-width: 140px !important;
 }
 
 /* Style the button */
 .button:pressed {
     -fx-background-color: #124e9a;
 }
+
 .button {
     -fx-background-color: linear-gradient(to bottom, #0A2354, #032254);
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.5), 5, 0, 0, 0);
