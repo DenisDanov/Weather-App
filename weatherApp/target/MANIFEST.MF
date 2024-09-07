@@ -1,6 +1,0 @@
-Manifest-Version: 1.0
-Main-Class: com.example.weatherapp.Main
-Class-Path: C:\Users\vorte\Desktop\javafx-sdk-21\lib
-Module-Path: C:\Users\vorte\Desktop\javafx-sdk-21\lib
-Module: weatherApp
-
